@@ -1,0 +1,499 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Absensi;
+use App\Models\Division;
+use App\Models\Employee;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border as StyleBorder;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Spatie\Activitylog\Models\Activity;
+
+class ReportingController extends Controller
+{
+    public function read()
+    {
+        $divisions = Division::orderBy('nama')->get();
+        $absensis = Absensi::with('employee', 'employee.division')
+            ->orderBy('tanggal', 'desc')
+            ->get();
+
+        return view('reporting.read', compact('absensis', 'divisions'));
+    }
+
+    public function create()
+    {
+        $employees = Employee::orderBy('nama')->get();
+        return view('reporting.create', compact('employees'));
+    }
+
+    public function approve(Request $request, $id)
+    {
+        $absen = Absensi::findOrFail($id);
+        $approval = $request->input('approval');
+
+        if ($approval === 'null') {
+            $absen->is_approved = null;
+        } else {
+            $absen->is_approved = (bool) $approval;
+        }
+
+        $absen->save();
+
+        // Hitung label dan warna
+        if (is_null($absen->is_approved)) {
+            $label = 'Menunggu Persetujuan';
+            $class = 'bg-yellow';
+        } elseif ($absen->is_approved) {
+            $label = 'Disetujui';
+            $class = 'bg-success';
+        } else {
+            $label = 'Ditolak';
+            $class = 'bg-red';
+        }
+
+        // Kirim tombol baru
+        $buttonHtml = view('partials.approval-buttons', ['absen' => $absen])->render();
+
+        return response()->json([
+            'status_label' => $label,
+            'status_class' => $class,
+            'button_html' => $buttonHtml
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $employeeIds = $request->input('nama', []);
+        $jenisCutiList = $request->input('jenis_cuti', []);
+        $keteranganCutiList = $request->input('keterangan', []);
+        $tanggal = now()->format('Y-m-d');
+
+        foreach ($employeeIds as $index => $employeeId) {
+            $employee = Employee::with('division')->find($employeeId);
+
+            if ($employee) {
+                Absensi::create([
+                    'employee_id' => $employee->id,
+                    'tanggal' => $tanggal,
+                    'kategori' => $this->getKategoriCode($jenisCutiList[$index] ?? ''),
+                    'keterangan' => $keteranganCutiList[$index],
+                ]);
+            }
+        }
+
+        return redirect()->route('index')->with('success', 'Data berhasil disimpan!');
+    }
+
+    public function dailyReport(Request $request)
+    {
+        $tanggal = $request->query('tanggal', now()->format('Y-m-d'));
+
+        $absensis = Absensi::with(['employee.division'])
+            ->whereDate('tanggal', $tanggal)
+            ->get()
+            ->groupBy(fn($item) => $item->employee->division->nama ?? 'Lainnya');
+
+        Carbon::setLocale('id');
+        $formattedText = "Dear Bu. Yuli,\n\nBerikut informasi absensi department produksi tanggal " . Carbon::parse($tanggal)->translatedFormat('d F Y') . "\n\n";
+
+        foreach ($absensis as $divisi => $items) {
+            $formattedText .= "Prod. " . $divisi . "\n";
+            foreach ($items as $index => $item) {
+                $formattedText .= ($index + 1) . ". " . ($item->employee->nama ?? '-') . " (" . $item->kategori_label . ")\n";
+            }
+            $formattedText .= "\n";
+        }
+
+        $formattedText .= "Mohon kerjasamanya.\n\nSupriyanto.";
+
+        return response()->json([
+            'text' => $formattedText,
+        ]);
+    }
+
+    public function getKategoriCode($kategori)
+    {
+        return match ($kategori) {
+            'Cuti' => 'C',
+            'Cuti Setengah Hari Pagi' => 'CSP',
+            'Cuti Setengah Hari Siang' => 'CSS',
+            'Terlambat' => 'T',
+            'Izin Keluar' => 'IK',
+            'Pulang Cepat' => 'P',
+            'Absen' => 'A',
+            'Absen Setengah Hari Pagi' => 'ASP',
+            'Absen Setengah Hari Siang' => 'ASS',
+            'Sakit' => 'S',
+            'Cuti Khusus' => 'CK',
+            'Serikat' => 'Sk',
+            default => '',
+        };
+    }
+
+    public function getEmployeeDetails(Request $request)
+    {
+        $employee_id = $request->input('employee_id');
+        $employee = Employee::with('division')->find($employee_id);
+
+        if ($employee) {
+            return response()->json([
+                'status' => $employee->status,
+                'divisi' => $employee->division->nama ?? '',
+                'team' => $employee->team ?? '',
+            ]);
+        }
+
+        return response()->json([
+            'status' => '',
+            'divisi' => '',
+            'team' => '',
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'kategori' => 'required|string',
+            'tanggal' => 'required|date',
+        ]);
+
+        $absensi = Absensi::findOrFail($id);
+        $absensi->load('employee');
+
+        $absensi->update([
+            'kategori' => $this->getKategoriCode($request->kategori),
+            'tanggal' => $request->tanggal,
+            'keterangan' => $request->keterangan,
+            'is_approved' => null,
+            'approved_at' => null,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Data berhasil diupdate.'], 200);
+    }
+
+    public function destroy($id)
+    {
+        $absensi = Absensi::find($id);
+
+        if (!$absensi) {
+            return response()->json(['error' => 'Data absensi tidak ditemukan.'], 404);
+        }
+
+        $absensi->delete();
+
+        return response()->json(['success' => 'Data absensi berhasil dihapus.']);
+    }
+
+    public function export(Request $request)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        Carbon::setLocale('id');
+
+        $bulan = $request->get('bulan', Carbon::now()->format('Y-m'));
+        [$year, $month] = explode('-', $bulan);
+        $dateObj = Carbon::createFromDate($year, $month, 1);
+
+        $daysInMonth = $dateObj->daysInMonth;
+        $monthName = strtoupper($dateObj->translatedFormat('F'));
+
+        $sheet->setTitle($monthName . '_' . $year);
+
+        $employees = Employee::with('division')->get();
+        $absensisMonth = Absensi::whereYear('tanggal', $year)
+            ->whereMonth('tanggal', $month)
+            ->get();
+        $absensisYear = Absensi::whereYear('tanggal', $year)
+            ->whereMonth('tanggal', '<=', $month)
+            ->get();
+
+        // Summary per divisi & status
+        $summary = [];
+        $employeesByDivision = $employees->sortBy(fn($emp) => $emp->division->id ?? PHP_INT_MAX);
+        foreach ($employeesByDivision as $emp) {
+            $div = $emp->division->nama ?? '';
+            $status = $emp->status ?? 'Contract';
+            if (!isset($summary[$div])) {
+                $summary[$div] = ['Permanent' => 0, 'Contract' => 0];
+            }
+            if (in_array($status, ['Permanent', 'Contract'])) {
+                $summary[$div][$status]++;
+            }
+        }
+
+        // Header summary
+        $sheet->setCellValue('B1', 'Div');
+        $sheet->setCellValue('C1', 'Member');
+        $sheet->setCellValue('D1', 'Permanent');
+        $sheet->setCellValue('E1', 'Contract');
+
+        $row = 2;
+        $totalPermanent = 0;
+        $totalContract = 0;
+        foreach ($summary as $div => $counts) {
+            $sheet->setCellValue("B{$row}", strtoupper($div));
+            $totalMember = $counts['Permanent'] + $counts['Contract'];
+            $sheet->setCellValue("C{$row}", $totalMember);
+            $sheet->setCellValue("D{$row}", $counts['Permanent']);
+            $sheet->setCellValue("E{$row}", $counts['Contract']);
+            $totalPermanent += $counts['Permanent'];
+            $totalContract += $counts['Contract'];
+            $row++;
+        }
+
+        // Baris total pegawai
+        $headerRow = 6;
+        $sheet->setCellValue('B' . ($headerRow - 1), 'Total');
+        $sheet->setCellValue('C' . ($headerRow - 1), $employees->count());
+        $sheet->setCellValue('D' . ($headerRow - 1), $totalPermanent);
+        $sheet->setCellValue('E' . ($headerRow - 1), $totalContract);
+
+        // Header kolom utama
+        $sheet->setCellValue('A6', 'No')->mergeCells('A6:A7');
+        $sheet->setCellValue('B6', 'Nama')->mergeCells('B6:B7');
+        $sheet->setCellValue('C6', 'Status')->mergeCells('C6:C7');
+        $sheet->setCellValue('D6', 'Div')->mergeCells('D6:D7');
+        $sheet->setCellValue('E6', 'Team')->mergeCells('E6:E7');
+
+        // Header bulan dan tanggal
+        $startTanggalColIndex = 8;
+        $endTanggalColIndex = $startTanggalColIndex + $daysInMonth - 1;
+
+        $startTanggalCol = Coordinate::stringFromColumnIndex($startTanggalColIndex);
+        $endTanggalCol = Coordinate::stringFromColumnIndex($endTanggalColIndex);
+
+        $sheet->setCellValue("{$startTanggalCol}6", $monthName);
+        $sheet->mergeCells("{$startTanggalCol}6:{$endTanggalCol}6");
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $col = Coordinate::stringFromColumnIndex($startTanggalColIndex + $day - 1);
+            $sheet->setCellValue("{$col}7", $day);
+        }
+
+        // Total absensi tahun ini
+        $kategoriList = ['C', 'CS', 'T', 'IK', 'P', 'A', 'AS', 'S', 'CK', 'Sk'];
+        $startKategoriColIndex = $endTanggalColIndex + 1;
+        $endKategoriColIndex = $startKategoriColIndex + count($kategoriList) - 1;
+
+        $startKategoriCol = Coordinate::stringFromColumnIndex($startKategoriColIndex);
+        $endKategoriCol = Coordinate::stringFromColumnIndex($endKategoriColIndex);
+        $sheet->setCellValue("{$startKategoriCol}6", 'TOTAL ABSENSI TAHUN INI');
+        $sheet->mergeCells("{$startKategoriCol}6:{$endKategoriCol}6");
+
+        foreach ($kategoriList as $i => $kode) {
+            $col = Coordinate::stringFromColumnIndex($startKategoriColIndex + $i);
+            $sheet->setCellValue("{$col}7", $kode);
+        }
+
+        // Lookup absensi bulan & tahun
+        $absensiLookupMonth = [];
+        $approvedLookup = [];
+
+        foreach ($absensisMonth as $absen) {
+            $day = (int) $absen->tanggal->format('j');
+            $absensiLookupMonth[$absen->employee_id][$day] = $absen->kategori;
+            $approvedLookup[$absen->employee_id][$day] = $absen->is_approved ?? false;
+        }
+
+        $absensiLookupYear = [];
+        foreach ($absensisYear as $absen) {
+            if(!$absen->is_approved) continue;
+            
+            $empId = $absen->employee_id;
+            $kategori = $absen->kategori;
+            if (!isset($absensiLookupYear[$empId])) {
+                $absensiLookupYear[$empId] = array_fill_keys($kategoriList, 0);
+            }
+            // Normalisasi kategori: CSP dan CSS dijadikan CS
+            // $kategori = in_array($kategori, ['CSP', 'CSS']) ? 'CS' : $kategori;
+            // Normalisasi kategori
+            if (in_array($kategori, ['CSP', 'CSS'])) {
+                $kategori = 'CS';
+            } elseif (in_array($kategori, ['ASP', 'ASS'])) {
+                $kategori = 'AS';
+            }
+
+            // Tambahkan key 'CS' kalau belum ada
+            if (!isset($absensiLookupYear[$empId]['CS'])) {
+                $absensiLookupYear[$empId]['CS'] = 0;
+            }
+
+            // Hitung hanya kategori yang diizinkan
+            if (in_array($kategori, $kategoriList) || $kategori === 'CS') {
+                $absensiLookupYear[$empId][$kategori]++;
+            }
+        }
+
+        // Highlight jenis izin jika ada
+        $row = $headerRow + 2;
+        $no = 1;
+        $highlightStyle = [
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '92D050'],
+            ]
+        ];
+
+        // Data pegawai lengkap
+        foreach ($employees as $emp) {
+            $sheet->setCellValue("A{$row}", $no++);
+            $sheet->setCellValue("B{$row}", $emp->nama);
+            $sheet->setCellValue("C{$row}", $emp->status ?? '');
+            $sheet->setCellValue("D{$row}", $emp->division->nama ?? '');
+            $sheet->setCellValue("E{$row}", $emp->team ?? '');
+
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $colIndex = $startTanggalColIndex + $day - 1;
+                $col = Coordinate::stringFromColumnIndex($colIndex);
+                $val = $absensiLookupMonth[$emp->id][$day] ?? '';
+                $date = Carbon::create($year, $month, $day);
+
+                // CS untuk CSP & CSS
+                // $displayVal = in_array($val, ['CSP', 'CSS']) ? 'CS' : $val;
+                $displayVal = match ($val) {
+                    'CSP', 'CSS' => 'CS',
+                    'ASP', 'ASS' => 'AS',
+                    default     => $val,
+                };
+
+                $sheet->setCellValue("{$col}{$row}", $displayVal);
+
+                if (
+                    in_array($displayVal, $kategoriList) &&
+                    ($approvedLookup[$emp->id][$day] ?? false)
+                ) {
+                    $sheet->getStyle("{$col}{$row}")->applyFromArray($highlightStyle);
+                }
+
+                if ($date->isWeekend()) {
+                    $sheet->getStyle("{$col}8:{$col}{$row}")
+                        ->getFill()
+                        ->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()
+                        ->setRGB('BF8F00');
+                }
+            }
+
+            $startRangeCol = Coordinate::stringFromColumnIndex($startTanggalColIndex);
+            $endRangeCol = Coordinate::stringFromColumnIndex($endTanggalColIndex);
+            $empId = $emp->id;
+            foreach ($kategoriList as $i => $kode) {
+                $col = Coordinate::stringFromColumnIndex($startKategoriColIndex + $i);
+                $val = $absensiLookupYear[$empId][$kode] ?? 0;
+                $sheet->setCellValue("{$col}{$row}", $val);
+            }
+
+            $row++;
+        }
+
+        // Autofit semua kolom
+        $highestColIndex = Coordinate::columnIndexFromString($sheet->getHighestColumn());
+        for ($i = 1; $i <= 5; $i++) {
+            $col = Coordinate::stringFromColumnIndex($i);
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        for ($i = 6; $i <= $highestColIndex; $i++) {
+            $col = Coordinate::stringFromColumnIndex($i);
+            $sheet->getColumnDimension($col)->setWidth(3.30);
+        }
+        $sheet->getRowDimension(7)->setRowHeight(31.50);
+
+        $lastCol = $sheet->getHighestColumn();
+        $lastColEmployee = 5;
+        $lastRowEmployee = $sheet->getHighestRow();
+        $startColMonth = $lastColEmployee + 1;
+        $startRowTotal = $lastRowEmployee + 3;
+
+        // Border cell data
+        $sheet->getStyle("B1:E5")->getBorders()->getAllBorders()->setBorderStyle(StyleBorder::BORDER_THIN);
+        $sheet->getStyle("A6:E{$lastRowEmployee}")->getBorders()->getAllBorders()->setBorderStyle(StyleBorder::BORDER_THIN);
+        $sheet->getStyle("H6:{$lastCol}{$lastRowEmployee}")
+            ->getBorders()
+            ->getAllBorders()
+            ->setBorderStyle(StyleBorder::BORDER_THIN);
+
+        // Total Per Hari, Per Kategori
+        $row += 2;
+        $sheet->setCellValue("E{$row}", 'TOTAL');
+        $sheet->mergeCells("E{$row}:F{$row}");
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $col = Coordinate::stringFromColumnIndex($startTanggalColIndex + $day - 1);
+            $formula = "=COUNTIF({$col}" . ($headerRow + 2) . ":{$col}" . ($lastRowEmployee) . ", \"<>\"&\"\")";
+            $sheet->setCellValue("{$col}{$row}", $formula);
+        }
+        $row++;
+
+        $kategoriLabel = [
+            'C' => 'CUTI',
+            'CS' => 'CUTI SETENGAH HARI',
+            'T' => 'TERLAMBAT',
+            'IK' => 'IZIN KELUAR',
+            'P' => 'PULANG CEPAT',
+            'A' => 'ABSEN',
+            'AS' => 'ABSEN SETENGAH HARI',
+            'S' => 'SAKIT',
+            'CK' => 'CUTI KHUSUS',
+            'Sk' => 'SERIKAT',
+        ];
+
+        foreach ($kategoriLabel as $kode => $label) {
+            $sheet->setCellValue("E{$row}", $label);
+            $sheet->mergeCells("E{$row}:F{$row}");
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $col = Coordinate::stringFromColumnIndex($startTanggalColIndex + $day - 1);
+                $formula = "=COUNTIF({$col}" . ($headerRow + 2) . ":{$col}" . ($lastRowEmployee) . ", \"{$kode}\")";
+                $sheet->setCellValue("{$col}{$row}", $formula);
+            }
+            $row++;
+        }
+
+        // Alignment
+        $sheet->getStyle("B1:E1")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("C2:E5")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("B2:B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+        $sheet->getStyle("A6:E6")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("A7:A{$sheet->getHighestRow()}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("C8:E{$sheet->getHighestRow()}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+        $sheet->getStyle("A6:{$lastCol}{$sheet->getHighestRow()}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle("H6:{$lastCol}{$sheet->getHighestRow()}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("H7:{$lastCol}{$sheet->getHighestRow()}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+
+        // Warna background
+        $sheet->getStyle('B1:E1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('000000');
+        $sheet->getStyle("E{$startRowTotal}:AL{$startRowTotal}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FCE4D6');
+        $sheet->getStyle('B1:E1')->getFont()->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('B5:E5')->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('FFFF00');
+
+        // Font style
+        $sheet->getStyle('A1:' . $lastCol . $sheet->getHighestRow())->getFont()->setName('Candara Light');
+        $sheet->getStyle("B5:E5")->getFont()->setSize('20');
+        $sheet->getStyle("B5:E5")->getFont()->setBold(true);
+        $sheet->getStyle("E{$startRowTotal}:AL{$startRowTotal}")->getFont()->setSize('14');
+
+        // Filter dan Freeze
+        $sheet->setAutoFilter("A7:{$lastCol}7");
+        $sheet->freezePane("G8");
+
+        // Output file
+        $filename = "laporan_izin_{$year}_{$month}.xlsx";
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+}
