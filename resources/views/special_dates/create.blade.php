@@ -1,53 +1,42 @@
 @extends('layouts.app')
 
-@section('title', 'Pegawai Baru')
+@section('title', 'Tanggal Khusus')
 
 @section('content')
 <main>
     @include('components.popupDelete')
 
-    <h1 class="text-2xl font-bold">Pegawai Baru</h1>
+    <h1 class="text-2xl font-bold">Tanggal Khusus</h1>
     <p class="text-sm flex w-full justify-end">Jumlah Data:&nbsp;<span id="jumlah-data">{{ old('nama') ? count(old('nama')) : 1 }}</span></p>
 
 
-    <form action="{{ route('employees.store') }}" method="POST" id="employee-form" class="g-5">
+    <form action="{{ route('dates.store') }}" method="POST" id="date-form" class="g-5">
         @csrf
         <section class="container-table">
-            <table id="employees-table">
+            <table id="dates-table">
                 <thead class="bg-gray-200">
                     <tr>
-                        <th class="table-cell w-4">No</th>
-                        <th class="table-cell w-45">Nama</th>
-                        <th class="table-cell w-16">Status</th>
-                        <th class="table-cell w-16">Divisi</th>
-                        <th class="table-cell w-15">Tim</th>
-                        <th class="table-cell w-4 sticky-col-right">Aksi</th>
+                        <th class="table-cell w-5">No</th>
+                        <th class="table-cell w-45">Tanggal</th>
+                        <th class="table-cell w-45">Jenis Tanggal</th>
+                        <th class="table-cell w-5 sticky-col-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td class="number">1</td>
                         <td>
-                            <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama...">
+                            <input type="date" name="tanggal[]" class="nama w-full" autocomplete="off" placeholder="Masukkan tanggal...">
                             <span id="error" class="text-red-500"></span>
                         </td>
                         <td>
-                            <select name="status[]" data-placeholder="Pilih status" class="select2 status" style="width: 100%">
+                            <select name="jenis_tanggal[]" data-placeholder="Pilih jenis tanggal" class="select2 type" style="width: 100%">
                                 <option></option>
-                                <option value="Contract">Contract</option>
-                                <option value="Permanent">Permanent</option>
+                                <option value="libur nasional">libur nasional</option>
+                                <option value="cuti perusahaan">cuti perusahaan</option>
+                                <option value="libur masuk">libur masuk</option>
+                                <option value="libur pengganti">libur pengganti</option>
                             </select>
-                        </td>
-                        <td>
-                            <select name="divisi[]" data-placeholder="Pilih divisi" class="select2 divisi" style="width: 100%">
-                                <option></option>
-                                @foreach ($divisions as $division)
-                                <option value="{{ $division->id }}">{{ $division->nama }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" name="team[]" class="team" autocomplete="off" placeholder="Masukkan team...">
                         </td>
                         <td class="sticky-col-right">
                             <button type="button" class="btn btn-icon danger delete-row">
@@ -80,7 +69,7 @@
 </main>
 
 <script>
-    const tableBody = document.querySelector('#employees-table tbody');
+    const tableBody = document.querySelector('#dates-table tbody');
     const jumlahDataElement = document.getElementById('jumlah-data');
 
     // Fungsi untuk menghitung data
@@ -99,47 +88,32 @@
         jumlahDataElement.textContent = rows.length;
     }
 
-    document.getElementById('employee-form').addEventListener('submit', function(e) {
+    document.getElementById('date-form').addEventListener('submit', function(e) {
         const errorText = document.getElementById('error-text');
-        const namaInputs = document.querySelectorAll('input[name="nama[]"]');
-        const statusInputs = document.querySelectorAll('select[name="status[]"]');
-        const divisiInputs = document.querySelectorAll('select[name="divisi[]"]');
-        const teamInputs = document.querySelectorAll('input[name="team[]"]');
+        const tanggalInputs = document.querySelectorAll('input[name="tanggal[]"]');
+        const jenisInputs = document.querySelectorAll('input[name="jenis_tanggal[]"]');
 
         let isValid = true;
+        let errorMessage = '';
 
-        namaInputs.forEach((input) => {
-            if (!input.value.trim()) {
+        tanggalInputs.forEach((select) => {
+            if (!select.value.trim()) {
                 isValid = false;
+                errorMessage = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
             }
         });
 
-        statusInputs.forEach((input) => {
+        jenisInputs.forEach((input) => {
             if (!input.value.trim()) {
                 isValid = false;
+                errorMessage = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
             }
         });
-
-        divisiInputs.forEach((input) => {
-            if (!input.value.trim()) {
-                isValid = false;
-            }
-        });
-
-        // teamInputs.forEach((select) => {
-        //     if (!select.value) {
-        //         isValid = false;
-        //     }
-        // });
 
         if (!isValid) {
             e.preventDefault();
             errorText.classList.remove('hidden');
-            errorText.textContent = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
-        } else if (namaInputs.length <= 0) {
-            e.preventDefault();
-            errorText.classList.remove('hidden');
-            errorText.textContent = 'Minimal 1 baris data untuk disimpan.';
+            errorText.textContent = errorMessage;
         } else {
             errorText.classList.add('hidden');
             errorText.textContent = '';
@@ -152,26 +126,17 @@
         row.innerHTML = `
             <td class="number"></td>
             <td>
-                <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama..." list="nama_datalist">
-                <p class="error-help hidden"></p>
+                <input type="date" name="tanggal[]" class="nama w-full" autocomplete="off" placeholder="Masukkan tanggal...">
+                <span id="error" class="text-red-500"></span>
             </td>
             <td>
-                <select name="status[]" data-placeholder="Pilih status" class="select2 status" style="width: 100%">
+                <select name="jenis_tanggal[]" data-placeholder="Pilih jenis tanggal" class="select2 type" style="width: 100%">
                     <option></option>
-                    <option value="Contract">Contract</option>
-                    <option value="Permanent">Permanent</option>
+                    <option value="libur nasional">libur nasional</option>
+                    <option value="cuti perusahaan">cuti perusahaan</option>
+                    <option value="libur masuk">libur masuk</option>
+                    <option value="libur pengganti">libur pengganti</option>
                 </select>
-            </td>
-            <td>
-                <select name="divisi[]" data-placeholder="Pilih divisi" class="select2 divisi" style="width: 100%">
-                    <option></option>
-                    @foreach ($divisions as $division)
-                    <option value="{{ $division->id }}">{{ $division->nama }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td>
-                <input type="text" name="team[]" class="team" autocomplete="off" placeholder="Masukkan team...">
             </td>
             <td class="sticky-col-right">
                 <button type="button" class="btn btn-icon danger delete-row">

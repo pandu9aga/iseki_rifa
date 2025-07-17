@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Activitylog\Models\Activity;
+use Illuminate\Support\Facades\Blade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +39,10 @@ class AppServiceProvider extends ServiceProvider
                     'causer_name' => Auth::user()->name
                 ]);
             }
+        });
+        
+        Blade::if('userType', function ($type) {
+            return auth()->check() && auth()->user()->type === $type;
         });
     }
 }

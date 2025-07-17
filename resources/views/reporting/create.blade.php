@@ -7,6 +7,13 @@
     @include('components.popupDelete')
 
     <h1 class="text-2xl font-bold">Perizinan Baru</h1>
+    <form action="{{ route('reporting.nihil') }}" method="POST" class="inline-block">
+        @csrf
+        <button type="submit" class="btn btn-secondary" style="width: 150px;" title="Laporkan Nihil">
+            <i class="material-symbols-rounded btn-primary align-middle">ad_off</i>
+            Nihil
+        </button>
+    </form>
     <p class="text-sm flex w-full justify-end">Jumlah Data:&nbsp;<span id="jumlah-data">{{ old('nama') ? count(old('nama')) : 1 }}</span></p>
 
 
@@ -72,7 +79,7 @@
                         </td>
                     </tr>
                     <tr id="row-button" class="hover-none">
-                        <td colspan="8">
+                        <td colspan="9">
                             <button type="button" id="add-row" class="btn btn-secondary">
                                 <i class="material-symbols-rounded btn-primary">
                                     add

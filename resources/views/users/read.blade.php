@@ -88,7 +88,7 @@
                 @endforeach
 
                 <tr id="no-data-row" class="hidden text-center">
-                    <td colspan="8" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                    <td colspan="6" class="text-gray-500 py-4">Data tidak ditemukan</td>
                 </tr>
             </tbody>
         </table>
@@ -221,7 +221,7 @@
 
     // Update nomor urut di kolom No setelah hapus baris
     function updateRowNumbers() {
-        const numbers = document.querySelectorAll('#employees-table tbody tr .number');
+        const numbers = document.querySelectorAll('#users-table tbody tr .number');
         numbers.forEach((cell, index) => {
             cell.textContent = index + 1;
         });

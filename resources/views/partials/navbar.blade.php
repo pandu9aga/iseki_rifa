@@ -16,27 +16,20 @@
 
             <!-- Normal Desktop Nav -->
             <ul class="nav-links items-center">
-                <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                    <a href="{{ url('/') }}">Report</a>
-                </li>
                 @guest
                 <li class="user-menu">
                     <a href="{{ route('show.login') }}" class="btn btn-primary">
                         <i class="material-symbols-rounded">
                             person
                         </i>
-                        Masuk sebagai Admin
+                        Masuk
                     </a>
                 </li>
                 @endguest
 
-                @auth
-                <li class="{{ request()->is('employees') || request()->is('employees/*') ? 'active' : '' }}">
-                    <a href="{{ url('/employees') }}">Pegawai</a>
-                </li>
-
-                <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
-                    <a href="{{ url('/users') }}">User</a>
+                @userType('leader')
+                <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
+                    <a href="{{ url('/') }}">Report</a>
                 </li>
 
                 <li class="user-menu">
@@ -61,7 +54,48 @@
                         </form>
                     </div>
                 </li>
-                @endauth
+                @enduserType
+
+                @userType('admin')
+                <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
+                    <a href="{{ url('/') }}">Report</a>
+                </li>
+
+                <li class="{{ request()->is('employees') || request()->is('employees/*') ? 'active' : '' }}">
+                    <a href="{{ url('/employees') }}">Pegawai</a>
+                </li>
+
+                <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
+                    <a href="{{ url('/users') }}">User</a>
+                </li>
+
+                <li class="{{ request()->is('dates') || request()->is('dates/*') ? 'active' : '' }}">
+                    <a href="{{ url('/dates') }}">Tanggal</a>
+                </li>
+
+                <li class="user-menu">
+                    <button onclick="toggleDropdown()" class="btn btn-secondary user-button">
+                        Hai, {{ Auth::user()->name }}
+                        <i class="material-symbols-rounded">
+                            arrow_drop_down
+                        </i>
+                    </button>
+
+                    <div id="userDropdown" class="user-dropdown dropdown hidden">
+                        <p class="text-sm">Ingin Keluar?</p>
+                        <hr>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-danger">
+                                <i class="material-symbols-rounded">
+                                    mode_off_on
+                                </i>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </li>
+                @enduserType
             </ul>
         </div>
     </nav>
@@ -82,9 +116,6 @@
 
         <nav class="flex flex-col">
             <ul class="nav-links">
-                <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                    <a href="{{ url('/') }}">Report</a>
-                </li>
                 @guest
                 <li class="user-menu">
                     <a href="{{ route('show.login') }}" class="btn btn-primary">
@@ -96,12 +127,9 @@
                 </li>
                 @endguest
 
-                @auth
-                <li class="{{ request()->is('employees') || request()->is('employees/*') ? 'active' : '' }}">
-                    <a href="{{ url('/employees') }}">Pegawai</a>
-                </li>
-                <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
-                    <a href="{{ url('/users') }}">User</a>
+                @userType('leader')
+                <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
+                    <a href="{{ url('/') }}">Report</a>
                 </li>
                 <li class="user-menu">
                     <button onclick="toggleDropdown()" class="btn btn-secondary user-button">
@@ -125,7 +153,44 @@
                         </form>
                     </div>
                 </li>
-                @endauth
+                @enduserType
+
+                @userType('admin')
+                <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
+                    <a href="{{ url('/') }}">Report</a>
+                </li>
+                <li class="{{ request()->is('employees') || request()->is('employees/*') ? 'active' : '' }}">
+                    <a href="{{ url('/employees') }}">Pegawai</a>
+                </li>
+                <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
+                    <a href="{{ url('/users') }}">User</a>
+                </li>
+                <li class="{{ request()->is('dates') || request()->is('dates/*') ? 'active' : '' }}">
+                    <a href="{{ url('/dates') }}">Tanggal</a>
+                </li>
+                <li class="user-menu">
+                    <button onclick="toggleDropdown()" class="btn btn-secondary user-button">
+                        Hai, {{ Auth::user()->name }}
+                        <i class="material-symbols-rounded">
+                            arrow_drop_down
+                        </i>
+                    </button>
+
+                    <div id="userDropdown" class="user-dropdown dropdown hidden">
+                        <p class="text-sm">Ingin Keluar?</p>
+                        <hr>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-danger">
+                                <i class="material-symbols-rounded">
+                                    mode_off_on
+                                </i>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </li>
+                @enduserType
             </ul>
         </nav>
     </div>

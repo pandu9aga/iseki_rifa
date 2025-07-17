@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Absensi;
 use App\Models\Division;
 use App\Models\Employee;
+use App\Models\Report;
+use App\Models\SpecialDate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -14,6 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border as StyleBorder;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Activitylog\Models\Activity;
+use Illuminate\Support\Facades\Auth;
 
 class ReportingController extends Controller
 {
@@ -24,7 +27,11 @@ class ReportingController extends Controller
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        return view('reporting.read', compact('absensis', 'divisions'));
+        $reportToday = Report::with('user')
+            ->whereDate('created_at', now())
+            ->get();
+
+        return view('reporting.read', compact('absensis', 'divisions', 'reportToday'));
     }
 
     public function create()
@@ -88,7 +95,51 @@ class ReportingController extends Controller
             }
         }
 
+        // Tambah atau update Report
+        $userId = Auth::id();
+        $today = now()->startOfDay();
+
+        Report::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'created_at' => Report::query()
+                    ->where('user_id', $userId)
+                    ->whereDate('created_at', $today)
+                    ->value('created_at') ?? now()
+            ],
+            [
+                'updated_at' => now(),
+                'divisi' => Auth::user()->division,
+            ]
+        );
+
         return redirect()->route('index')->with('success', 'Data berhasil disimpan!');
+    }
+
+    public function storeNihil(Request $request)
+    {
+        $user = Auth::user();
+        $today = now()->toDateString();
+
+        // Cek apakah sudah ada report user hari ini
+        $existing = Report::where('user_id', $user->id)
+            ->whereDate('updated_at', $today)
+            ->first();
+
+        if ($existing) {
+            // Jika sudah ada, update timestamp
+            $existing->touch(); // update updated_at
+        } else {
+            // Jika belum, buat baru
+            Report::create([
+                'user_id' => $user->id,
+                'divisi' => $user->division,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return redirect()->route('index')->with('success', 'Laporan Nihil berhasil dikirim.');
     }
 
     public function dailyReport(Request $request)
@@ -176,6 +227,24 @@ class ReportingController extends Controller
             'updated_at' => now(),
         ]);
 
+        // Tambah atau update Report
+        $userId = Auth::id();
+        $today = now()->startOfDay();
+
+        Report::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'created_at' => Report::query()
+                    ->where('user_id', $userId)
+                    ->whereDate('created_at', $today)
+                    ->value('created_at') ?? now()
+            ],
+            [
+                'updated_at' => now(),
+                'divisi' => Auth::user()->division,
+            ]
+        );
+
         return response()->json(['message' => 'Data berhasil diupdate.'], 200);
     }
 
@@ -193,7 +262,7 @@ class ReportingController extends Controller
     }
 
     public function export(Request $request)
-    {
+    {   
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         Carbon::setLocale('id');
@@ -201,6 +270,13 @@ class ReportingController extends Controller
         $bulan = $request->get('bulan', Carbon::now()->format('Y-m'));
         [$year, $month] = explode('-', $bulan);
         $dateObj = Carbon::createFromDate($year, $month, 1);
+
+        $specialDates = SpecialDate::whereYear('tanggal', $year)
+        ->whereMonth('tanggal', $month)
+        ->get()
+        ->keyBy(function ($item) {
+            return Carbon::parse($item->tanggal)->format('Y-m-d');
+        });
 
         $daysInMonth = $dateObj->daysInMonth;
         $monthName = strtoupper($dateObj->translatedFormat('F'));
@@ -373,12 +449,31 @@ class ReportingController extends Controller
                     $sheet->getStyle("{$col}{$row}")->applyFromArray($highlightStyle);
                 }
 
-                if ($date->isWeekend()) {
-                    $sheet->getStyle("{$col}8:{$col}{$row}")
-                        ->getFill()
-                        ->setFillType(Fill::FILL_SOLID)
-                        ->getStartColor()
-                        ->setRGB('BF8F00');
+                // Di dalam foreach tanggal
+                $isWeekend = $date->isWeekend();
+                $special = $specialDates[$date->format('Y-m-d')] ?? null;
+
+                $shouldHighlight = false;
+
+                if ($isWeekend) {
+                    // Hanya highlight weekend kalau BUKAN libur masuk
+                    $shouldHighlight = !($special && $special->jenis_tanggal === 'libur masuk');
+                } else {
+                    // Hanya highlight weekday kalau ADA jenis libur resmi
+                    if ($special && in_array($special->jenis_tanggal, ['libur nasional', 'cuti perusahaan', 'libur pengganti'])) {
+                        $shouldHighlight = true;
+                    }
+                }
+
+                $cell = "{$col}{$row}";
+
+                if ($shouldHighlight) {
+                    $sheet->getStyle($cell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                            'color' => ['rgb' => 'BF8F00'],
+                        ],
+                    ]);
                 }
             }
 

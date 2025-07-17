@@ -6,37 +6,42 @@
 <main>
     @include('components.popupDelete')
 
-    <h1 class="text-2xl font-bold">Pegawai Baru</h1>
+    <h1 class="text-2xl font-bold">User Baru</h1>
     <p class="text-sm flex w-full justify-end">Jumlah Data:&nbsp;<span id="jumlah-data">{{ old('nama') ? count(old('nama')) : 1 }}</span></p>
 
 
-    <form action="{{ route('employees.store') }}" method="POST" id="employee-form" class="g-5">
+    <form action="{{ route('users.store') }}" method="POST" id="user-form" class="g-5">
         @csrf
         <section class="container-table">
-            <table id="employees-table">
+            <table id="users-table">
                 <thead class="bg-gray-200">
                     <tr>
-                        <th class="table-cell w-4">No</th>
-                        <th class="table-cell w-45">Nama</th>
-                        <th class="table-cell w-16">Status</th>
-                        <th class="table-cell w-16">Divisi</th>
-                        <th class="table-cell w-15">Tim</th>
-                        <th class="table-cell w-4 sticky-col-right">Aksi</th>
+                        <th class="table-cell w-5">No</th>
+                        <th class="table-cell w-15">Akun</th>
+                        <th class="table-cell w-20">Nama</th>
+                        <th class="table-cell w-20">Username</th>
+                        <th class="table-cell w-15">Divisi</th>
+                        <th class="table-cell w-20">Password</th>
+                        <th class="table-cell w-5 sticky-col-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td class="number">1</td>
                         <td>
+                            <select name="type[]" data-placeholder="Pilih type" class="select2 type" style="width: 100%">
+                                <option></option>
+                                <option value="leader">leader</option>
+                                <option value="admin">admin</option>
+                            </select>
+                        </td>
+                        <td>
                             <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama...">
                             <span id="error" class="text-red-500"></span>
                         </td>
                         <td>
-                            <select name="status[]" data-placeholder="Pilih status" class="select2 status" style="width: 100%">
-                                <option></option>
-                                <option value="Contract">Contract</option>
-                                <option value="Permanent">Permanent</option>
-                            </select>
+                            <input type="text" name="username[]" class="nama w-full" autocomplete="off" placeholder="Masukkan username...">
+                            <span id="error" class="text-red-500"></span>
                         </td>
                         <td>
                             <select name="divisi[]" data-placeholder="Pilih divisi" class="select2 divisi" style="width: 100%">
@@ -47,7 +52,7 @@
                             </select>
                         </td>
                         <td>
-                            <input type="text" name="team[]" class="team" autocomplete="off" placeholder="Masukkan team...">
+                            <input type="password" name="password[]" class="password" autocomplete="off" placeholder="Masukkan password...">
                         </td>
                         <td class="sticky-col-right">
                             <button type="button" class="btn btn-icon danger delete-row">
@@ -58,7 +63,7 @@
                         </td>
                     </tr>
                     <tr id="row-button" class="hover-none">
-                        <td colspan="8">
+                        <td colspan="6">
                             <button type="button" id="add-row" class="btn btn-secondary">
                                 <i class="material-symbols-rounded btn-primary">
                                     add
@@ -80,7 +85,7 @@
 </main>
 
 <script>
-    const tableBody = document.querySelector('#employees-table tbody');
+    const tableBody = document.querySelector('#users-table tbody');
     const jumlahDataElement = document.getElementById('jumlah-data');
 
     // Fungsi untuk menghitung data
@@ -99,43 +104,62 @@
         jumlahDataElement.textContent = rows.length;
     }
 
-    document.getElementById('employee-form').addEventListener('submit', function(e) {
+    document.getElementById('user-form').addEventListener('submit', function(e) {
         const errorText = document.getElementById('error-text');
+        const typeInputs = document.querySelectorAll('input[name="type[]"]');
         const namaInputs = document.querySelectorAll('input[name="nama[]"]');
-        const statusInputs = document.querySelectorAll('select[name="status[]"]');
+        const usernameInputs = document.querySelectorAll('select[name="username[]"]');
         const divisiInputs = document.querySelectorAll('select[name="divisi[]"]');
-        const teamInputs = document.querySelectorAll('input[name="team[]"]');
+        const passwordInputs = document.querySelectorAll('input[name="password[]"]');
 
         let isValid = true;
+        let errorMessage = '';
+
+        typeInputs.forEach((select) => {
+            if (!select.value.trim()) {
+                isValid = false;
+                errorMessage = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
+            }
+        });
 
         namaInputs.forEach((input) => {
             if (!input.value.trim()) {
                 isValid = false;
+                errorMessage = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
             }
         });
 
-        statusInputs.forEach((input) => {
+        usernameInputs.forEach((input) => {
             if (!input.value.trim()) {
                 isValid = false;
+                errorMessage = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
             }
         });
 
-        divisiInputs.forEach((input) => {
-            if (!input.value.trim()) {
+        document.querySelectorAll('#users-table tbody tr').forEach(row => {
+            if (row.id === 'row-button') return; // lewati baris tombol
+
+            const type = row.querySelector('select[name="type[]"]')?.value?.trim();
+            const divisi = row.querySelector('select[name="divisi[]"]')?.value?.trim();
+
+            if (type !== 'admin' && !divisi) {
                 isValid = false;
+                errorMessage = 'Divisi wajib diisi, kecuali jika tipe akun adalah admin.';
             }
         });
 
-        teamInputs.forEach((select) => {
-            if (!select.value) {
+        passwordInputs.forEach((input) => {
+            const length = input.value.length;
+            if (length > 0 && length < 8) {
                 isValid = false;
+                errorMessage = 'Password minimal 8 karakter jika diisi.';
             }
         });
 
         if (!isValid) {
             e.preventDefault();
             errorText.classList.remove('hidden');
-            errorText.textContent = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
+            errorText.textContent = errorMessage;
         } else if (namaInputs.length <= 0) {
             e.preventDefault();
             errorText.classList.remove('hidden');
@@ -152,15 +176,19 @@
         row.innerHTML = `
             <td class="number"></td>
             <td>
-                <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama..." list="nama_datalist">
-                <p class="error-help hidden"></p>
+                <select name="type[]" data-placeholder="Pilih type" class="select2 type" style="width: 100%">
+                    <option></option>
+                    <option value="leader">leader</option>
+                    <option value="admin">admin</option>
+                </select>
             </td>
             <td>
-                <select name="status[]" data-placeholder="Pilih status" class="select2 status" style="width: 100%">
-                    <option></option>
-                    <option value="Contract">Contract</option>
-                    <option value="Permanent">Permanent</option>
-                </select>
+                <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama...">
+                <span id="error" class="text-red-500"></span>
+            </td>
+            <td>
+                <input type="text" name="username[]" class="nama w-full" autocomplete="off" placeholder="Masukkan username...">
+                <span id="error" class="text-red-500"></span>
             </td>
             <td>
                 <select name="divisi[]" data-placeholder="Pilih divisi" class="select2 divisi" style="width: 100%">
@@ -171,7 +199,7 @@
                 </select>
             </td>
             <td>
-                <input type="text" name="team[]" class="team" autocomplete="off" placeholder="Masukkan team...">
+                <input type="password" name="password[]" class="password" autocomplete="off" placeholder="Masukkan password...">
             </td>
             <td class="sticky-col-right">
                 <button type="button" class="btn btn-icon danger delete-row">

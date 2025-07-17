@@ -25,61 +25,38 @@ class UserController extends Controller
     public function create()
     {
         $divisions = Division::orderBy('nama')->get();
-        return view('employees.create', compact('divisions'));
-    }
-
-    public function getIdByName(Request $request)
-    {
-        $nama = $request->query('nama');
-
-        if (!$nama) {
-            return response()->json(['error' => 'Nama kosong'], 400);
-        }
-
-        $employee = Employee::where('nama', $nama)->first();
-
-        if (!$employee) {
-            return response()->json(['error' => 'Karyawan tidak ditemukan'], 404);
-        }
-
-        return response()->json(['id' => $employee->id]);
-    }
-
-    public function getDetailById($id)
-    {
-        $employee = Employee::with('division')->find($id);
-
-        if (!$employee) {
-            return response()->json(['error' => 'Data tidak ditemukan'], 404);
-        }
-
-        return response()->json([
-            'nama' => $employee->nama,
-            'divisi' => $employee->division ? $employee->division->nama : null,
-            'team' => $employee->team,
-            'status' => $employee->status,
-        ]);
+        return view('users.create', compact('divisions'));
     }
 
     public function store(Request $request)
     {
         $namaList = $request->input('nama', []);
-        $statusList = $request->input('status', []);
+        $usernameList = $request->input('username', []);
+        $typeList = $request->input('type', []);
         $divisionList = $request->input('divisi', []);
-        $teamList = $request->input('team', []);
+        $passwordList = $request->input('password', []);
 
         foreach ($namaList as $index => $nama) {
-            Employee::create([
-                'nama' => $nama,
-                'status' => $statusList[$index],
-                'division_id' => $divisionList[$index],
-                'team' => $teamList[$index] ?? '-',
+            // Cek apakah type admin, jika iya maka division = null
+            $divisionName = null;
+
+            if ($typeList[$index] !== 'admin') {
+                $divisionId = $divisionList[$index] ?? null;
+                $divisionName = Division::find($divisionId)?->nama;
+            }
+
+            User::create([
+                'type' => $typeList[$index],
+                'name' => $nama,
+                'username' => $usernameList[$index],
+                'division' => $divisionName,
+                'password' => $passwordList[$index],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        return redirect()->route('employees.read')->with('success', 'Data berhasil disimpan!');
+        return redirect()->route('users.read')->with('success', 'Data berhasil disimpan!');
     }
 
     public function update(Request $request, $id)
@@ -111,14 +88,14 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        $employee = Employee::find($id);
+        $user = User::find($id);
 
-        if (!$employee) {
-            return response()->json(['error' => 'Data absensi tidak ditemukan.'], 404);
+        if (!$user) {
+            return response()->json(['error' => 'Data user tidak ditemukan.'], 404);
         }
 
-        $employee->delete();
+        $user->delete();
 
-        return response()->json(['success' => 'Data absensi berhasil dihapus.']);
+        return response()->json(['success' => 'Data user berhasil dihapus.']);
     }
 }

@@ -5,18 +5,47 @@
 <main>
     @include('components.popupEdit')
     @include('components.popupDailyReport')
+    
+    <h5 class="font-bold">
+        Leader Yang Telah Submit Hari ini : 
+        <span style="color: #ec057d;">{{ now()->format('d M Y') }}</span>
+    </h5>
+    <table class="table-auto w-full border border-gray-300 mt-4">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="border px-4 py-2 text-center">No</th>
+                <th class="border px-4 py-2">Nama</th>
+                <th class="border px-4 py-2">Divisi</th>
+                <th class="border px-4 py-2">Submit Laporan</th>
+                <th class="border px-4 py-2">Update Laporan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($reportToday as $i => $report)
+                <tr>
+                    <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
+                    <td class="border px-4 py-2">{{ $report->user->name }}</td>
+                    <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
+                    <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
+                    <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <br>
     <section class="title-button d-flex flex-row">
-        <h1 class="text-2xl font-bold">Laporan Perizinan</h1>
+        <h1 class="font-bold">List Perizinan</h1>
         <section class="btn-group d-flex flex-row">
-            @guest
-            <a href="{{ url('/reporting') }}" class="btn btn-primary">
+            @userType('leader')
+            <a href="{{ url('/reporting/create') }}" class="btn btn-primary">
                 Tambah Data
                 <i class="material-symbols-rounded">
                     add
                 </i>
             </a>
-            @endguest
-            @auth
+            @enduserType
+            @userType('admin')
             <button class="btn btn-secondary" id="dailyReportBtn">
                 Laporan Harian
                 <i class="material-symbols-rounded">
@@ -45,7 +74,7 @@
                     </button>
                 </form>
             </div>
-            @endauth
+            @enduserType
         </section>
     </section>
 
@@ -64,9 +93,9 @@
                     <th>Tanggal</th>
                     <th>Keterangan</th>
                     <th>Status Persetujuan</th>
-                    @auth
+                    @userType('admin')
                     <th rowspan="2">Approvement</th>
-                    @endauth
+                    @enduserType
                     <th>Status</th>
                     <th>Divisi</th>
                     <th>Tim</th>
@@ -147,7 +176,7 @@
                             {{ $status }}
                         </span>
                     </td>
-                    @auth
+                    @userType('admin')
                     <td>
                         <form class="approval-form" data-id="{{ $absen->id }}">
                             @csrf
@@ -163,7 +192,7 @@
                         </form>
 
                     </td>
-                    @endauth
+                    @enduserType
                     <td>{{ $absen->employee->status ?? 'Contract' }}</td>
                     <td>{{ $absen->employee->division->nama ?? '-' }}</td>
                     <td>{{ $absen->employee->team ?? '-' }}</td>
@@ -186,7 +215,12 @@
                 @endforeach
 
                 <tr id="no-data-row" class="hidden text-center">
-                    <td colspan="8" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                    @userType('leader')
+                    <td colspan="10" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                    @enduserType
+                    @userType('admin')
+                    <td colspan="11" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                    @enduserType
                 </tr>
             </tbody>
         </table>

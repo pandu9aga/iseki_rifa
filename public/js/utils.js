@@ -113,11 +113,40 @@ function filterUsersTable() {
     toggleNoDataRow(visibleCount);
 }
 
+function filterDatesTable() {
+    const filterTanggal = document.getElementById('filter-tanggal').value.toLowerCase();
+    const filterJenis = document.getElementById('filter-jenis').value.toLowerCase();
+
+    const rows = document.querySelectorAll('#dates-table tbody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        if (row.id === 'no-data-row') return;
+
+        const tanggal = row.cells[1].textContent.toLowerCase();
+        const jenis = row.cells[2].textContent.toLowerCase();
+
+        if (
+            tanggal.includes(filterTanggal) &&
+            jenis.includes(filterJenis)
+        ) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    updateJumlahData('dates-table', 'jumlah-data');
+    toggleNoDataRow(visibleCount);
+}
+
 function setupFilters() {
     try {
         const isCutiTable = document.getElementById('cuti-table') !== null;
         const isEmployeeTable = document.getElementById('employees-table') !== null;
         const isUsersTable = document.getElementById('users-table') !== null;
+        const isDatesTable = document.getElementById('dates-table') !== null;
 
         if (isCutiTable) {
             document.getElementById('filter-nama').addEventListener('input', filterCutiTable);
@@ -144,10 +173,16 @@ function setupFilters() {
             document.getElementById('filter-divisi').addEventListener('change', filterUsersTable);
         }
 
+        if (isDatesTable) {
+            document.getElementById('filter-tanggal').addEventListener('change', filterDatesTable);
+            document.getElementById('filter-jenis').addEventListener('change', filterDatesTable);
+        }
+
         $('.select2').on('change', () => setTimeout(() => {
             if (isCutiTable) filterCutiTable();
             else if (isEmployeeTable) filterEmployeeTable();
             else if (isUsersTable) filterUsersTable();
+            else if (isDatesTable) filterDatesTable();
         }, 0));
 
         return true;
