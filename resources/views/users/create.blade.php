@@ -17,11 +17,12 @@
                 <thead class="bg-gray-200">
                     <tr>
                         <th class="table-cell w-5">No</th>
-                        <th class="table-cell w-15">Akun</th>
-                        <th class="table-cell w-20">Nama</th>
-                        <th class="table-cell w-20">Username</th>
-                        <th class="table-cell w-15">Divisi</th>
-                        <th class="table-cell w-20">Password</th>
+                        <th class="table-cell w-10">Akun</th>
+                        <th class="table-cell w-15">Nama</th>
+                        <th class="table-cell w-15">Username</th>
+                        <th class="table-cell w-10">Divisi</th>
+                        <th class="table-cell w-25">Team</th>
+                        <th class="table-cell w-15">Password</th>
                         <th class="table-cell w-5 sticky-col-right">Aksi</th>
                     </tr>
                 </thead>
@@ -52,6 +53,19 @@
                             </select>
                         </td>
                         <td>
+                            <select name="team[0][]" class="select2 team-select w-full" multiple="multiple" data-placeholder="Pilih team" style="width: 100%">
+                                <option value="painting a">Painting A</option>
+                                <option value="painting b">Painting B</option>
+                                <option value="transmisi">Transmisi</option>
+                                <option value="main line">Main Line</option>
+                                <option value="sub engine">Sub Engine</option>
+                                <option value="sub assy">Sub Assy</option>
+                                <option value="inspeksi">Inspeksi</option>
+                                <option value="mower collector">Mower Collector</option>
+                                <option value="dst">DST</option>
+                            </select>
+                        </td>
+                        <td>
                             <input type="password" name="password[]" class="password" autocomplete="off" placeholder="Masukkan password...">
                         </td>
                         <td class="sticky-col-right">
@@ -63,7 +77,7 @@
                         </td>
                     </tr>
                     <tr id="row-button" class="hover-none">
-                        <td colspan="6">
+                        <td colspan="8">
                             <button type="button" id="add-row" class="btn btn-secondary">
                                 <i class="material-symbols-rounded btn-primary">
                                     add
@@ -108,8 +122,9 @@
         const errorText = document.getElementById('error-text');
         const typeInputs = document.querySelectorAll('input[name="type[]"]');
         const namaInputs = document.querySelectorAll('input[name="nama[]"]');
-        const usernameInputs = document.querySelectorAll('select[name="username[]"]');
+        const usernameInputs = document.querySelectorAll('input[name="username[]"]');
         const divisiInputs = document.querySelectorAll('select[name="divisi[]"]');
+        const teamInputs = document.querySelectorAll('select[name^="team["]');
         const passwordInputs = document.querySelectorAll('input[name="password[]"]');
 
         let isValid = true;
@@ -141,10 +156,17 @@
 
             const type = row.querySelector('select[name="type[]"]')?.value?.trim();
             const divisi = row.querySelector('select[name="divisi[]"]')?.value?.trim();
+            const teamSelect = row.querySelector('select[name^="team["]');
+            const selectedTeams = Array.from(teamSelect?.selectedOptions || []).map(opt => opt.value).filter(v => v);
 
             if (type !== 'admin' && !divisi) {
                 isValid = false;
                 errorMessage = 'Divisi wajib diisi, kecuali jika tipe akun adalah admin.';
+            }
+
+            if (type !== 'admin' && selectedTeams.length === 0) {
+                isValid = false;
+                errorMessage = 'Team wajib diisi, kecuali jika tipe akun adalah admin.';
             }
         });
 
@@ -173,6 +195,7 @@
     // Fungsi untuk membuat baris baru
     function addRow() {
         const row = document.createElement('tr');
+        const rowIndex = tableBody.querySelectorAll('tr:not(#row-button)').length;
         row.innerHTML = `
             <td class="number"></td>
             <td>
@@ -199,6 +222,19 @@
                 </select>
             </td>
             <td>
+                <select name="team[${rowIndex}][]" class="select2 team-select w-full" multiple="multiple" data-placeholder="Pilih team">
+                    <option value="painting a">Painting A</option>
+                    <option value="painting b">Painting B</option>
+                    <option value="transmisi">Transmisi</option>
+                    <option value="main line">Main Line</option>
+                    <option value="sub engine">Sub Engine</option>
+                    <option value="sub assy">Sub Assy</option>
+                    <option value="inspeksi">Inspeksi</option>
+                    <option value="mower collector">Mower Collector</option>
+                    <option value="dst">DST</option>
+                </select>
+            </td>
+            <td>
                 <input type="password" name="password[]" class="password" autocomplete="off" placeholder="Masukkan password...">
             </td>
             <td class="sticky-col-right">
@@ -219,6 +255,9 @@
         }
 
         $(row).find('.select2').select2();
+        $(row).find('.team-select').select2({
+            width: '100%'
+        });
     }
 
     document.getElementById('add-row').addEventListener('click', addRow);

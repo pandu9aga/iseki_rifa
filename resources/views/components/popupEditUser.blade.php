@@ -35,6 +35,22 @@
             </div>
 
             <div class="form-control">
+                <label for="edit-team">Team</label>
+                <select id="edit-team" name="team[]" class="select2 input w-full" multiple="multiple" data-placeholder="Pilih team">
+                    <option></option>
+                    <option value="painting a">Painting A</option>
+                    <option value="painting b">Painting B</option>
+                    <option value="transmisi">Transmisi</option>
+                    <option value="main line">Main Line</option>
+                    <option value="sub engine">Sub Engine</option>
+                    <option value="sub assy">Sub Assy</option>
+                    <option value="inspeksi">Inspeksi</option>
+                    <option value="mower collector">Mower Collector</option>
+                    <option value="dst">DST</option>
+                </select>
+            </div>
+
+            <div class="form-control">
                 <label for="edit-password">Password Baru (Opsional)</label>
                 <input type="password" id="edit-password" name="password" class="input w-full" placeholder="Biarkan kosong jika tidak ingin mengubah">
             </div>

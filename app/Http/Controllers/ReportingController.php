@@ -31,7 +31,29 @@ class ReportingController extends Controller
             ->whereDate('created_at', now())
             ->get();
 
-        return view('reporting.read', compact('absensis', 'divisions', 'reportToday'));
+        $teamsWithReport = Report::whereDate('created_at', now())
+            ->whereHas('user', function ($q) {
+                $q->whereNotNull('team');
+            })
+            ->with('user')
+            ->get()
+            ->pluck('user.team')
+            ->unique()
+            ->toArray();
+
+        $allTeams = [
+            'painting a',
+            'painting b',
+            'transmisi',
+            'main line',
+            'sub engine',
+            'sub assy',
+            'inspeksi',
+            'mower collector',
+            'dst',
+        ];
+
+        return view('reporting.read', compact('absensis', 'divisions', 'reportToday', 'teamsWithReport', 'allTeams'));
     }
 
     public function create()
@@ -152,7 +174,7 @@ class ReportingController extends Controller
             ->groupBy(fn($item) => $item->employee->division->nama ?? 'Lainnya');
 
         Carbon::setLocale('id');
-        $formattedText = "Dear Bu. Yuli,\n\nBerikut informasi absensi department produksi tanggal " . Carbon::parse($tanggal)->translatedFormat('d F Y') . "\n\n";
+        $formattedText = "Dear bu Yuli\n\n\n\nBerikut informasi absensi department produksi tanggal " . Carbon::parse($tanggal)->translatedFormat('d F Y') . "\n\n";
 
         foreach ($absensis as $divisi => $items) {
             $formattedText .= "Prod. " . $divisi . "\n";
@@ -162,7 +184,7 @@ class ReportingController extends Controller
             $formattedText .= "\n";
         }
 
-        $formattedText .= "Mohon kerjasamanya.\n\nSupriyanto.";
+        $formattedText .= "Mohon kerjasamanya\n\n\n\nSupri";
 
         return response()->json([
             'text' => $formattedText,

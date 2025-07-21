@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'type',
         'division',
+        'team',
     ];
 
     /**
@@ -45,6 +46,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'team' => 'array', // <--- Ini akan otomatis decode JSON ke array
         ];
     }
 }

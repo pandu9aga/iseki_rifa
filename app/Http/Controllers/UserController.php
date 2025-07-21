@@ -35,14 +35,17 @@ class UserController extends Controller
         $typeList = $request->input('type', []);
         $divisionList = $request->input('divisi', []);
         $passwordList = $request->input('password', []);
+        $teamList = $request->input('team', []);
 
         foreach ($namaList as $index => $nama) {
-            // Cek apakah type admin, jika iya maka division = null
+            // Cek apakah type admin, jika iya maka division & team = null
             $divisionName = null;
+            $teamName = null;
 
             if ($typeList[$index] !== 'admin') {
                 $divisionId = $divisionList[$index] ?? null;
                 $divisionName = Division::find($divisionId)?->nama;
+                $teamName = $teamList[$index];
             }
 
             User::create([
@@ -51,6 +54,7 @@ class UserController extends Controller
                 'username' => $usernameList[$index],
                 'division' => $divisionName,
                 'password' => $passwordList[$index],
+                'team' => $teamName,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -68,6 +72,8 @@ class UserController extends Controller
             'username' => 'required|string|unique:users,username,' . $id,
             'type' => 'required|string',
             'division' => 'nullable|string',
+            'team' => 'nullable|array',
+            'team.*' => 'string',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -75,6 +81,7 @@ class UserController extends Controller
         $user->username = $validated['username'];
         $user->type = $validated['type'];
         $user->division = $validated['division'] ?? null;
+        $user->team = $validated['team'] ?? null;
 
         // Jika password diisi, update dan hash
         if (!empty($validated['password'])) {

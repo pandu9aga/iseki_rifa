@@ -41,6 +41,14 @@ function filterCutiTable() {
         }
     });
 
+    // Update nomor urut setelah filter
+    let nomor = 1;
+    rows.forEach(row => {
+        if (row.style.display !== 'none' && row.id !== 'no-data-row') {
+            row.cells[0].textContent = nomor++;
+        }
+    });
+
     updateJumlahData('cuti-table', 'jumlah-data');
     toggleNoDataRow(visibleCount);
 }
@@ -75,6 +83,14 @@ function filterEmployeeTable() {
         }
     });
 
+    // Update nomor urut setelah filter
+    let nomor = 1;
+    rows.forEach(row => {
+        if (row.style.display !== 'none' && row.id !== 'no-data-row') {
+            row.cells[0].textContent = nomor++;
+        }
+    });
+
     updateJumlahData('employees-table', 'jumlah-data');
     toggleNoDataRow(visibleCount);
 }
@@ -84,6 +100,7 @@ function filterUsersTable() {
     const filterNama = document.getElementById('filter-nama').value.toLowerCase();
     const filterUsername = document.getElementById('filter-username').value.toLowerCase();
     const filterDivisi = document.getElementById('filter-divisi').value.toLowerCase();
+    const filterTeam = document.getElementById('filter-team').value.toLowerCase();
 
     const rows = document.querySelectorAll('#users-table tbody tr');
     let visibleCount = 0;
@@ -95,17 +112,27 @@ function filterUsersTable() {
         const nama = row.cells[2].textContent.toLowerCase();
         const username = row.cells[3].textContent.toLowerCase();
         const divisi = row.cells[4].textContent.toLowerCase();
+        const team = row.cells[5].textContent.toLowerCase();
 
         if (
             type.includes(filterType) &&
             nama.includes(filterNama) &&
             username.includes(filterUsername) &&
-            divisi.includes(filterDivisi)
+            divisi.includes(filterDivisi) &&
+            team.includes(filterTeam)
         ) {
             row.style.display = '';
             visibleCount++;
         } else {
             row.style.display = 'none';
+        }
+    });
+
+    // Update nomor urut setelah filter
+    let nomor = 1;
+    rows.forEach(row => {
+        if (row.style.display !== 'none' && row.id !== 'no-data-row') {
+            row.cells[0].textContent = nomor++;
         }
     });
 
@@ -134,6 +161,14 @@ function filterDatesTable() {
             visibleCount++;
         } else {
             row.style.display = 'none';
+        }
+    });
+
+    // Update nomor urut setelah filter
+    let nomor = 1;
+    rows.forEach(row => {
+        if (row.style.display !== 'none' && row.id !== 'no-data-row') {
+            row.cells[0].textContent = nomor++;
         }
     });
 
@@ -171,6 +206,7 @@ function setupFilters() {
             document.getElementById('filter-nama').addEventListener('input', filterUsersTable);
             document.getElementById('filter-username').addEventListener('input', filterUsersTable);
             document.getElementById('filter-divisi').addEventListener('change', filterUsersTable);
+            document.getElementById('filter-team').addEventListener('change', filterUsersTable);
         }
 
         if (isDatesTable) {

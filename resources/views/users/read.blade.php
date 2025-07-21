@@ -38,6 +38,7 @@
                     <th>Nama</th>
                     <th>Username</th>
                     <th>Divisi</th>
+                    <th>Team</th>
                     <th rowspan="2" class="sticky-col-right">Aksi</th>
                 </tr>
                 <tr>
@@ -58,6 +59,20 @@
                             @endforeach
                         </select>
                     </th>
+                    <th>
+                        <select name="divisi" id="filter-team" class="select2 filter" data-placeholder="Pilih team" data-allow-clear="true" style="width: 100%">
+                            <option></option>
+                            <option value="painting a">Painting A</option>
+                            <option value="painting b">Painting B</option>
+                            <option value="transmisi">Transmisi</option>
+                            <option value="main line">Main Line</option>
+                            <option value="sub engine">Sub Engine</option>
+                            <option value="sub assy">Sub Assy</option>
+                            <option value="inspeksi">Inspeksi</option>
+                            <option value="mower collector">Mower Collector</option>
+                            <option value="dst">DST</option>
+                        </select>
+                    </th>
                 </tr>
             </thead>
 
@@ -69,6 +84,10 @@
                     <td>{{ $user->name ?? '-' }}</td>
                     <td>{{ $user->username ?? '-' }}</td>
                     <td>{{ $user->division ?? '-' }}</td>
+                    @php
+                        $teamNames = is_array($user->team) ? implode(', ', $user->team) : ($user->team ?? '-');
+                    @endphp
+                    <td>{{ $teamNames }}</td>
                     <td class="sticky-col-right">
                         <div class="btn-group">
                             <button type="button" class="btn btn-icon edit-row">
@@ -88,7 +107,7 @@
                 @endforeach
 
                 <tr id="no-data-row" class="hidden text-center">
-                    <td colspan="6" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                    <td colspan="7" class="text-gray-500 py-4">Data tidak ditemukan</td>
                 </tr>
             </tbody>
         </table>
@@ -150,6 +169,7 @@
     const editName = document.getElementById('edit-name');
     const editUsername = document.getElementById('edit-username');
     const editDivision = document.getElementById('edit-division');
+    const editTeam = document.getElementById('edit-team');
     const editId = document.getElementById('edit-id');
 
     // Show Edit Modal
@@ -161,17 +181,21 @@
             const name = row.children[2].textContent.trim();
             const username = row.children[3].textContent.trim();
             const division = row.children[4].textContent.trim();
+            const teamText = row.children[5].textContent.trim();
+            const teamArray = teamText.split(',').map(item => item.trim());
 
             editId.value = id;
             editType.value = type;
             editName.value = name;
             editUsername.value = username;
             editDivision.value = division;
+            editTeam.value = teamArray;
 
             showModal('editUserModal');
 
             $('#edit-type').val(type).trigger('change');
             $('#edit-division').val(division).trigger('change');
+            $('#edit-team').val(teamArray).trigger('change');
         });
     });
 
@@ -195,6 +219,7 @@
             username: editUsername.value,
             type: editType.value,
             division: editDivision.value,
+            team: Array.from(editTeam.selectedOptions).map(option => option.value),
         };
 
         const password = document.getElementById('edit-password').value;

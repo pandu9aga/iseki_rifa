@@ -1,14 +1,56 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .badge-container {
+        margin: 1em 0;
+    }
 
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        margin: 4px 4px 8px 0;
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 12px;
+        text-transform: capitalize;
+    }
+
+    .badge-submitted {
+        background-color: #ec057d;
+        color: white;
+    }
+
+    .badge-pending {
+        background-color: #ccc;
+        color: #333;
+    }
+</style>
 <main>
     @include('components.popupEdit')
     @include('components.popupDailyReport')
-    
-    <h5 class="font-bold">
-        Leader Yang Telah Submit Hari ini : 
+
+    <h4 class="font-bold mt-4">
+        Laporan hari ini :
         <span style="color: #ec057d;">{{ now()->format('d M Y') }}</span>
+    </h4>
+
+    <div class="badge-container">
+        <h5 style="margin-bottom: 5pt;">Status Tim yang Sudah Submit:</h5>
+        @foreach ($allTeams as $team)
+            @php
+                $flatTeams = array_map('strtolower', array_merge(...$teamsWithReport));
+                $isSubmitted = in_array(strtolower($team), $flatTeams);
+            @endphp
+
+            <span class="badge {{ $isSubmitted ? 'badge-submitted' : 'badge-pending' }}">
+                {{ ucwords($team) }}
+            </span>
+        @endforeach
+    </div>
+    
+    <h5>
+        Leader Yang Telah Submit :
     </h5>
     <table class="table-auto w-full border border-gray-300 mt-4">
         <thead class="bg-gray-100">
@@ -16,6 +58,7 @@
                 <th class="border px-4 py-2 text-center">No</th>
                 <th class="border px-4 py-2">Nama</th>
                 <th class="border px-4 py-2">Divisi</th>
+                <th class="border px-4 py-2">Team</th>
                 <th class="border px-4 py-2">Submit Laporan</th>
                 <th class="border px-4 py-2">Update Laporan</th>
             </tr>
@@ -26,6 +69,9 @@
                     <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
                     <td class="border px-4 py-2">{{ $report->user->name }}</td>
                     <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
+                    <td class="border px-4 py-2">
+                        {{ is_array($report->user->team) ? implode(', ', $report->user->team) : ($report->user->team ?? 'Tanpa Team') }}
+                    </td>
                     <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
                     <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
                 </tr>
@@ -153,7 +199,8 @@
             <tbody>
                 @foreach($absensis as $index => $absen)
                 <tr data-id="{{ $absen->id }}">
-                    <td class="sticky-col-left number">{{ $index + 1 }}</td>
+                    {{-- <td class="sticky-col-left number">{{ $index + 1 }}</td> --}}
+                    <td class="sticky-col-left number">{{ $loop->iteration }}</td>
                     <td class="sticky-col-left">{{ $absen->employee->nama ?? '-' }}</td>
                     <td>{{ $absen->kategori_label }}</td>
                     <td>{{ $absen->tanggal->format('d/m/Y') }}</td>
