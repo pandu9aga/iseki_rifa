@@ -22,10 +22,10 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Report
-Route::get('/reporting', [ReportingController::class, 'read'])->name('reporting');
+Route::get('/reporting', [ReportingController::class, 'read'])->name('reporting')->middleware('auth');
 Route::get('/reporting/create', [ReportingController::class, 'create']);
 Route::post('/reporting', [ReportingController::class, 'store'])->name('reporting.store');
-Route::get('/employee/details', [ReportingController::class, 'getEmployeeDetails'])->name('employee.details');
+Route::get('/employee/details', [ReportingController::class, 'getEmployeeDetails'])->name('employee.details')->middleware('auth');
 Route::get('/reporting/export', [ReportingController::class, 'export']);
 Route::put('/reporting/{id}', [ReportingController::class, 'update'])->name('reporting.update');
 Route::delete('/reporting/{id}', [ReportingController::class, 'destroy'])->name('reporting.destroy');
