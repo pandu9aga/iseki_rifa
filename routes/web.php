@@ -32,6 +32,8 @@ Route::delete('/reporting/{id}', [ReportingController::class, 'destroy'])->name(
 Route::put('/reporting/{id}/approve', [ReportingController::class, 'approve'])->name('reporting.approve')->middleware('auth');
 Route::get('/reporting/daily-report', [ReportingController::class, 'dailyReport']);
 Route::post('/reporting/nihil', [ReportingController::class, 'storeNihil'])->name('reporting.nihil');
+Route::get('/reporting/download-pdf', [ReportingController::class, 'pdf'])->name('reporting.pdf');
+Route::get('/reporting/download-excel', [ReportingController::class, 'excel'])->name('reporting.excel');
 
 // Employees
 Route::get('/employees', [EmployeeController::class, 'read'])->name('employees.read')->middleware('auth');

@@ -17,6 +17,8 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\Auth;
+use App\Services\GoogleDriveService;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportingController extends Controller
 {
@@ -54,6 +56,110 @@ class ReportingController extends Controller
         ];
 
         return view('reporting.read', compact('absensis', 'divisions', 'reportToday', 'teamsWithReport', 'allTeams'));
+    }
+
+    public function pdf()
+    {
+        // $date = '2025-07-14';
+        // $absensis = Absensi::with('employee', 'employee.division')
+        //     ->whereDate('tanggal', $date)
+        //     ->orderBy('tanggal', 'desc')
+        //     ->get();
+
+        // $pdf = Pdf::loadView('reporting.pdf', compact('absensis', 'date'));
+        
+        // return $pdf->download('rekap_absensi.pdf');
+        $date = '2025-07-14';
+        $absensis = Absensi::with('employee', 'employee.division')
+            ->whereDate('tanggal', $date)
+            ->orderBy('tanggal', 'desc')
+            ->get();
+
+        $pdf = Pdf::loadView('reporting.pdf', compact('absensis', 'date'));
+        
+        // Simpan dulu ke storage
+        $fileName = 'rekap_absensi_' . now()->format('Ymd_His') . '.pdf';
+        $filePath = storage_path('app/' . $fileName);
+        file_put_contents($filePath, $pdf->output());
+
+        // Upload ke Google Drive
+        $drive = new GoogleDriveService();
+        $folderId = '1i7ark9PZaKxm7GbdpFBSxz-WUwjHA5OP'; // Folder tujuan
+        $drive->uploadFile($filePath, $folderId, $fileName);
+
+        return "PDF berhasil di-upload ke Google Drive!";
+    }
+
+    public function excel(){
+        $absensis = Absensi::with('employee', 'employee.division')
+            ->orderBy('tanggal')
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Absensi');
+
+        // Header
+        $headers = [
+            'No', 'Nama', 'Jenis Izin', 'Tanggal', 'Keterangan',
+            'Status Persetujuan', 'Status', 'Divisi', 'Tim'
+        ];
+        $sheet->fromArray($headers, NULL, 'A1');
+
+        // Data
+        $row = 2;
+        foreach ($absensis as $index => $absen) {
+            $statusPersetujuan = is_null($absen->is_approved)
+                ? 'Menunggu'
+                : ($absen->is_approved ? 'Disetujui' : 'Ditolak');
+
+            $sheet->fromArray([
+                $index + 1,
+                $absen->employee->nama ?? '-',
+                $absen->kategori_label ?? '-',
+                $absen->tanggal ? $absen->tanggal->format('d/m/Y') : '-',
+                $absen->keterangan ?? '-',
+                $statusPersetujuan,
+                $absen->employee->status ?? 'Contract',
+                $absen->employee->division->nama ?? '-',
+                $absen->employee->team ?? '-'
+            ], NULL, 'A' . $row);
+
+            $row++;
+        }
+
+        // Styling (opsional)
+        $styleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => StyleBorder::BORDER_THIN,
+                ],
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_TOP,
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'wrapText' => true,
+            ],
+        ];
+        $sheet->getStyle('A1:I' . ($row - 1))->applyFromArray($styleArray);
+
+        // Header bold
+        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Auto-size kolom
+        foreach (range('A', 'I') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Buat file sementara
+        $filename = 'rekap_absensi.xlsx';
+        $temp_file = tempnam(sys_get_temp_dir(), $filename);
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($temp_file);
+
+        // Return response download
+        return response()->download($temp_file, $filename)->deleteFileAfterSend(true);
     }
 
     public function create()
@@ -176,12 +282,16 @@ class ReportingController extends Controller
         Carbon::setLocale('id');
         $formattedText = "Dear bu Yuli\n\n\n\nBerikut informasi absensi department produksi tanggal " . Carbon::parse($tanggal)->translatedFormat('d F Y') . "\n\n";
 
-        foreach ($absensis as $divisi => $items) {
-            $formattedText .= "Prod. " . $divisi . "\n";
-            foreach ($items as $index => $item) {
-                $formattedText .= ($index + 1) . ". " . ($item->employee->nama ?? '-') . " (" . $item->kategori_label . ")\n";
+        if ($absensis->isEmpty()) {
+            $formattedText .= "- Nihil\n\n";
+        } else {
+            foreach ($absensis as $divisi => $items) {
+                $formattedText .= "Prod. " . $divisi . "\n";
+                foreach ($items as $index => $item) {
+                    $formattedText .= ($index + 1) . ". " . ($item->employee->nama ?? '-') . " (" . $item->kategori_label . ")\n";
+                }
+                $formattedText .= "\n";
             }
-            $formattedText .= "\n";
         }
 
         $formattedText .= "Mohon kerjasamanya\n\n\n\nSupri";

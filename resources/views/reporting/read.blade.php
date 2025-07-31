@@ -92,6 +92,7 @@
             </a>
             @enduserType
             @userType('admin')
+            <input type="date" id="dailyReportInput" class="form-control" value="{{ now()->format('Y-m-d'); }}" />
             <button class="btn btn-secondary" id="dailyReportBtn">
                 Laporan Harian
                 <i class="material-symbols-rounded">
@@ -123,6 +124,9 @@
             @enduserType
         </section>
     </section>
+
+    {{-- <a href="{{ route('reporting.pdf') }}" class="btn btn-primary">Download PDF</a> --}}
+    <a href="{{ route('reporting.excel') }}" class="btn btn-primary">Data Perizinan <i class="material-symbols-rounded">download</i></a>
 
     <p id="jumlah-data" class="flex justify-end mb-2 text-sm">
         Jumlah Data: {{ count($absensis) }}
@@ -320,9 +324,14 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     document.getElementById('dailyReportBtn')?.addEventListener('click', function() {
-        const today = new Date().toISOString().split('T')[0];
+        const selectedDate = document.getElementById('dailyReportInput')?.value;
+        
+        if (!selectedDate) {
+            alert('Silakan pilih tanggal terlebih dahulu');
+            return;
+        }
 
-        fetch(`/iseki_rifa/public/reporting/daily-report?tanggal=${today}`)
+        fetch(`/iseki_rifa/public/reporting/daily-report?tanggal=${selectedDate}`)
             .then(response => response.json())
             .then(data => {
                 const contentEl = document.getElementById('dailyReportContent');
