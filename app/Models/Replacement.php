@@ -20,6 +20,6 @@ class Replacement extends Model
     
     public function employee()
     {
-        return $this->belongsTo(Employee::class, 'nik', 'replacer_nik');
+        return $this->belongsTo(Employee::class, 'replacer_nik', 'nik');
     }
 }

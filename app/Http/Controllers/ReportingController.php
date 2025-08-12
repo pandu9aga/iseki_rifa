@@ -90,94 +90,93 @@ class ReportingController extends Controller
         return "PDF berhasil di-upload ke Google Drive!";
     }
 
-    public function excel()
-{
-    $absensis = Absensi::with('employee', 'employee.division', 'replacements', 'replacements.employee')
-        ->orderBy('tanggal')
-        ->get();
+    public function excel(){
+        $absensis = Absensi::with('employee', 'employee.division', 'replacements.employee')
+            ->orderBy('tanggal')
+            ->get();
 
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-    $sheet->setTitle('Absensi');
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Absensi');
 
-    // Header
-    $headers = [
-        'No', 'Nama', 'Jenis Izin', 'Tanggal', 'Keterangan',
-        'Status Persetujuan', 'Status', 'Divisi', 'Tim', 'Pengganti'
-    ];
-    $sheet->fromArray($headers, NULL, 'A1');
+        // Header
+        $headers = [
+            'No', 'Nama', 'Jenis Izin', 'Tanggal', 'Keterangan',
+            'Status Persetujuan', 'Status', 'Divisi', 'Tim', 'Pengganti'
+        ];
+        $sheet->fromArray($headers, NULL, 'A1');
 
-    // Data
-    $row = 2;
-    foreach ($absensis as $index => $absen) {
-        $statusPersetujuan = is_null($absen->is_approved)
-            ? 'Menunggu'
-            : ($absen->is_approved ? 'Disetujui' : 'Ditolak');
+        // Data
+        $row = 2;
+        foreach ($absensis as $index => $absen) {
+            $statusPersetujuan = is_null($absen->is_approved)
+                ? 'Menunggu'
+                : ($absen->is_approved ? 'Disetujui' : 'Ditolak');
 
-        // Ambil replacements
-        $replacementsArr = [];
-        foreach ($absen->replacements as $rep) {
-            $replacementsArr[] = [
-                'nama'  => $rep->employee->nama ?? '-',
-                'no'    => $rep->production_number ?? '-',
-                'waktu' => $rep->created_at ? $rep->created_at->format('d/m/Y H:i') : '-',
-            ];
+            // Format pengganti
+            $penggantiText = '-';
+            if ($absen->replacements && $absen->replacements->count() > 0) {
+                $penggantiList = [];
+                foreach ($absen->replacements as $rep) {
+                    $penggantiList[] = sprintf(
+                        "%s (%s) - %s",
+                        $rep->employee->nama ?? '-',
+                        $rep->production_number ?? '-',
+                        $rep->created_at ? \Carbon\Carbon::parse($rep->created_at)->format('d/m/Y H:i') : '-'
+                    );
+                }
+                // Gabungkan jadi teks multi-baris
+                $penggantiText = implode("\n", $penggantiList);
+            }
+
+            $sheet->fromArray([
+                $index + 1,
+                $absen->employee->nama ?? '-',
+                $absen->kategori_label ?? '-',
+                $absen->tanggal ? $absen->tanggal->format('d/m/Y') : '-',
+                $absen->keterangan ?? '-',
+                $statusPersetujuan,
+                $absen->employee->status ?? 'Contract',
+                $absen->employee->division->nama ?? '-',
+                $absen->employee->team ?? '-',
+                $penggantiText
+            ], NULL, 'A' . $row);
+
+            $row++;
         }
 
-        // Ubah jadi string JSON agar tetap rapi di Excel (atau bisa implode sesuai format)
-        $replacementsStr = !empty($replacementsArr)
-            ? json_encode($replacementsArr, JSON_UNESCAPED_UNICODE)
-            : '-';
-
-        $sheet->fromArray([
-            $index + 1,
-            $absen->employee->nama ?? '-',
-            $absen->kategori_label ?? '-',
-            $absen->tanggal ? $absen->tanggal->format('d/m/Y') : '-',
-            $absen->keterangan ?? '-',
-            $statusPersetujuan,
-            $absen->employee->status ?? 'Contract',
-            $absen->employee->division->nama ?? '-',
-            $absen->employee->team ?? '-',
-            $replacementsStr
-        ], NULL, 'A' . $row);
-
-        $row++;
-    }
-
-    // Styling
-    $styleArray = [
-        'borders' => [
-            'allBorders' => [
-                'borderStyle' => StyleBorder::BORDER_THIN,
+        // Styling
+        $styleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => StyleBorder::BORDER_THIN,
+                ],
             ],
-        ],
-        'alignment' => [
-            'vertical' => Alignment::VERTICAL_TOP,
-            'horizontal' => Alignment::HORIZONTAL_LEFT,
-            'wrapText' => true,
-        ],
-    ];
-    $sheet->getStyle('A1:J' . ($row - 1))->applyFromArray($styleArray);
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_TOP,
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'wrapText' => true, // penting untuk multi-line
+            ],
+        ];
+        $sheet->getStyle('A1:J' . ($row - 1))->applyFromArray($styleArray);
 
-    // Header bold
-    $sheet->getStyle('A1:J1')->getFont()->setBold(true);
-    $sheet->getRowDimension(1)->setRowHeight(25);
+        // Header bold
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
+        $sheet->getRowDimension(1)->setRowHeight(25);
 
-    // Auto-size kolom
-    foreach (range('A', 'J') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
+        // Auto-size kolom
+        foreach (range('A', 'J') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // File sementara
+        $filename = 'rekap_absensi.xlsx';
+        $temp_file = tempnam(sys_get_temp_dir(), $filename);
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($temp_file);
+
+        return response()->download($temp_file, $filename)->deleteFileAfterSend(true);
     }
-
-    // Buat file sementara
-    $filename = 'rekap_absensi.xlsx';
-    $temp_file = tempnam(sys_get_temp_dir(), $filename);
-    $writer = new Xlsx($spreadsheet);
-    $writer->save($temp_file);
-
-    return response()->download($temp_file, $filename)->deleteFileAfterSend(true);
-}
-
 
     public function create()
     {
