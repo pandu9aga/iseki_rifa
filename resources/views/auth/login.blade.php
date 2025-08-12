@@ -31,6 +31,11 @@
             </ul>
             @endif
         </form>
+        <br><hr><br>
+        <p>Bagi member yang menggantikan proses:</p><br>
+        <a href="{{ route('replacements.read') }}"">
+            <button type="button" class="btn btn-primary">Pengganti</button>
+        </a>
     </div>
 </div>
 @endsection

@@ -11,6 +11,11 @@
             </div>
 
             <div class="form-control">
+                <label for="edit-nik">NIK</label>
+                <input type="text" id="edit-nik" name="nik" class="input w-full">
+            </div>
+
+            <div class="form-control">
                 <label for="edit-status">Status</label>
                 <select id="edit-status" name="status" data-placeholder="Pilih status" class="select2 input w-full">
                     <option></option>

@@ -16,6 +16,18 @@
 
             <!-- Normal Desktop Nav -->
             <ul class="nav-links items-center">
+
+                @guest
+                <li class="user-menu">
+                    <a href="{{ route('replacements.read') }}" class="btn btn-primary">
+                        <i class="material-symbols-rounded">
+                            person
+                        </i>
+                        Pengganti
+                    </a>
+                </li>
+                @endguest
+
                 @guest
                 <li class="user-menu">
                     <a href="{{ route('show.login') }}" class="btn btn-primary">
@@ -116,13 +128,25 @@
 
         <nav class="flex flex-col">
             <ul class="nav-links">
+
+                @guest
+                <li class="user-menu">
+                    <a href="{{ route('replacements.read') }}" class="btn btn-primary">
+                        <i class="material-symbols-rounded">
+                            person
+                        </i>
+                        Pengganti
+                    </a>
+                </li>
+                @endguest
+                
                 @guest
                 <li class="user-menu">
                     <a href="{{ route('show.login') }}" class="btn btn-primary">
                         <i class="material-symbols-rounded">
                             person
                         </i>
-                        Masuk sebagai Admin
+                        Masuk
                     </a>
                 </li>
                 @endguest

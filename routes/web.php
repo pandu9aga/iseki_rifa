@@ -6,6 +6,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\DateController;
+use App\Http\Controllers\ReplacementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -55,3 +56,13 @@ Route::get('/dates/new', [DateController::class, 'create'])->middleware('auth');
 Route::post('/dates', [DateController::class, 'store'])->name('dates.store')->middleware('auth');
 Route::put('/dates/{id}', [DateController::class, 'update'])->middleware('auth');
 Route::delete('/dates/{id}', [DateController::class, 'destroy'])->name('dates.destroy')->middleware('auth');
+
+// Pengganti
+Route::get('/replacements', [ReplacementController::class, 'read'])->name('replacements.read');
+Route::get('/replacements/create/{id}', [ReplacementController::class, 'create'])->name('replacements.create');
+Route::get('/employee/by-nik/{nik}', function($nik) {
+    $employee = \App\Models\Employee::where('nik', $nik)->first();
+    return response()->json($employee);
+});
+Route::post('/replacements/store', [ReplacementController::class, 'store'])->name('replacements.store');
+Route::get('/replacements/by-absensi/{id}', [ReplacementController::class, 'byAbsensi']);

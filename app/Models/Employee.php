@@ -10,9 +10,9 @@ use Spatie\Activitylog\LogOptions;
 
 class Employee extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory; //, LogsActivity;
 
-    protected $fillable = ['nama', 'team', 'division_id', 'status'];
+    protected $fillable = ['nama', 'nik', 'team', 'division_id', 'status'];
 
     public function division()
     {
@@ -24,15 +24,15 @@ class Employee extends Model
         return $this->hasMany(Absensi::class);
     }
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->useLogName('employee')
-            ->logOnly(['nama', 'status', 'division_id', 'team'])
-            ->logOnlyDirty()
-            ->setDescriptionForEvent(function (string $eventName) {
-                $causer = Auth::check() ? Auth::user()->name : 'Guest';
-                return "{$causer} melakukan {$eventName} data karyawan {$this->nama}";
-            });
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->useLogName('employee')
+    //         ->logOnly(['nama', 'nik', 'status', 'division_id', 'team'])
+    //         ->logOnlyDirty()
+    //         ->setDescriptionForEvent(function (string $eventName) {
+    //             $causer = Auth::check() ? Auth::user()->name : 'Guest';
+    //             return "{$causer} melakukan {$eventName} data karyawan {$this->nama}";
+    //         });
+    // }
 }

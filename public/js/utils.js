@@ -3,6 +3,7 @@ function filterCutiTable() {
     const filterJenis = document.getElementById('filter-jenis').value.toLowerCase();
     const filterTanggal = formatTanggalKeYMD(document.getElementById('filter-tanggal').value.toLowerCase());
     const filterKeterangan = document.getElementById('filter-keterangan').value.toLowerCase();
+    // const filterPengganti = document.getElementById('filter-pengganti').value.toLowerCase();
     const filterApprovalStatus = document.getElementById('filter-approval-status').value.toLowerCase();
     const filterStatus = document.getElementById('filter-status').value.toLowerCase();
     const filterDivisi = document.getElementById('filter-divisi').value.toLowerCase();
@@ -13,22 +14,24 @@ function filterCutiTable() {
 
     rows.forEach(row => {
         if (row.id === 'no-data-row') return;
-        const isWithAuth = row.cells.length === 11;
+        const isWithAuth = row.cells.length === 12;
 
         const nama = row.cells[1].textContent.toLowerCase();
         const jenisCuti = row.cells[2].textContent.toLowerCase();
         const tanggal = formatTanggalKeYMD(row.cells[3].textContent.toLowerCase());
         const keterangan = row.cells[4].textContent.toLowerCase();
-        const approval_status = row.cells[5].textContent.toLowerCase();
-        const status = row.cells[isWithAuth ? 7 : 6].textContent.toLowerCase();
-        const divisi = row.cells[isWithAuth ? 8 : 7].textContent.toLowerCase();
-        const team = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase();
+        // const pengganti = row.cells[5].textContent.toLowerCase();
+        const approval_status = row.cells[6].textContent.toLowerCase();
+        const status = row.cells[isWithAuth ? 8 : 7].textContent.toLowerCase();
+        const divisi = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase();
+        const team = row.cells[isWithAuth ? 10 : 9].textContent.toLowerCase();
 
         if (
             nama.includes(filterNama) &&
             jenisCuti.includes(filterJenis) &&
             tanggal.includes(filterTanggal) &&
             keterangan.includes(filterKeterangan) &&
+            // pengganti.includes(filterPengganti) &&
             approval_status.includes(filterApprovalStatus) &&
             status.includes(filterStatus) &&
             divisi.includes(filterDivisi) &&
@@ -55,6 +58,7 @@ function filterCutiTable() {
 
 function filterEmployeeTable() {
     const filterNama = document.getElementById('filter-nama').value.toLowerCase();
+    const filterNik = document.getElementById('filter-nik').value.toLowerCase();
     const filterStatus = document.getElementById('filter-status').value.toLowerCase();
     const filterDivisi = document.getElementById('filter-divisi').value.toLowerCase();
     const filterTeam = document.getElementById('filter-team').value.toLowerCase();
@@ -66,12 +70,14 @@ function filterEmployeeTable() {
         if (row.id === 'no-data-row') return;
 
         const nama = row.cells[1].textContent.toLowerCase();
-        const status = row.cells[2].textContent.toLowerCase();
-        const divisi = row.cells[3].textContent.toLowerCase();
-        const team = row.cells[4].textContent.toLowerCase();
+        const nik = row.cells[2].textContent.toLowerCase();
+        const status = row.cells[3].textContent.toLowerCase();
+        const divisi = row.cells[4].textContent.toLowerCase();
+        const team = row.cells[5].textContent.toLowerCase();
 
         if (
             nama.includes(filterNama) &&
+            nik.includes(filterNik) &&
             status.includes(filterStatus) &&
             divisi.includes(filterDivisi) &&
             team.includes(filterTeam)
@@ -176,18 +182,56 @@ function filterDatesTable() {
     toggleNoDataRow(visibleCount);
 }
 
+function filterPenggantiTable() {
+    const filterNama = document.getElementById('filter-nama').value.toLowerCase();
+    const filterTanggal = formatTanggalKeYMD(document.getElementById('filter-tanggal').value.toLowerCase());
+
+    const rows = document.querySelectorAll('#pengganti-table tbody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        if (row.id === 'no-data-row') return;
+
+        const nama = row.cells[1].textContent.toLowerCase();
+        const tanggal = formatTanggalKeYMD(row.cells[2].textContent.toLowerCase());
+
+        if (
+            nama.includes(filterNama) &&
+            tanggal.includes(filterTanggal)
+        ) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Update nomor urut setelah filter
+    let nomor = 1;
+    rows.forEach(row => {
+        if (row.style.display !== 'none' && row.id !== 'no-data-row') {
+            row.cells[0].textContent = nomor++;
+        }
+    });
+
+    updateJumlahData('pengganti-table', 'jumlah-data');
+    toggleNoDataRow(visibleCount);
+}
+
 function setupFilters() {
     try {
         const isCutiTable = document.getElementById('cuti-table') !== null;
         const isEmployeeTable = document.getElementById('employees-table') !== null;
         const isUsersTable = document.getElementById('users-table') !== null;
         const isDatesTable = document.getElementById('dates-table') !== null;
+        const isPenggantiTable = document.getElementById('pengganti-table') !== null;
 
         if (isCutiTable) {
             document.getElementById('filter-nama').addEventListener('input', filterCutiTable);
             document.getElementById('filter-jenis').addEventListener('change', filterCutiTable);
             document.getElementById('filter-tanggal').addEventListener('change', filterCutiTable);
             document.getElementById('filter-keterangan').addEventListener('input', filterCutiTable);
+            // document.getElementById('filter-pengganti').addEventListener('input', filterCutiTable);
             document.getElementById('filter-approval-status').addEventListener('change', filterCutiTable);
             document.getElementById('filter-status').addEventListener('change', filterCutiTable);
             document.getElementById('filter-divisi').addEventListener('change', filterCutiTable);
@@ -196,6 +240,7 @@ function setupFilters() {
 
         if (isEmployeeTable) {
             document.getElementById('filter-nama').addEventListener('input', filterEmployeeTable);
+            document.getElementById('filter-nik').addEventListener('input', filterEmployeeTable);
             document.getElementById('filter-status').addEventListener('change', filterEmployeeTable);
             document.getElementById('filter-divisi').addEventListener('change', filterEmployeeTable);
             document.getElementById('filter-team').addEventListener('input', filterEmployeeTable);
@@ -214,11 +259,17 @@ function setupFilters() {
             document.getElementById('filter-jenis').addEventListener('change', filterDatesTable);
         }
 
+        if (isPenggantiTable) {
+            document.getElementById('filter-nama').addEventListener('change', filterPenggantiTable);
+            document.getElementById('filter-tanggal').addEventListener('change', filterPenggantiTable);
+        }
+
         $('.select2').on('change', () => setTimeout(() => {
             if (isCutiTable) filterCutiTable();
             else if (isEmployeeTable) filterEmployeeTable();
             else if (isUsersTable) filterUsersTable();
             else if (isDatesTable) filterDatesTable();
+            else if (isPenggantiTable) filterPenggantiTable();
         }, 0));
 
         return true;
@@ -255,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('cuti-table')) filterCutiTable();
     if (document.getElementById('employees-table')) filterEmployeeTable();
     if (document.getElementById('users-table')) filterUsersTable();
+    if (document.getElementById('pengganti-table')) filterPenggantiTable();
 });
 
 function copyDailyReport(event) {

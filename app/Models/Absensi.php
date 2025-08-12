@@ -10,7 +10,7 @@ use Spatie\Activitylog\LogOptions;
 
 class Absensi extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory; //, LogsActivity;
 
     protected $fillable = ['employee_id', 'tanggal', 'kategori', 'keterangan', 'is_approved'];
 
@@ -20,26 +20,30 @@ class Absensi extends Model
     ];
 
     // Log
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->useLogName('absensi')
-            ->logOnly(['employee_id', 'tanggal', 'kategori', 'keterangan', 'is_approved'])
-            ->logOnlyDirty()
-            ->setDescriptionForEvent(function (string $eventName) {
-                $causer = Auth::check() ? Auth::user()->name : 'Guest';
-                $kategori = $this->kategori ?? '-';
-                $tanggal = $this->tanggal?->format('Y-m-d') ?? '-';
-                $employeeName = $this->employee->nama ?? '(nama tidak ditemukan)';
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->useLogName('absensi')
+    //         ->logOnly(['employee_id', 'tanggal', 'kategori', 'keterangan', 'is_approved'])
+    //         ->logOnlyDirty()
+    //         ->setDescriptionForEvent(function (string $eventName) {
+    //             $causer = Auth::check() ? Auth::user()->name : 'Guest';
+    //             $kategori = $this->kategori ?? '-';
+    //             $tanggal = $this->tanggal?->format('Y-m-d') ?? '-';
+    //             $employeeName = $this->employee->nama ?? '(nama tidak ditemukan)';
 
-                return "{$causer} melakukan {$eventName} absensi untuk {$employeeName} pada {$tanggal} dengan kategori {$kategori}";
-            });
-    }
-
+    //             return "{$causer} melakukan {$eventName} absensi untuk {$employeeName} pada {$tanggal} dengan kategori {$kategori}";
+    //         });
+    // }
 
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function replacements()
+    {
+        return $this->hasMany(Replacement::class);
     }
 
     public function getKategoriLabelAttribute()

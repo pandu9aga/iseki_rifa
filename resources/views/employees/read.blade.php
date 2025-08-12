@@ -35,6 +35,7 @@
                 <tr>
                     <th rowspan="2">No</th>
                     <th>Nama</th>
+                    <th>NIK</th>
                     <th>Status</th>
                     <th>Divisi</th>
                     <th>Tim</th>
@@ -42,6 +43,7 @@
                 </tr>
                 <tr>
                     <th><input class="filter" id="filter-nama" type="text" placeholder="Cari Nama" /></th>
+                    <th><input class="filter" id="filter-nik" type="text" placeholder="Cari NIK" /></th>
                     <th>
                         <select name="status" class="select2 filter" data-placeholder="Pilih status" data-allow-clear="true" style="width: 100%" id="filter-status">
                             <option></option>
@@ -66,6 +68,7 @@
                 <tr data-id="{{ $employee->id }}">
                     <td class="number">{{ $index + 1 }}</td>
                     <td>{{ $employee->nama ?? '-' }}</td>
+                    <td>{{ $employee->nik ?? '-' }}</td>
                     <td>{{ $employee->status ?? '-' }}</td>
                     <td>{{ $employee->division->nama ?? '-' }}</td>
                     <td>{{ $employee->team ?? '-' }}</td>
@@ -88,7 +91,7 @@
                 @endforeach
 
                 <tr id="no-data-row" class="hidden text-center">
-                    <td colspan="6" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                    <td colspan="7" class="text-gray-500 py-4">Data tidak ditemukan</td>
                 </tr>
             </tbody>
         </table>
@@ -147,6 +150,7 @@
     const editModal = document.getElementById('editEmployeeModal');
     const editForm = document.getElementById('editEmployeeForm');
     const editNama = document.getElementById('edit-nama');
+    const editNik = document.getElementById('edit-nik');
     const editStatus = document.getElementById('edit-status');
     const editDivisi = document.getElementById('edit-divisi');
     const editTeam = document.getElementById('edit-team');
@@ -158,12 +162,14 @@
             const row = button.closest('tr');
             const id = row.dataset.id;
             const nama = row.children[1].textContent;
-            const status = row.children[2].textContent;
-            const divisi = row.children[3].textContent;
-            const team = row.children[4].textContent === '-' ? '' : row.children[4].textContent;
+            const nik = row.children[2].textContent;
+            const status = row.children[3].textContent;
+            const divisi = row.children[4].textContent;
+            const team = row.children[5].textContent === '-' ? '' : row.children[5].textContent;
 
             editId.value = id;
             editNama.value = nama;
+            editNik.value = nik;
             editStatus.value = status;
             editDivisi.value = divisi;
             editTeam.value = team;
@@ -192,6 +198,7 @@
         const id = editId.value;
         const data = {
             nama: editNama.value,
+            nik: editNik.value,
             status: editStatus.value,
             divisi: editDivisi.value,
             team: editTeam.value,

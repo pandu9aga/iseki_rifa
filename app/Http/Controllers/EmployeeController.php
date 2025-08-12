@@ -59,6 +59,7 @@ class EmployeeController extends Controller
     public function store(Request $request)
     {
         $namaList = $request->input('nama', []);
+        $nikList = $request->input('nik', []);
         $statusList = $request->input('status', []);
         $divisionList = $request->input('divisi', []);
         $teamList = $request->input('team', []);
@@ -66,6 +67,7 @@ class EmployeeController extends Controller
         foreach ($namaList as $index => $nama) {
             Employee::create([
                 'nama' => $nama,
+                'nik' => $nikList[$index],
                 'status' => $statusList[$index],
                 'division_id' => $divisionList[$index],
                 'team' => $teamList[$index] ?? null,
@@ -88,6 +90,7 @@ class EmployeeController extends Controller
         $division = Division::where('nama', $request->divisi)->first();
         $employee->update([
             'nama' => $request->nama,
+            'nik' => $request->nik,
             'status' => $request->status,
             'division_id' => $division->id ?? null,
             'team' => $request->team,

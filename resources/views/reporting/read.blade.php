@@ -142,6 +142,7 @@
                     <th>Jenis Izin</th>
                     <th>Tanggal</th>
                     <th>Keterangan</th>
+                    <th rowspan="2">Pengganti</th>
                     <th>Status Persetujuan</th>
                     @userType('admin')
                     <th rowspan="2">Approvement</th>
@@ -173,6 +174,7 @@
                     {{-- <th><input class="filter" id="filter-tanggal" type="month" value="{{ request('bulan', now()->format('Y-m')) }}" /></th> --}}
                     <th><input class="filter" id="filter-tanggal" type="date" value="{{ request('tanggal', now()->format('Y-m-d')) }}" /></th>
                     <th><input type="text" class="filter" id="filter-keterangan" placeholder="Cari Keterangan" /></th>
+                    {{-- <th><input type="text" class="filter" id="filter-pengganti" placeholder="Cari Pengganti" /></th> --}}
                     <th>
                         <select name="approval_status" class="select2 filter" data-placeholder="Pilih status persetujuan" data-allow-clear="true" style="width: 100%" id="filter-approval-status">
                             <option></option>
@@ -209,6 +211,16 @@
                     <td>{{ $absen->kategori_label }}</td>
                     <td>{{ $absen->tanggal->format('d/m/Y') }}</td>
                     <td>{!! $absen->keterangan ? nl2br(e($absen->keterangan)) : '-' !!}</td>
+                    <td>
+                        <div style="display: inline-flex; align-items: center; gap: 5px;">
+                            <span>{{ \App\Models\Replacement::where('absensi_id', $absen->id)->count() }} ; </span>
+                            <button type="button" class="btn btn-icon btn-view-replacement" data-id="{{ $absen->id }}">
+                                <i class="material-symbols-rounded delete-row btn-primary">
+                                    visibility
+                                </i>
+                            </button>
+                        </div>
+                    </td>
                     @php
                     if (is_null($absen->is_approved)) {
                     $status = 'Menunggu Persetujuan';
@@ -278,6 +290,7 @@
     </section>
     @include('components.popupDelete')
 </main>
+@include('components.popupReplacement')
 
 <script>
     // Update jumlah data (setelah filter, oninput, setelah delete)
@@ -477,6 +490,46 @@
         numbers.forEach((cell, index) => {
             cell.textContent = index + 1;
         });
+    }
+</script>
+<script>
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-view-replacement')) {
+            const btn = e.target.closest('.btn-view-replacement');
+            const absensiId = btn.getAttribute('data-id');
+
+            fetch(`/iseki_rifa/public/replacements/by-absensi/${absensiId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('replacementTableBody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>`;
+                    } else {
+                        data.forEach((item, index) => {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td class="border px-4 py-2">${index + 1}</td>
+                                    <td class="border px-4 py-2">${item.replacer_nik}</td>
+                                    <td class="border px-4 py-2">${item.nama_pengganti ?? '-'}</td>
+                                    <td class="border px-4 py-2">${item.production_number}</td>
+                                    <td class="border px-4 py-2">${item.created_at}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    showModal(document.getElementById('popupReplacement'));
+                });
+        }
+    });
+
+    function showModal(modal) {
+        modal.classList.replace('hidden', 'flex');
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.replace('flex', 'hidden');
     }
 </script>
 @endsection

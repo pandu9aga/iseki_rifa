@@ -17,7 +17,8 @@
                 <thead class="bg-gray-200">
                     <tr>
                         <th class="table-cell w-4">No</th>
-                        <th class="table-cell w-45">Nama</th>
+                        <th class="table-cell w-31">Nama</th>
+                        <th class="table-cell w-16">Nik</th>
                         <th class="table-cell w-16">Status</th>
                         <th class="table-cell w-16">Divisi</th>
                         <th class="table-cell w-15">Tim</th>
@@ -29,6 +30,10 @@
                         <td class="number">1</td>
                         <td>
                             <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama...">
+                            <span id="error" class="text-red-500"></span>
+                        </td>
+                        <td>
+                            <input type="text" name="nik[]" class="nik" autocomplete="off" placeholder="Masukkan nik...">
                             <span id="error" class="text-red-500"></span>
                         </td>
                         <td>
@@ -58,7 +63,7 @@
                         </td>
                     </tr>
                     <tr id="row-button" class="hover-none">
-                        <td colspan="6">
+                        <td colspan="7">
                             <button type="button" id="add-row" class="btn btn-secondary">
                                 <i class="material-symbols-rounded btn-primary">
                                     add
@@ -102,6 +107,7 @@
     document.getElementById('employee-form').addEventListener('submit', function(e) {
         const errorText = document.getElementById('error-text');
         const namaInputs = document.querySelectorAll('input[name="nama[]"]');
+        const nikInputs = document.querySelectorAll('input[name="nik[]"]');
         const statusInputs = document.querySelectorAll('select[name="status[]"]');
         const divisiInputs = document.querySelectorAll('select[name="divisi[]"]');
         const teamInputs = document.querySelectorAll('input[name="team[]"]');
@@ -109,6 +115,12 @@
         let isValid = true;
 
         namaInputs.forEach((input) => {
+            if (!input.value.trim()) {
+                isValid = false;
+            }
+        });
+
+        nikInputs.forEach((input) => {
             if (!input.value.trim()) {
                 isValid = false;
             }
@@ -153,6 +165,10 @@
             <td class="number"></td>
             <td>
                 <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama..." list="nama_datalist">
+                <p class="error-help hidden"></p>
+            </td>
+            <td>
+                <input type="text" name="nik[]" class="nik" autocomplete="off" placeholder="Masukkan nik..." list="nik_datalist">
                 <p class="error-help hidden"></p>
             </td>
             <td>
