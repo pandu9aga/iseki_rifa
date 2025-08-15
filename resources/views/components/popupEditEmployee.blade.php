@@ -19,8 +19,8 @@
                 <label for="edit-status">Status</label>
                 <select id="edit-status" name="status" data-placeholder="Pilih status" class="select2 input w-full">
                     <option></option>
-                    <option value="Permanent">Permanent</option>
-                    <option value="Contract">Contract</option>
+                    <option value="Direct">Direct</option>
+                    <option value="Non Direct">Non Direct</option>
                 </select>
             </div>
 

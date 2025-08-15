@@ -186,8 +186,8 @@
                     <th>
                         <select name="status" class="select2 filter" data-placeholder="Pilih status" data-allow-clear="true" style="width: 100%" id="filter-status">
                             <option></option>
-                            <option value="Permanent">Permanent</option>
-                            <option value="Contract">Contract</option>
+                            <option value="Direct">Direct</option>
+                            <option value="Non Direct">Non Direct</option>
                         </select>
                     </th>
                     <th>
@@ -256,7 +256,7 @@
 
                     </td>
                     @enduserType
-                    <td>{{ $absen->employee->status ?? 'Contract' }}</td>
+                    <td>{{ $absen->employee->status ?? '-' }}</td>
                     <td>{{ $absen->employee->division->nama ?? '-' }}</td>
                     <td>{{ $absen->employee->team ?? '-' }}</td>
                     <td class="sticky-col-right">

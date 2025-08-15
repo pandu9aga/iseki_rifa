@@ -39,8 +39,8 @@
                         <td>
                             <select name="status[]" data-placeholder="Pilih status" class="select2 status" style="width: 100%">
                                 <option></option>
-                                <option value="Contract">Contract</option>
-                                <option value="Permanent">Permanent</option>
+                                <option value="Direct">Direct</option>
+                                <option value="Non Direct">Non Direct</option>
                             </select>
                         </td>
                         <td>
@@ -174,8 +174,8 @@
             <td>
                 <select name="status[]" data-placeholder="Pilih status" class="select2 status" style="width: 100%">
                     <option></option>
-                    <option value="Contract">Contract</option>
-                    <option value="Permanent">Permanent</option>
+                    <option value="Direct">Direct</option>
+                    <option value="Non Direct">Non Direct</option>
                 </select>
             </td>
             <td>
