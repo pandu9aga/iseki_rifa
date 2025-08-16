@@ -220,9 +220,9 @@
     </div>
 
     <!-- Overlay Background -->
-    <div id="overlay"
+    {{-- <div id="overlay"
         class="overlay hidden-overlay fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ease-in-out">
-    </div>
+    </div> --}}
 </header>
 
 <script>
@@ -241,10 +241,10 @@
         overlay.classList.add('hidden-overlay');
     });
 
-    overlay.addEventListener('click', () => {
-        drawer.classList.remove('show');
-        overlay.classList.add('hidden-overlay');
-    });
+    // overlay.addEventListener('click', () => {
+    //     drawer.classList.remove('show');
+    //     overlay.classList.add('hidden-overlay');
+    // });
 
     function toggleDropdown() {
         document.querySelectorAll('.user-dropdown').forEach(el => {

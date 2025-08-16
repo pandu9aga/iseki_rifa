@@ -67,9 +67,9 @@ class EmployeeController extends Controller
         foreach ($namaList as $index => $nama) {
             Employee::create([
                 'nama' => $nama,
-                'nik' => $nikList[$index],
-                'status' => $statusList[$index],
-                'division_id' => $divisionList[$index],
+                'nik' => $nikList[$index] ?? null,
+                'status' => $statusList[$index] ?? null,
+                'division_id' => $divisionList[$index] ?? null,
                 'team' => $teamList[$index] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -87,13 +87,21 @@ class EmployeeController extends Controller
 
         $employee = Employee::findOrFail($id);
 
+        if ($request->nik == '-')
+        {
+            $nik = null;
+        } else
+        {
+            $nik = $request->nik;
+        }
+
         $division = Division::where('nama', $request->divisi)->first();
         $employee->update([
             'nama' => $request->nama,
-            'nik' => $request->nik,
-            'status' => $request->status,
+            'nik' => $nik,
+            'status' => $request->status ?? null,
             'division_id' => $division->id ?? null,
-            'team' => $request->team,
+            'team' => $request->team ?? null,
             'updated_at' => now(),
         ]);
 

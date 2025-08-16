@@ -20,7 +20,7 @@
 </head>
 
 <body>
-    @if (!Route::is('show.login') && !Route::is('show.register'))
+    @if (!Route::is('show.register'))
     @include('partials.navbar')
     @endif
 
