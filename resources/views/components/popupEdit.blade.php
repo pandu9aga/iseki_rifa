@@ -39,6 +39,12 @@
     </div>
 </div>
 
+<style>
+    .select2-container {
+        z-index: 10000 !important;
+    }
+</style>
+
 <script>
     $('#edit-jenis').select2({
         dropdownParent: $('#editModal .modal-content')
