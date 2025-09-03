@@ -7,6 +7,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\DateController;
 use App\Http\Controllers\ReplacementController;
+use App\Http\Controllers\LemburController;
+use App\Models\Lembur;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -60,9 +62,19 @@ Route::delete('/dates/{id}', [DateController::class, 'destroy'])->name('dates.de
 // Pengganti
 Route::get('/replacements', [ReplacementController::class, 'read'])->name('replacements.read');
 Route::get('/replacements/create/{id}', [ReplacementController::class, 'create'])->name('replacements.create');
-Route::get('/employee/by-nik/{nik}', function($nik) {
+Route::get('/employee/by-nik/{nik}', function ($nik) {
     $employee = \App\Models\Employee::where('nik', $nik)->first();
     return response()->json($employee);
 });
+
+Route::get('/lembur', [LemburController::class, 'index'])->name('lemburs.index');   // List
+Route::get('/lembur/create', [LemburController::class, 'create'])->name('lemburs.create'); // Form tambah
+Route::post('/lembur', [LemburController::class, 'store'])->name('lemburs.store');  // Simpan
+Route::delete('/lembur/{id}', [LemburController::class, 'destroy'])->name('lemburs.destroy');  // Hapus
+Route::put('/lembur/{id}', [LemburController::class, 'update'])->name('lemburs.update');  // Edit
+// Route::resource('lemburs', LemburController::class)->only([
+//     'index', 'store', 'edit', 'update', 'destroy'
+// ]);
+
 Route::post('/replacements/store', [ReplacementController::class, 'store'])->name('replacements.store');
 Route::get('/replacements/by-absensi/{id}', [ReplacementController::class, 'byAbsensi']);

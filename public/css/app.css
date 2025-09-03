@@ -307,6 +307,8 @@ th input[type="text"],
 th input[type="password"],
 th input[type="date"],
 th input[type="month"],
+th input[type="time"],
+th input[type="number"],
 th select {
     width: fit-content;
     padding: 0.5rem;
@@ -316,8 +318,10 @@ th select {
 }
 
 td input[type="text"],
-th input[type="password"],
+td input[type="password"],
 td input[type="date"],
+td input[type="time"],
+td input[type="number"],
 td select {
     width: 100%;
     padding: 0.5rem;
@@ -342,6 +346,8 @@ select,
 input[type="month"],
 input[type="date"],
 input[type="text"],
+input[type="time"],
+input[type="number"],
 input[type="password"] {
     width: 100%;
     padding: 0.5rem;
