@@ -16,21 +16,29 @@
         </div>
 
         {{-- Tombol sesuai role --}}
-        <section class="btn-group flex gap-2 mb-4">
-            @userType('leader')
-                <a href="{{ route('lemburs.create') }}" class="btn btn-primary">
-                    <span>Tambah Data</span>
-                    <i class="material-symbols-rounded">add</i>
-                </a>
-                <a href="#" class="btn btn-primary" id="export-lembur-btn">
-                    <i class="fas fa-file-excel"></i> Export Lembur
-                </a>
-            @enduserType
-            @userType('admin')
-                <a href="#" class="btn btn-primary" id="export-lembur-btn">
-                    <i class="fas fa-file-excel"></i> Export Lembur
-                </a>
-            @enduserType
+        <section class="btn-group flex gap-2 mb-4 items-center justify-between">
+            <div class="flex gap-2">
+                @userType('leader')
+                    <a href="{{ route('lemburs.create') }}" class="btn btn-primary">
+                        <span>Tambah Data</span>
+                        <i class="material-symbols-rounded">add</i>
+                    </a>
+                    <a href="#" class="btn btn-primary" id="export-lembur-btn">
+                        <i class="fas fa-file-excel"></i> Export Lembur
+                    </a>
+                @enduserType
+                @userType('admin')
+                    <a href="#" class="btn btn-primary" id="export-lembur-btn">
+                        <i class="fas fa-file-excel"></i> Export Lembur
+                    </a>
+                @enduserType
+            </div>
+
+            <!-- Kotak total durasi -->
+            <div id="total-durasi-box"
+                class="bg-gray-100 border border-gray-300 px-4 py-2 rounded shadow text-sm font-semibold">
+                Total Durasi: <span id="total-durasi">0</span> jam
+            </div>
         </section>
 
         <!-- Tabel -->
@@ -41,7 +49,11 @@
                         <th class="sticky-col-left">No</th>
                         <th>Nama<br><input type="text" class="filter" data-column="1" placeholder="Cari Nama"></th>
                         <th>Divisi<br><input type="text" class="filter" data-column="2" placeholder="Cari Divisi"></th>
-                        <th>Tanggal<br><input type="date" class="filter" data-column="3"></th>
+                        <th>
+                            Tanggal<br>
+                            <input id="customDate" name="customDate" type="date" class="filter" data-column="3">
+                            <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
+                        </th>
                         <th>Jam<br><input type="text" class="filter" data-column="4" placeholder="Jam"></th>
                         <th>Durasi<br><input type="text" class="filter" data-column="5" placeholder="Durasi"></th>
                         <th>Pekerjaan<br><input type="text" class="filter" data-column="6" placeholder="Pekerjaan"></th>
@@ -95,7 +107,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-
             const table = document.getElementById('lembur-table');
             if (!table) return;
 
@@ -103,10 +114,25 @@
 
             // set default tanggal hari ini
             const today = new Date().toISOString().split('T')[0];
-            const dateFilter = table.querySelector('input[type="date"][data-column="3"]');
+            const dateFilter = document.getElementById('customDate');
             if (dateFilter) {
                 dateFilter.value = today;
                 filterTable();
+            }
+
+            // Toggle date/month
+            const toggleBtn = document.getElementById('toggleType');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (dateFilter.type === "date") {
+                        dateFilter.type = "month";
+                        this.textContent = "Date";
+                    } else {
+                        dateFilter.type = "date";
+                        this.textContent = "Month";
+                    }
+                    filterTable();
+                });
             }
 
             // filter per kolom
@@ -118,6 +144,7 @@
             function filterTable() {
                 const rows = table.tBodies[0].rows;
                 let counter = 1;
+                let totalDurasi = 0;
 
                 for (let row of rows) {
                     let show = true;
@@ -140,13 +167,35 @@
                         }
                     });
 
+                    // tambahan filter fleksibel untuk toggle date/month
+                    if (dateFilter && dateFilter.value) {
+                        const [day, month, year] = row.cells[3].textContent.trim().split("-");
+                        if (dateFilter.type === "date") {
+                            const filterDate = new Date(dateFilter.value);
+                            const rowDate = new Date(`${year}-${month}-${day}`);
+                            if (rowDate.toDateString() !== filterDate.toDateString()) show = false;
+                        } else if (dateFilter.type === "month") {
+                            const [fYear, fMonth] = dateFilter.value.split("-");
+                            if (month !== fMonth || year !== fYear) show = false;
+                        }
+                    }
+
                     if (show) {
                         row.style.display = '';
                         row.querySelector('td.sticky-col-left').textContent = counter++;
+
+                        // ambil kolom durasi (kolom ke-5, index 5)
+                        let durasiText = row.cells[5].textContent.trim();
+                        let durasiNum = parseFloat(durasiText.replace(',', '.')) || 0;
+                        totalDurasi += durasiNum;
                     } else {
                         row.style.display = 'none';
                     }
                 }
+
+                // update kotak total durasi
+                // update kotak total durasi (tanpa desimal)
+                document.getElementById('total-durasi').textContent = Math.round(totalDurasi);
             }
 
             // Export Lembur
@@ -204,7 +253,7 @@
                 document.getElementById('edit-durasi_lembur').value = data.durasi_lembur || '';
                 document.getElementById('edit-keterangan_lembur').value = data.keterangan_lembur || '';
                 document.getElementById('edit-makan_lembur').value = (data.makan_lembur && data.makan_lembur
-                    .toLowerCase() === 'ya') ? 'Ya' : 'Tidak';
+                    .toLowerCase() === 'ya') ? 'Ya' : 'X';
                 document.getElementById('editLemburModal').classList.replace('hidden', 'flex');
             }
 
@@ -221,10 +270,7 @@
                     };
                     openEditModal(data);
                 });
-
             });
-
-
 
             // Submit Edit
             document.getElementById('editLemburForm').addEventListener('submit', function(e) {
@@ -253,12 +299,12 @@
                     else alert('Gagal menyimpan perubahan');
                 });
             });
+
         });
 
         function closeEditModal() {
             const modal = document.getElementById('editLemburModal');
             if (modal) modal.classList.replace('flex', 'hidden');
-            // Opsional: refresh halaman atau kembali ke halaman index
             window.location.href = "{{ route('lemburs.index') }}";
         }
     </script>

@@ -28,6 +28,7 @@ class Lembur extends Model
     protected $casts = [
         'tanggal_lembur' => 'date',
         'approval_lembur' => 'boolean',
+        'durasi_lembuar' => 'float',
     ];
 
     public function employee()

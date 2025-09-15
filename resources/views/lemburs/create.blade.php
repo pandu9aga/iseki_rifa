@@ -42,7 +42,10 @@
                             <td><input type="date" name="tanggal_lembur[]" class="form-control" required></td>
                             <td><input type="time" name="jam_mulai[]" class="form-control"></td>
                             <td><input type="time" name="jam_selesai[]" class="form-control"></td>
-                            <td><input type="text" name="durasi_lembur[]" class="form-control" placeholder="Durasi jam">
+                            <td>
+                                <input type="number" name="durasi_lembur[]" class="form-control" placeholder="Durasi (jam)"
+                                    min="0" step="0.1" required>
+                            </td>
                             </td>
                             <td>
                                 <textarea name="keterangan_lembur[]" class="form-control" placeholder="Isi pekerjaan"></textarea>
@@ -106,8 +109,12 @@
             <td><input type="date" name="tanggal_lembur[]" class="form-control" required></td>
             <td><input type="time" name="jam_mulai[]" class="form-control"></td>
             <td><input type="time" name="jam_selesai[]" class="form-control"></td>
-            <td><input type="text" name="durasi_lembur[]" class="form-control" placeholder="Durasi jam"></td>
-            <td><textarea name="keterangan_lembur[]" class="form-control" placeholder="Isi pekerjaan"></textarea></td>
+            <td>
+                <input type="number" name="durasi_lembur[]" 
+                    class="form-control" 
+                    placeholder="Durasi (jam)" 
+                    min="0" step="0.1" required>
+            </td>            <td><textarea name="keterangan_lembur[]" class="form-control" placeholder="Isi pekerjaan"></textarea></td>
             <td>
                 <select name="makan_lembur[]" class="form-control">
                     <option value="tidak">tidak</option>

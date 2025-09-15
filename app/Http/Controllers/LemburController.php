@@ -66,7 +66,7 @@ class LemburController extends Controller
             'tanggal_lembur.*' => 'required|date',
             'jam_mulai.*' => 'nullable|date_format:H:i',
             'jam_selesai.*' => 'nullable|date_format:H:i',
-            'durasi_lembur.*' => 'nullable|string',
+            'durasi_lembur.*' => 'nullable|numeric',
             'keterangan_lembur.*' => 'nullable|string',
             'makan_lembur.*' => 'nullable|string',
         ]);
@@ -88,7 +88,7 @@ class LemburController extends Controller
                 'division' => $division,
                 'tanggal_lembur' => $tanggal[$index] ?? null,
                 'waktu_lembur' => ($jam_mulai[$index] ?? '') . ' - ' . ($jam_selesai[$index] ?? ''),
-                'durasi_lembur' => $durasi[$index] ?? null,
+                'durasi_lembur' => isset($durasi[$index]) ? (float) $durasi[$index] : null,
                 'keterangan_lembur' => $keterangan[$index] ?? null,
                 'makan_lembur' => $makan[$index] ?? null,
             ]);
@@ -125,7 +125,7 @@ class LemburController extends Controller
         $lembur->update([
             'tanggal_lembur' => $request->tanggal_lembur,
             'waktu_lembur' => $request->jam_mulai . ' - ' . $request->jam_selesai,
-            'durasi_lembur' => $request->durasi_lembur,
+            'durasi_lembur' => $request->durasi_lembur !== null ? (float) $request->durasi_lembur : null,
             'keterangan_lembur' => $request->keterangan_lembur,
             'makan_lembur' => $request->makan_lembur,
         ]);
@@ -191,10 +191,16 @@ class LemburController extends Controller
         $drawing2 = new Drawing();
         $drawing2->setName('Logo2');
         $drawing2->setPath(public_path('images/LOGO5.png'));
-        $drawing2->setCoordinates('H1');
+        $drawing2->setCoordinates('K1'); // taruh di kolom K
         $drawing2->setHeight(55);
+        // kasih offset biar mepet kanan
+        $drawing2->setOffsetX(-85); // bisa atur ±10, ±20 sesuai rapihnya
         $drawing2->setWorksheet($sheet);
-        $sheet->mergeCells('H1:K1');
+
+        $sheet->mergeCells('H1:K1'); // merge tetap bisa, gambar posisinya manual
+
+        // Atur tinggi baris 1 supaya logo lebih pas
+        $sheet->getRowDimension(1)->setRowHeight(20);
 
         // ========== JUDUL ==========
         $sheet->mergeCells('A4:K4');
@@ -323,12 +329,37 @@ class LemburController extends Controller
             $sheet->setCellValue("C{$row}", $item->employee->division->nama ?? '');
             $sheet->setCellValue("E{$row}", Carbon::parse($item->tanggal_lembur)->format('d-m-Y'));
             $sheet->setCellValue("F{$row}", $item->waktu_lembur ?? '');
-            $sheet->setCellValue("G{$row}", $item->durasi_lembur ?? '');
+            $sheet->setCellValueExplicit("G{$row}", (float) $item->durasi_lembur, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             $sheet->setCellValue("H{$row}", $item->keterangan_lembur ?? '');
             $sheet->setCellValue("I{$row}", $item->makan_lembur ?? '');
             $sheet->setCellValue("J{$row}", $item->approval_lembur ?? '');
         }
 
+        // ========== ATUR LEBAR ROW DATA (14-37) ==========
+        for ($row = 14; $row <= 37; $row++) {
+            // Tinggi baris dibuat 1.5x (misal default 15 → jadi 22)
+            $sheet->getRowDimension($row)->setRowHeight(27);
+
+            // Kolom B (Nama) rata kiri, vertical middle
+            $sheet->getStyle("B{$row}")
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT)
+                ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER)
+                ->setWrapText(true);
+
+            // Kolom selain B rata tengah, vertical middle
+            $sheet->getStyle("A{$row}:A{$row}")
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER)
+                ->setWrapText(true);
+
+            $sheet->getStyle("C{$row}:K{$row}")
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER)
+                ->setWrapText(true);
+        }
         // ========== MERGE KOLOM C-D & J-K SAMPAI BARIS 37 ==========
         for ($row = $startRow; $row <= $endRow; $row++) {
             $sheet->mergeCells("C{$row}:D{$row}");
@@ -340,10 +371,8 @@ class LemburController extends Controller
 
         // Hitung total jam lembur dari data yang difilter
         $totalJam = $lemburs->sum(function ($item) {
-            // Pastikan durasi_lembur adalah angka
-            return is_numeric($item->durasi_lembur) ? $item->durasi_lembur : 0;
+            return is_numeric($item->durasi_lembur) ? (float) $item->durasi_lembur : 0;
         });
-
         // ========== TOTAL JAM ==========
         // Merge sel A38:F38 untuk tulisan
         $sheet->mergeCells('A38:F38')->setCellValue('A38', 'TOTAL JAM');
