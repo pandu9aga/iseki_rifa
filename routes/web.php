@@ -72,6 +72,9 @@ Route::get('/lembur/create', [LemburController::class, 'create'])->name('lemburs
 Route::post('/lembur', [LemburController::class, 'store'])->name('lemburs.store');  // Simpan
 Route::delete('/lembur/{id}', [LemburController::class, 'destroy'])->name('lemburs.destroy');  // Hapus
 Route::put('/lembur/{id}', [LemburController::class, 'update'])->name('lemburs.update');  // Edit
+Route::get('/export-lembur', [LemburController::class, 'exportLembur'])->name('export.lembur');
+
+
 // Route::resource('lemburs', LemburController::class)->only([
 //     'index', 'store', 'edit', 'update', 'destroy'
 // ]);

@@ -10,7 +10,8 @@
                 <label class="block mb-2 font-semibold">Karyawan</label>
                 <select id="edit-employee_id" class="form-control select2" disabled>
                     @foreach ($employees as $emp)
-                        <option value="{{ $emp->id }}">{{ $emp->nama }} - {{ $emp->division->nama ?? '-' }}</option>
+                        <option value="{{ $emp->id }}">{{ $emp->nama }} - {{ $emp->division->nama ?? '-' }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -50,7 +51,7 @@
             </div>
 
             <div class="button-group">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('editLemburModal')">Batal</button>
+                <a href="{{ route('lemburs.index') }}" class="btn btn-secondary mt-2">Batal</a>
                 <button type="submit" class="btn btn-primary">Simpan</button>
             </div>
         </form>
