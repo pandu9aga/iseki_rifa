@@ -101,9 +101,18 @@ class LemburController extends Controller
     {
         $lembur = Lembur::findOrFail($id);
         $employees = Employee::with('division')->get();
-        // Split waktu_lembur menjadi jam_mulai dan jam_selesai
-        [$jam_mulai, $jam_selesai] = explode(' - ', $lembur->waktu_lembur . ' - ');
-        return view('lemburs.edit', compact('lembur', 'employees', 'jam_mulai', 'jam_selesai'));
+
+        // Split waktu_lembur jadi jam_mulai dan jam_selesai
+        if ($lembur->waktu_lembur) {
+            [$jam_mulai, $jam_selesai] = explode(' - ', $lembur->waktu_lembur);
+        } else {
+            $jam_mulai = '';
+            $jam_selesai = '';
+        }
+
+        // Cek kalau view yang dipakai popup atau halaman biasa
+        // Kalau popup, kita bisa render view component
+        return view('components.popupEditLembur', compact('lembur', 'employees', 'jam_mulai', 'jam_selesai'));
     }
 
     public function update(Request $request, $id)
