@@ -34,7 +34,7 @@
 
             <div class="form-control">
                 <label class="block mb-2 font-semibold">Durasi (Jam)</label>
-                <input type="number" id="edit-durasi_lembur" class="form-control w-full mb-3" step="0.1">
+                <input type="number" id="edit-durasi_lembur" class="form-control w-full mb-3" step="0.01">
             </div>
 
             <div class="form-control">

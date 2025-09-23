@@ -23,6 +23,11 @@ class Employee extends Model
     {
         return $this->hasMany(Absensi::class);
     }
+    
+    public function lemburs()
+    {
+        return $this->hasMany(Lembur::class, 'employee_id', 'id');
+    }
 
     // public function getActivitylogOptions(): LogOptions
     // {

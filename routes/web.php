@@ -8,6 +8,8 @@ use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\DateController;
 use App\Http\Controllers\ReplacementController;
 use App\Http\Controllers\LemburController;
+use App\Http\Controllers\LaporanLemburController;
+
 use App\Models\Lembur;
 use Illuminate\Support\Facades\Route;
 
@@ -75,8 +77,13 @@ Route::put('/lembur/{id}', [LemburController::class, 'update'])->name('lemburs.u
 Route::get('/export-lembur', [LemburController::class, 'exportLembur'])->name('export.lembur');
 
 
-// Route::resource('lemburs', LemburController::class)->only([
-//     'index', 'store', 'edit', 'update', 'destroy'
+Route::prefix('laporan')->name('laporan.')->group(function () {
+    Route::get('/lembur', [LaporanLemburController::class, 'index'])
+        ->name('lembur.index');
+
+    Route::get('/lembur/export', [LaporanLemburController::class, 'export'])
+        ->name('lembur.export');
+}); //     'index', 'store', 'edit', 'update', 'destroy'
 // ]);
 
 Route::post('/replacements/store', [ReplacementController::class, 'store'])->name('replacements.store');

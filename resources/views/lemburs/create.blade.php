@@ -44,7 +44,7 @@
                             <td><input type="time" name="jam_selesai[]" class="form-control"></td>
                             <td>
                                 <input type="number" name="durasi_lembur[]" class="form-control" placeholder="Durasi (jam)"
-                                    min="0" step="0.1" required>
+                                    min="0" step="0.01" required>
                             </td>
                             </td>
                             <td>

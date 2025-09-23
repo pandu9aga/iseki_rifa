@@ -197,6 +197,12 @@
                         class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
                         <a href="{{ url('/') }}">Report</a>
                     </li>
+
+                    <li
+                        class="{{ request()->is('/') || request()->is('lembur') || request()->is('reporting/*') ? 'active' : '' }}">
+                        <a href="{{ url('lembur') }}">Lembur</a>
+                    </li>
+
                     <li class="{{ request()->is('employees') || request()->is('employees/*') ? 'active' : '' }}">
                         <a href="{{ url('/employees') }}">Pegawai</a>
                     </li>

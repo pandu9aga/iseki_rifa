@@ -31,7 +31,11 @@
                     <a href="#" class="btn btn-primary" id="export-lembur-btn">
                         <i class="fas fa-file-excel"></i> Export Lembur
                     </a>
+                    <a href="{{ route('laporan.lembur.index') }}" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> Laporan Lembur
+                    </a>
                 @enduserType
+
             </div>
 
             <!-- Kotak total durasi -->
