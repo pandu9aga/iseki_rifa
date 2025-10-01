@@ -62,7 +62,11 @@
                         <th>Durasi<br><input type="text" class="filter" data-column="5" placeholder="Durasi"></th>
                         <th>Pekerjaan<br><input type="text" class="filter" data-column="6" placeholder="Pekerjaan"></th>
                         <th>Makan<br><input type="text" class="filter" data-column="7" placeholder="Makan"></th>
-                        <th>Approval<br><input type="text" class="filter" data-column="8" placeholder="Approval"></th>
+                        <th>Status Persetujuan<br><input type="text" class="filter" data-column="8"
+                                placeholder="Approval"></th>
+                        @userType('admin')
+                            <th>Approval<br><input type="text" class="filter" data-column="8" placeholder="Approval"></th>
+                        @enduserType
                         <th class="sticky-col-right">Aksi</th>
                     </tr>
                 </thead>
@@ -77,7 +81,36 @@
                             <td>{{ $row->durasi_lembur }}</td>
                             <td>{{ $row->keterangan_lembur }}</td>
                             <td>{{ $row->makan_lembur }}</td>
-                            <td>{{ $row->approval_lembur }}</td>
+
+
+                            <!-- Status Persetujuan -->
+                            <td
+                                class="status text-center h-full text-sm {{ $row->approval_lembur === null ? 'bg-yellow' : ($row->approval_lembur ? 'bg-success' : 'bg-red') }}">
+                                {{ is_null($row->approval_lembur) ? 'Menunggu Persetujuan' : ($row->approval_lembur ? 'Disetujui' : 'Ditolak') }}
+                            </td>
+
+                            <!-- Approval -->
+                            @userType('admin')
+                                <td>
+                                    <form class="approval-form" data-id="{{ $row->id_lembur }}">
+                                        @csrf
+                                        @method('PUT')
+                                        @if (is_null($row->approval_lembur))
+                                            <div class="flex flex-col btn-group">
+                                                <button type="button" data-value="1"
+                                                    class="btn bg-success text-sm rounded approve-btn">Setujui</button>
+                                                <button type="button" data-value="0"
+                                                    class="btn bg-red text-sm rounded approve-btn">Tolak</button>
+                                            </div>
+                                        @else
+                                            <button type="button" data-value="null"
+                                                class="btn bg-yellow text-sm rounded approve-btn">Batalkan</button>
+                                        @endif
+                                    </form>
+                                </td>
+                            @enduserType
+
+                            <!-- Aksi -->
                             <td class="sticky-col-right">
                                 @userType('leader')
                                     <div class="btn-group">
@@ -311,5 +344,62 @@
             if (modal) modal.classList.replace('flex', 'hidden');
             window.location.href = "{{ route('lemburs.index') }}";
         }
+
+        // Approve / Reject / Cancel
+        document.querySelectorAll('.btn-approve').forEach(btn => {
+            btn.addEventListener('click', () => updateApproval(btn.dataset.id, 'Approved'));
+        });
+        document.querySelectorAll('.btn-reject').forEach(btn => {
+            btn.addEventListener('click', () => updateApproval(btn.dataset.id, 'Rejected'));
+        });
+        document.querySelectorAll('.btn-cancel').forEach(btn => {
+            btn.addEventListener('click', () => updateApproval(btn.dataset.id, 'Pending'));
+        });
     </script>
+
+    <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        function attachApprovalListeners(context = document) {
+            context.querySelectorAll('.approve-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const approval = this.dataset.value;
+                    const form = this.closest('.approval-form');
+                    const id = form.dataset.id;
+
+                    fetch(`/iseki_rifa/public/lembur/${id}/approve`, {
+                            method: 'PUT',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                approval: approval
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            const row = document.querySelector(`tr[data-id="${id}"]`);
+                            const statusCell = row.querySelector('.status');
+
+                            // Update kolom Status Persetujuan
+                            statusCell.textContent = data.status_label;
+                            statusCell.classList.remove('bg-yellow', 'bg-success', 'bg-red');
+                            statusCell.classList.add(data.status_class);
+
+                            // Update tombol Approval
+                            form.innerHTML = data.button_html;
+                            attachApprovalListeners(form); // attach ulang hanya di form ini
+
+                        })
+                        .catch(() => alert('Gagal memperbarui status'));
+                });
+            });
+        }
+
+        // Jalankan listener saat page load
+        document.addEventListener('DOMContentLoaded', () => attachApprovalListeners());
+    </script>
+
 @endsection

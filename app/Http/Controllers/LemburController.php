@@ -158,6 +158,49 @@ class LemburController extends Controller
         ]);
     }
 
+
+    public function approve(Request $request, $id)
+    {
+        $lembur = Lembur::findOrFail($id);
+        $approval = $request->approval;
+
+        if ($approval === '1') {
+            $lembur->approval_lembur = true;
+        } elseif ($approval === '0') {
+            $lembur->approval_lembur = false;
+        } else { // 'null' = batalkan
+            $lembur->approval_lembur = null;
+        }
+        $lembur->save();
+
+        // Tentukan label & class
+        if (is_null($lembur->approval_lembur)) {
+            $status_label = 'Menunggu Persetujuan';
+            $status_class = 'bg-yellow';
+            $button_html = '
+            <div class="flex flex-col btn-group">
+                <button type="button" data-value="1" class="approve-btn btn bg-success text-sm rounded">Setujui</button>
+                <button type="button" data-value="0" class="approve-btn btn bg-red text-sm rounded">Tolak</button>
+            </div>
+        ';
+        } elseif ($lembur->approval_lembur) {
+            $status_label = 'Disetujui';
+            $status_class = 'bg-success';
+            $button_html = '<button type="button" data-value="null" class="approve-btn btn bg-yellow text-sm rounded">Batalkan</button>';
+        } else {
+            $status_label = 'Ditolak';
+            $status_class = 'bg-red';
+            $button_html = '<button type="button" data-value="null" class="approve-btn btn bg-yellow text-sm rounded">Batalkan</button>';
+        }
+
+        return response()->json([
+            'status_label' => $status_label,
+            'status_class' => $status_class,
+            'button_html' => $button_html,
+        ]);
+    }
+
+
     public function exportLembur(Request $request)
     {
         $tanggal = $request->get('tanggal'); // filter perhari
@@ -341,7 +384,7 @@ class LemburController extends Controller
             $sheet->setCellValueExplicit("G{$row}", (float) $item->durasi_lembur, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             $sheet->setCellValue("H{$row}", $item->keterangan_lembur ?? '');
             $sheet->setCellValue("I{$row}", $item->makan_lembur ?? '');
-            $sheet->setCellValue("J{$row}", $item->approval_lembur ?? '');
+            $sheet->setCellValue("J{$row}", '');
         }
 
         // ========== ATUR LEBAR ROW DATA (14-37) ==========

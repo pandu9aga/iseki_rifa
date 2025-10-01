@@ -75,6 +75,7 @@ Route::post('/lembur', [LemburController::class, 'store'])->name('lemburs.store'
 Route::delete('/lembur/{id}', [LemburController::class, 'destroy'])->name('lemburs.destroy');  // Hapus
 Route::put('/lembur/{id}', [LemburController::class, 'update'])->name('lemburs.update');  // Edit
 Route::get('/export-lembur', [LemburController::class, 'exportLembur'])->name('export.lembur');
+Route::put('/lembur/{id}/approve', [LemburController::class, 'approve'])->name('lembur.approve');
 
 
 Route::prefix('laporan')->name('laporan.')->group(function () {
@@ -83,6 +84,7 @@ Route::prefix('laporan')->name('laporan.')->group(function () {
 
     Route::get('/lembur/export', [LaporanLemburController::class, 'export'])
         ->name('lembur.export');
+
 }); //     'index', 'store', 'edit', 'update', 'destroy'
 // ]);
 
