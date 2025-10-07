@@ -74,8 +74,8 @@
                     @foreach ($lemburs as $row)
                         <tr data-id="{{ $row->id_lembur }}">
                             <td class="sticky-col-left">{{ $loop->iteration }}</td>
-                            <td>{{ $row->employee->nama }}</td>
-                            <td>{{ $row->employee->division->nama }}</td>
+                            <td>{{ $row->employee->nama ?? '-' }}</td>
+                            <td>{{ $row->employee->division->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
                             <td>{{ $row->waktu_lembur }}</td>
                             <td>{{ $row->durasi_lembur }}</td>
