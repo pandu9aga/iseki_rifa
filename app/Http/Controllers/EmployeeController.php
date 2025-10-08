@@ -11,7 +11,7 @@ class EmployeeController extends Controller
 {
     public function read()
     {
-        $employees = Employee::with('division')->get();
+        $employees = Employee::with('division')->orderBy('nik')->get();
         $divisions = Division::withCount('employees')->orderBy('nama')->get();
 
         return view('employees.read', compact('employees', 'divisions'));
