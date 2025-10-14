@@ -33,7 +33,7 @@ class LemburController extends Controller
         $sampai  = $request->get('sampai');  // filter range sampai
 
         // Query dasar
-        $query = Lembur::with(['employee', 'employee.division']);
+        $query = Lembur::with(['employee', 'employee.division'])->whereHas('employee');
 
         // Filter kalau ada tanggal / range
         if ($tanggal) {
@@ -207,7 +207,7 @@ class LemburController extends Controller
         $dari    = $request->get('dari');    // filter range mulai
         $sampai  = $request->get('sampai');  // filter range sampai
 
-        $query = Lembur::with(['employee', 'employee.division']);
+        $query = Lembur::with(['employee', 'employee.division'])->whereHas('employee');
 
         if ($tanggal) {
             $query->whereDate('tanggal_lembur', $tanggal);

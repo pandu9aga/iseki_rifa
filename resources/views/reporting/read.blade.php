@@ -134,7 +134,7 @@
         </p>
 
         @csrf
-        <section class="container-table">
+        <section class="container-table table-scroll-wrapper">
             <table id="cuti-table">
                 <thead>
                     <tr>

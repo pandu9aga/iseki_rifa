@@ -46,7 +46,7 @@
         </section>
 
         <!-- Tabel -->
-        <section class="container-table">
+        <section class="container-table table-scroll-wrapper">
             <table class="table-auto w-full border border-gray-300 mt-4" id="lembur-table">
                 <thead>
                     <tr>
@@ -115,7 +115,8 @@
                                 @userType('leader')
                                     <div class="btn-group">
                                         <button type="button" class="btn btn-icon edit-btn" data-id="{{ $row->id_lembur }}"
-                                            data-employee="{{ $row->employee->id }}"
+                                            data-employee_name="{{ $row->employee->nama ?? '-' }}"
+                                            data-employee_id="{{ $row->employee->id }}"
                                             data-tanggal="{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('Y-m-d') }}"
                                             data-waktu="{{ $row->waktu_lembur }}" data-durasi="{{ $row->durasi_lembur }}"
                                             data-keterangan="{{ $row->keterangan_lembur }}"
@@ -282,6 +283,7 @@
             // Modal Edit
             function openEditModal(data) {
                 document.getElementById('edit-lembur-id').value = data.id;
+                document.getElementById('edit-employee_name').value = data.employee_name;
                 document.getElementById('edit-employee_id').value = data.employee_id;
                 document.getElementById('edit-tanggal_lembur').value = data.tanggal_lembur || '';
                 const [jamMulai, jamSelesai] = (data.waktu || ' - ').split(' - ');
@@ -289,8 +291,8 @@
                 document.getElementById('edit-jam_selesai').value = jamSelesai || '';
                 document.getElementById('edit-durasi_lembur').value = data.durasi_lembur || '';
                 document.getElementById('edit-keterangan_lembur').value = data.keterangan_lembur || '';
-                document.getElementById('edit-makan_lembur').value = (data.makan_lembur && data.makan_lembur
-                    .toLowerCase() === 'ya') ? 'Ya' : 'X';
+                let makan = (data.makan_lembur || '').toString().toLowerCase().trim();
+                document.getElementById('edit-makan_lembur').value = (makan === 'ya') ? 'ya' : 'tidak';
                 document.getElementById('editLemburModal').classList.replace('hidden', 'flex');
             }
 
@@ -298,7 +300,8 @@
                 btn.addEventListener('click', () => {
                     const data = {
                         id: btn.dataset.id,
-                        employee_id: btn.dataset.employee,
+                        employee_name: btn.dataset.employee_name,
+                        employee_id: btn.dataset.employee_id,
                         tanggal_lembur: btn.dataset.tanggal,
                         waktu: btn.dataset.waktu,
                         durasi_lembur: btn.dataset.durasi,
@@ -315,6 +318,7 @@
                 const id = document.getElementById('edit-lembur-id').value;
 
                 const data = {
+                    employee_name: document.getElementById('edit-employee_name').value,
                     employee_id: document.getElementById('edit-employee_id').value,
                     tanggal_lembur: document.getElementById('edit-tanggal_lembur').value,
                     jam_mulai: document.getElementById('edit-jam_mulai').value,
@@ -342,7 +346,7 @@
         function closeEditModal() {
             const modal = document.getElementById('editLemburModal');
             if (modal) modal.classList.replace('flex', 'hidden');
-            window.location.href = "{{ route('lemburs.index') }}";
+            // window.location.href = "{{ route('lemburs.index') }}";
         }
 
         // Approve / Reject / Cancel

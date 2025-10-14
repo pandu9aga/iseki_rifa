@@ -31,7 +31,7 @@
     </a>
 </section>
 
-        <section class="container-table">
+        <section class="container-table table-scroll-wrapper">
             <table class="table-auto w-full border border-gray-300 mt-4" id="laporan-table">
                 <thead>
                     <tr>

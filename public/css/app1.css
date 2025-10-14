@@ -360,7 +360,7 @@ input[type="password"] {
 thead {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 3;
 }
 
 .sticky-col-left {
@@ -972,3 +972,9 @@ button.bg-red:hover {
     }
 }
 
+.table-scroll-wrapper {
+    max-height: 70vh;
+    overflow: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}

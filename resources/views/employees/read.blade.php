@@ -29,7 +29,7 @@
     </section>
 
     @csrf
-    <section class="container-table">
+    <section class="container-table table-scroll-wrapper">
         <table id="employees-table">
             <thead>
                 <tr>

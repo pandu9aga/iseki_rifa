@@ -8,12 +8,14 @@
 
             <div class="form-control">
                 <label class="block mb-2 font-semibold">Karyawan</label>
-                <select id="edit-employee_id" class="form-control select2" disabled>
+                {{-- <select id="edit-employee_id" class="form-control select2" disabled>
                     @foreach ($employees as $emp)
                         <option value="{{ $emp->id }}">{{ $emp->nama }} - {{ $emp->division->nama ?? '-' }}
                         </option>
                     @endforeach
-                </select>
+                </select> --}}
+                <input type="text" id="edit-employee_name" class="form-control w-full mb-3" disabled>
+                <input type="hidden" id="edit-employee_id" class="form-control w-full mb-3" required>
             </div>
 
             <div class="form-control">
@@ -45,17 +47,17 @@
             <div class="form-control">
                 <label class="block mb-2 font-semibold">Makan</label>
                 <select id="edit-makan_lembur" class="form-control w-full mb-3">
-                    <option value="Ya">Ya</option>
-                    <option value="Tidak">Tidak</option>
+                    <option value="ya">ya</option>
+                    <option value="tidak">tidak</option>
                 </select>
             </div>
 
             <div class="button-group">
-                <a href="{{ route('lemburs.index') }}" class="btn btn-secondary mt-2">Batal</a>
+                <button type="button" onclick="closeEditModal('editLemburModal')" class="btn btn-secondary mt-2">Batal</button>
                 <button type="submit" class="btn btn-primary">Simpan</button>
             </div>
         </form>
         <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-            onclick="closeModal('editLemburModal')">&times;</button>
+            onclick="closeEditModal('editLemburModal')">&times;</button>
     </div>
 </div>
