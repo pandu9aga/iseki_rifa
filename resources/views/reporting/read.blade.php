@@ -143,14 +143,14 @@
                         <th>Jenis Izin</th>
                         <th>Tanggal</th>
                         <th>Keterangan</th>
-                        <th rowspan="2">Pengganti</th>
-                        <th>Status Persetujuan</th>
                         @userType('admin')
                             <th rowspan="2">Approvement</th>
                         @enduserType
+                        <th>Status Persetujuan</th>
+                        <th rowspan="2">Pengganti</th>
+                        <th>Tim</th>
                         <th>Status</th>
                         <th>Divisi</th>
-                        <th>Tim</th>
                         <th rowspan="2" class="sticky-col-right">Aksi</th>
                     </tr>
                     <tr>
@@ -190,6 +190,7 @@
                                 <option value="Ditolak">Ditolak</option>
                             </select>
                         </th>
+                        <th><input class="filter" id="filter-team" type="text" placeholder="Cari Tim" /></th>
                         <th>
                             <select name="status" class="select2 filter" data-placeholder="Pilih status"
                                 data-allow-clear="true" style="width: 100%" id="filter-status">
@@ -207,7 +208,6 @@
                                 @endforeach
                             </select>
                         </th>
-                        <th><input class="filter" id="filter-team" type="text" placeholder="Cari Tim" /></th>
                     </tr>
                 </thead>
 
@@ -220,17 +220,6 @@
                             <td>{{ $absen->kategori_label }}</td>
                             <td>{{ $absen->tanggal->format('d/m/Y') }}</td>
                             <td>{!! $absen->keterangan ? nl2br(e($absen->keterangan)) : '-' !!}</td>
-                            <td>
-                                <div style="display: inline-flex; align-items: center; gap: 5px;">
-                                    <span>{{ \App\Models\Replacement::where('absensi_id', $absen->id)->count() }} ; </span>
-                                    <button type="button" class="btn btn-icon btn-view-replacement"
-                                        data-id="{{ $absen->id }}">
-                                        <i class="material-symbols-rounded delete-row btn-primary">
-                                            visibility
-                                        </i>
-                                    </button>
-                                </div>
-                            </td>
                             @php
                                 if (is_null($absen->is_approved)) {
                                     $status = 'Menunggu Persetujuan';
@@ -244,11 +233,6 @@
                                 }
                             @endphp
 
-                            <td class="status text-center h-full text-sm {{ $stylingClass }}">
-                                <span>
-                                    {{ $status }}
-                                </span>
-                            </td>
                             @userType('admin')
                                 <td>
                                     <form class="approval-form" data-id="{{ $absen->id }}">
@@ -269,9 +253,26 @@
 
                                 </td>
                             @enduserType
+
+                            <td class="status text-center h-full text-sm {{ $stylingClass }}">
+                                <span>
+                                    {{ $status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: inline-flex; align-items: center; gap: 5px;">
+                                    <span>{{ \App\Models\Replacement::where('absensi_id', $absen->id)->count() }} ; </span>
+                                    <button type="button" class="btn btn-icon btn-view-replacement"
+                                        data-id="{{ $absen->id }}">
+                                        <i class="material-symbols-rounded delete-row btn-primary">
+                                            visibility
+                                        </i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>{{ $absen->employee->team ?? '-' }}</td>
                             <td>{{ $absen->employee->status ?? '-' }}</td>
                             <td>{{ $absen->employee->division->nama ?? '-' }}</td>
-                            <td>{{ $absen->employee->team ?? '-' }}</td>
                             <td class="sticky-col-right">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-icon edit-row">

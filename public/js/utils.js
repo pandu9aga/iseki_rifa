@@ -20,11 +20,10 @@ function filterCutiTable() {
         const jenisCuti = row.cells[2].textContent.toLowerCase();
         const tanggal = formatTanggalKeYMD(row.cells[3].textContent.toLowerCase());
         const keterangan = row.cells[4].textContent.toLowerCase();
-        // const pengganti = row.cells[5].textContent.toLowerCase();
         const approval_status = row.cells[6].textContent.toLowerCase();
-        const status = row.cells[isWithAuth ? 8 : 7].textContent.toLowerCase();
-        const divisi = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase();
-        const team = row.cells[isWithAuth ? 10 : 9].textContent.toLowerCase();
+        const team = row.cells[isWithAuth ? 8 : 7].textContent.toLowerCase();
+        const status = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase();
+        const divisi = row.cells[isWithAuth ? 10 : 9].textContent.toLowerCase();
 
         if (
             nama.includes(filterNama) &&

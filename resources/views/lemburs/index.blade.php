@@ -51,21 +51,29 @@
                 <thead>
                     <tr>
                         <th class="sticky-col-left">No</th>
-                        <th>Nama<br><input type="text" class="filter" data-column="1" placeholder="Cari Nama"></th>
+                        <th class="sticky-col-left">Nama<br><input type="text" class="filter" data-column="1" placeholder="Cari Nama"></th>
                         <th>Divisi<br><input type="text" class="filter" data-column="2" placeholder="Cari Divisi"></th>
                         <th>
                             Tanggal<br>
                             <input id="customDate" name="customDate" type="date" class="filter" data-column="3">
                             <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
                         </th>
-                        <th>Jam<br><input type="text" class="filter" data-column="4" placeholder="Jam"></th>
-                        <th>Durasi<br><input type="text" class="filter" data-column="5" placeholder="Durasi"></th>
-                        <th>Pekerjaan<br><input type="text" class="filter" data-column="6" placeholder="Pekerjaan"></th>
-                        <th>Makan<br><input type="text" class="filter" data-column="7" placeholder="Makan"></th>
-                        <th>Status Persetujuan<br><input type="text" class="filter" data-column="8"
-                                placeholder="Approval"></th>
+                        @userType('leader')
+                            <th>Status Persetujuan<br><input type="text" class="filter" data-column="4"
+                                    placeholder="Approval"></th>
+                            <th>Jam<br><input type="text" class="filter" data-column="5" placeholder="Jam"></th>
+                            <th>Durasi<br><input type="text" class="filter" data-column="6" placeholder="Durasi"></th>
+                            <th>Pekerjaan<br><input type="text" class="filter" data-column="7" placeholder="Pekerjaan"></th>
+                            <th>Makan<br><input type="text" class="filter" data-column="8" placeholder="Makan"></th>
+                        @enduserType
                         @userType('admin')
-                            <th>Approval<br><input type="text" class="filter" data-column="8" placeholder="Approval"></th>
+                            <th>Approval</th>
+                            <th>Status Persetujuan<br><input type="text" class="filter" data-column="5"
+                                placeholder="Approval"></th>
+                            <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
+                            <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
+                            <th>Pekerjaan<br><input type="text" class="filter" data-column="8" placeholder="Pekerjaan"></th>
+                            <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
                         @enduserType
                         <th class="sticky-col-right">Aksi</th>
                     </tr>
@@ -74,21 +82,9 @@
                     @foreach ($lemburs as $row)
                         <tr data-id="{{ $row->id_lembur }}">
                             <td class="sticky-col-left">{{ $loop->iteration }}</td>
-                            <td>{{ $row->employee->nama ?? '-' }}</td>
+                            <td class="sticky-col-left">{{ $row->employee->nama ?? '-' }}</td>
                             <td>{{ $row->employee->division->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
-                            <td>{{ $row->waktu_lembur }}</td>
-                            <td>{{ $row->durasi_lembur }}</td>
-                            <td>{{ $row->keterangan_lembur }}</td>
-                            <td>{{ $row->makan_lembur }}</td>
-
-
-                            <!-- Status Persetujuan -->
-                            <td
-                                class="status text-center h-full text-sm {{ $row->approval_lembur === null ? 'bg-yellow' : ($row->approval_lembur ? 'bg-success' : 'bg-red') }}">
-                                {{ is_null($row->approval_lembur) ? 'Menunggu Persetujuan' : ($row->approval_lembur ? 'Disetujui' : 'Ditolak') }}
-                            </td>
-
                             <!-- Approval -->
                             @userType('admin')
                                 <td>
@@ -109,6 +105,15 @@
                                     </form>
                                 </td>
                             @enduserType
+                            <!-- Status Persetujuan -->
+                            <td
+                                class="status text-center h-full text-sm {{ $row->approval_lembur === null ? 'bg-yellow' : ($row->approval_lembur ? 'bg-success' : 'bg-red') }}">
+                                {{ is_null($row->approval_lembur) ? 'Menunggu Persetujuan' : ($row->approval_lembur ? 'Disetujui' : 'Ditolak') }}
+                            </td>
+                            <td>{{ $row->waktu_lembur }}</td>
+                            <td>{{ $row->durasi_lembur }}</td>
+                            <td>{{ $row->keterangan_lembur }}</td>
+                            <td>{{ $row->makan_lembur }}</td>
 
                             <!-- Aksi -->
                             <td class="sticky-col-right">
