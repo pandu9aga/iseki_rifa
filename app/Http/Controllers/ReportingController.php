@@ -180,7 +180,7 @@ class ReportingController extends Controller
 
     public function create()
     {
-        $employees = Employee::orderBy('nama')->get();
+        $employees = Employee::orderBy('nama')->whereNull('deleted_at')->get();
         return view('reporting.create', compact('employees'));
     }
 
@@ -431,7 +431,21 @@ class ReportingController extends Controller
 
         $sheet->setTitle($monthName . '_' . $year);
 
-        $employees = Employee::with('division')->get();
+        $employees = Employee::with('division')
+            ->where(function ($query) use ($year, $month) {
+                $query->whereNull('deleted_at')
+                    ->orWhereYear('deleted_at', '<', $year)
+                    ->orWhere(function ($q) use ($year, $month) {
+                        $q->whereYear('deleted_at', $year)
+                            ->whereMonth('deleted_at', '<', $month);
+                    })
+                    ->orWhere(function ($q) use ($year, $month) {
+                        $q->whereYear('deleted_at', $year)
+                            ->whereMonth('deleted_at', $month);
+                    });
+            })
+            ->get();
+
         $absensisMonth = Absensi::whereYear('tanggal', $year)
             ->whereMonth('tanggal', $month)
             ->get();
@@ -574,54 +588,66 @@ class ReportingController extends Controller
             $sheet->setCellValue("D{$row}", $emp->division->nama ?? '');
             $sheet->setCellValue("E{$row}", $emp->team ?? '');
 
+            $deletedDay = null;
+            if ($emp->deleted_at) {
+                $deletedAt = Carbon::parse($emp->deleted_at);
+                if ($deletedAt->year == $year && $deletedAt->month == $month) {
+                    $deletedDay = $deletedAt->day;
+                }
+            }
+
             for ($day = 1; $day <= $daysInMonth; $day++) {
                 $colIndex = $startTanggalColIndex + $day - 1;
                 $col = Coordinate::stringFromColumnIndex($colIndex);
-                $val = $absensiLookupMonth[$emp->id][$day] ?? '';
                 $date = Carbon::create($year, $month, $day);
 
-                // CS untuk CSP & CSS
-                // $displayVal = in_array($val, ['CSP', 'CSS']) ? 'CS' : $val;
-                $displayVal = match ($val) {
-                    'CSP', 'CSS' => 'CS',
-                    'ASP', 'ASS' => 'AS',
-                    default     => $val,
-                };
-
-                $sheet->setCellValue("{$col}{$row}", $displayVal);
-
-                if (
-                    in_array($displayVal, $kategoriList) &&
-                    ($approvedLookup[$emp->id][$day] ?? false)
-                ) {
-                    $sheet->getStyle("{$col}{$row}")->applyFromArray($highlightStyle);
-                }
-
-                // Di dalam foreach tanggal
-                $isWeekend = $date->isWeekend();
-                $special = $specialDates[$date->format('Y-m-d')] ?? null;
-
-                $shouldHighlight = false;
-
-                if ($isWeekend) {
-                    // Hanya highlight weekend kalau BUKAN libur masuk
-                    $shouldHighlight = !($special && $special->jenis_tanggal === 'libur masuk');
+                if ($deletedDay && $day >= $deletedDay) {
+                    $sheet->setCellValue("{$col}{$row}", '-');
                 } else {
-                    // Hanya highlight weekday kalau ADA jenis libur resmi
-                    if ($special && in_array($special->jenis_tanggal, ['libur nasional', 'cuti perusahaan', 'libur pengganti'])) {
-                        $shouldHighlight = true;
+                    $val = $absensiLookupMonth[$emp->id][$day] ?? '';
+                    // CS untuk CSP & CSS
+                    // $displayVal = in_array($val, ['CSP', 'CSS']) ? 'CS' : $val;
+                    $displayVal = match ($val) {
+                        'CSP', 'CSS' => 'CS',
+                        'ASP', 'ASS' => 'AS',
+                        default     => $val,
+                    };
+
+                    $sheet->setCellValue("{$col}{$row}", $displayVal);
+
+                    if (
+                        in_array($displayVal, $kategoriList) &&
+                        ($approvedLookup[$emp->id][$day] ?? false)
+                    ) {
+                        $sheet->getStyle("{$col}{$row}")->applyFromArray($highlightStyle);
                     }
-                }
 
-                $cell = "{$col}{$row}";
+                    // Di dalam foreach tanggal
+                    $isWeekend = $date->isWeekend();
+                    $special = $specialDates[$date->format('Y-m-d')] ?? null;
 
-                if ($shouldHighlight) {
-                    $sheet->getStyle($cell)->applyFromArray([
-                        'fill' => [
-                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                            'color' => ['rgb' => 'BF8F00'],
-                        ],
-                    ]);
+                    $shouldHighlight = false;
+
+                    if ($isWeekend) {
+                        // Hanya highlight weekend kalau BUKAN libur masuk
+                        $shouldHighlight = !($special && $special->jenis_tanggal === 'libur masuk');
+                    } else {
+                        // Hanya highlight weekday kalau ADA jenis libur resmi
+                        if ($special && in_array($special->jenis_tanggal, ['libur nasional', 'cuti perusahaan', 'libur pengganti'])) {
+                            $shouldHighlight = true;
+                        }
+                    }
+
+                    $cell = "{$col}{$row}";
+
+                    if ($shouldHighlight) {
+                        $sheet->getStyle($cell)->applyFromArray([
+                            'fill' => [
+                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'color' => ['rgb' => 'BF8F00'],
+                            ],
+                        ]);
+                    }
                 }
             }
 

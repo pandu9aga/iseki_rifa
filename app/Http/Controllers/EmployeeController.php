@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Division;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
     public function read()
     {
-        $employees = Employee::with('division')->orderBy('nik')->get();
+        $employees = Employee::with('division')->whereNull('deleted_at')->orderBy('nik')->get();
         $divisions = Division::withCount('employees')->orderBy('nama')->get();
 
         return view('employees.read', compact('employees', 'divisions'));
@@ -113,11 +114,25 @@ class EmployeeController extends Controller
         $employee = Employee::find($id);
 
         if (!$employee) {
-            return response()->json(['error' => 'Data absensi tidak ditemukan.'], 404);
+            return response()->json(['error' => 'Data pegawai tidak ditemukan.'], 404);
         }
 
-        $employee->delete();
+        $employee->deleted_at = Carbon::now();
+        $employee->save();
 
-        return response()->json(['success' => 'Data absensi berhasil dihapus.']);
+        return response()->json(['success' => 'Data pegawai berhasil dihapus.']);
     }
+
+    // public function destroy($id)
+    // {
+    //     $employee = Employee::find($id);
+
+    //     if (!$employee) {
+    //         return response()->json(['error' => 'Data pegawai tidak ditemukan.'], 404);
+    //     }
+
+    //     $employee->delete();
+
+    //     return response()->json(['success' => 'Data pegawai berhasil dihapus.']);
+    // }
 }

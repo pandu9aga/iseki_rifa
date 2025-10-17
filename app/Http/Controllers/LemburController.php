@@ -54,7 +54,7 @@ class LemburController extends Controller
 
     public function create()
     {
-        $employees = Employee::with('division')->get();
+        $employees = Employee::with('division')->whereNull('deleted_at')->get();
         return view('lemburs.create', compact('employees'));
     }
 

@@ -12,7 +12,7 @@ class Employee extends Model
 {
     use HasFactory; //, LogsActivity;
 
-    protected $fillable = ['nama', 'nik', 'team', 'division_id', 'status'];
+    protected $fillable = ['nama', 'nik', 'team', 'division_id', 'status', 'deleted_at'];
 
     public function division()
     {

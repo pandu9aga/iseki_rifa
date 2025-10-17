@@ -16,6 +16,10 @@ class LaporanLemburController extends Controller
         $tahun = $request->get('tahun', now()->year); // default tahun ini
 
         $employees = Employee::with('division')
+            ->where(function ($query) use ($tahun) {
+                $query->whereNull('deleted_at')
+                    ->orWhereYear('deleted_at', '<=', $tahun); // Tampil jika dihapus <= tahun yg dicari
+            })
             ->withSum(['lemburs as total_lembur' => function ($query) use ($tahun) {
                 $query->whereYear('tanggal_lembur', $tahun);
             }], 'durasi_lembur')
@@ -34,6 +38,10 @@ class LaporanLemburController extends Controller
         $tahun = $request->get('tahun', now()->year);
 
         $employees = Employee::with('division')
+            ->where(function ($query) use ($tahun) {
+                $query->whereNull('deleted_at')
+                    ->orWhereYear('deleted_at', '<=', $tahun); // Tampil jika dihapus <= tahun yg dicari
+            })
             ->withSum(['lemburs as total_lembur' => function ($query) use ($tahun) {
                 $query->whereYear('tanggal_lembur', $tahun);
             }], 'durasi_lembur')
