@@ -3,9 +3,8 @@ function filterCutiTable() {
     const filterJenis = document.getElementById('filter-jenis').value.toLowerCase();
     const filterTanggal = formatTanggalKeYMD(document.getElementById('filter-tanggal').value.toLowerCase());
     const filterKeterangan = document.getElementById('filter-keterangan').value.toLowerCase();
-    // const filterPengganti = document.getElementById('filter-pengganti').value.toLowerCase();
     const filterApprovalStatus = document.getElementById('filter-approval-status').value.toLowerCase();
-    const filterStatus = document.getElementById('filter-status').value.toLowerCase();
+    const filterStatus = document.getElementById('filter-status').value.toLowerCase(); // "direct" atau "non direct"
     const filterDivisi = document.getElementById('filter-divisi').value.toLowerCase();
     const filterTeam = document.getElementById('filter-team').value.toLowerCase();
 
@@ -14,7 +13,7 @@ function filterCutiTable() {
 
     rows.forEach(row => {
         if (row.id === 'no-data-row') return;
-        const isWithAuth = row.cells.length === 12;
+        const isWithAuth = row.cells.length === 12; // admin punya 12 kolom, leader 11
 
         const nama = row.cells[1].textContent.toLowerCase();
         const jenisCuti = row.cells[2].textContent.toLowerCase();
@@ -22,19 +21,33 @@ function filterCutiTable() {
         const keterangan = row.cells[4].textContent.toLowerCase();
         const approval_status = row.cells[6].textContent.toLowerCase();
         const team = row.cells[isWithAuth ? 8 : 7].textContent.toLowerCase();
-        const status = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase();
+        const status = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase().trim(); // <-- tambahkan .trim()
         const divisi = row.cells[isWithAuth ? 10 : 9].textContent.toLowerCase();
 
+        // Filter partial untuk teks bebas
+        const matchNama = nama.includes(filterNama);
+        const matchJenis = jenisCuti.includes(filterJenis);
+        const matchTanggal = tanggal.includes(filterTanggal);
+        const matchKeterangan = keterangan.includes(filterKeterangan);
+        const matchApproval = approval_status.includes(filterApprovalStatus);
+        const matchDivisi = divisi.includes(filterDivisi);
+        const matchTeam = team.includes(filterTeam);
+
+        // Filter EXACT untuk status (Direct / Non Direct)
+        let matchStatus = true;
+        if (filterStatus) {
+            matchStatus = (status === filterStatus);
+        }
+
         if (
-            nama.includes(filterNama) &&
-            jenisCuti.includes(filterJenis) &&
-            tanggal.includes(filterTanggal) &&
-            keterangan.includes(filterKeterangan) &&
-            // pengganti.includes(filterPengganti) &&
-            approval_status.includes(filterApprovalStatus) &&
-            status.includes(filterStatus) &&
-            divisi.includes(filterDivisi) &&
-            team.includes(filterTeam)
+            matchNama &&
+            matchJenis &&
+            matchTanggal &&
+            matchKeterangan &&
+            matchApproval &&
+            matchStatus &&
+            matchDivisi &&
+            matchTeam
         ) {
             row.style.display = '';
             visibleCount++;
@@ -43,7 +56,7 @@ function filterCutiTable() {
         }
     });
 
-    // Update nomor urut setelah filter
+    // Update nomor urut
     let nomor = 1;
     rows.forEach(row => {
         if (row.style.display !== 'none' && row.id !== 'no-data-row') {
@@ -58,7 +71,7 @@ function filterCutiTable() {
 function filterEmployeeTable() {
     const filterNama = document.getElementById('filter-nama').value.toLowerCase();
     const filterNik = document.getElementById('filter-nik').value.toLowerCase();
-    const filterStatus = document.getElementById('filter-status').value.toLowerCase();
+    const filterStatus = document.getElementById('filter-status').value.toLowerCase(); // bisa "" atau "direct" / "non direct"
     const filterDivisi = document.getElementById('filter-divisi').value.toLowerCase();
     const filterTeam = document.getElementById('filter-team').value.toLowerCase();
 
@@ -70,17 +83,23 @@ function filterEmployeeTable() {
 
         const nama = row.cells[1].textContent.toLowerCase();
         const nik = row.cells[2].textContent.toLowerCase();
-        const status = row.cells[3].textContent.toLowerCase();
+        const status = row.cells[3].textContent.toLowerCase().trim(); // "direct" atau "non direct"
         const divisi = row.cells[4].textContent.toLowerCase();
         const team = row.cells[5].textContent.toLowerCase();
 
-        if (
-            nama.includes(filterNama) &&
-            nik.includes(filterNik) &&
-            status.includes(filterStatus) &&
-            divisi.includes(filterDivisi) &&
-            team.includes(filterTeam)
-        ) {
+        // Cek filter nama, nik, divisi, team → tetap pakai includes (boleh partial)
+        const matchNama = nama.includes(filterNama);
+        const matchNik = nik.includes(filterNik);
+        const matchDivisi = divisi.includes(filterDivisi);
+        const matchTeam = team.includes(filterTeam);
+
+        // Cek status → harus EXACT MATCH jika filterStatus tidak kosong
+        let matchStatus = true;
+        if (filterStatus) {
+            matchStatus = (status === filterStatus);
+        }
+
+        if (matchNama && matchNik && matchStatus && matchDivisi && matchTeam) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -88,7 +107,7 @@ function filterEmployeeTable() {
         }
     });
 
-    // Update nomor urut setelah filter
+    // Update nomor urut
     let nomor = 1;
     rows.forEach(row => {
         if (row.style.display !== 'none' && row.id !== 'no-data-row') {
