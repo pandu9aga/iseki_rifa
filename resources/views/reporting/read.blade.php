@@ -122,6 +122,37 @@
                         </form>
                     </div>
                 @enduserType
+                @userType('super')
+                    <input type="date" id="dailyReportInput" class="form-control" value="{{ now()->format('Y-m-d') }}" />
+                    <button class="btn btn-secondary" id="dailyReportBtn">
+                        Laporan Harian
+                        <i class="material-symbols-rounded">
+                            assignment
+                        </i>
+                    </button>
+                    <div class="relative">
+                        <button class="btn w-fit btn-export text-white" id="toggle-dropdown">
+                            Unduh Laporan
+                            <span class="material-symbols-rounded">
+                                stat_minus_1
+                            </span>
+                        </button>
+
+                        <form id="dropdown-form" method="GET" action="{{ url('/reporting/export') }}"
+                            class="absolute right-0 mt-2 p-4 bg-white rounded-md items-end shadow-sm hidden w-fit z-10 border border-black">
+                            <label for="bulan" class="text-sm font-medium w-full flex gap-sm-1">Pilih Bulan</label>
+                            <input type="month" name="bulan" id="dropdown-bulan"
+                                value="{{ request('bulan', now()->format('Y-m')) }}"
+                                class="border rounded px-2 py-1 block w-fit text-sm" required>
+                            <button type="submit" class="btn w-fit btn-primary">
+                                Unduh
+                                <i class="material-symbols-rounded">
+                                    download
+                                </i>
+                            </button>
+                        </form>
+                    </div>
+                @enduserType
             </section>
         </section>
 
@@ -143,7 +174,7 @@
                         <th>Jenis Izin</th>
                         <th>Tanggal</th>
                         <th>Keterangan</th>
-                        @userType('admin')
+                        @userType('super')
                             <th rowspan="2">Approvement</th>
                         @enduserType
                         <th>Status Persetujuan</th>
@@ -233,7 +264,7 @@
                                 }
                             @endphp
 
-                            @userType('admin')
+                            @userType('super')
                                 <td>
                                     <form class="approval-form" data-id="{{ $absen->id }}">
                                         @csrf
@@ -296,6 +327,9 @@
                             <td colspan="10" class="text-gray-500 py-4">Data tidak ditemukan</td>
                         @enduserType
                         @userType('admin')
+                            <td colspan="10" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                        @enduserType
+                        @userType('super')
                             <td colspan="11" class="text-gray-500 py-4">Data tidak ditemukan</td>
                         @enduserType
                     </tr>

@@ -11,6 +11,7 @@
                     <option></option>
                     <option value="admin">Admin</option>
                     <option value="leader">Leader</option>
+                    <option value="super">Super</option>
                 </select>
             </div>
 

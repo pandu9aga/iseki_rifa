@@ -34,6 +34,7 @@
                                 <option></option>
                                 <option value="leader">leader</option>
                                 <option value="admin">admin</option>
+                                <option value="super">super</option>
                             </select>
                         </td>
                         <td>
@@ -203,6 +204,7 @@
                     <option></option>
                     <option value="leader">leader</option>
                     <option value="admin">admin</option>
+                    <option value="super">super</option>
                 </select>
             </td>
             <td>

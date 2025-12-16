@@ -35,6 +35,14 @@
                         <i class="fas fa-chart-line"></i> Laporan Lembur
                     </a>
                 @enduserType
+                @userType('super')
+                    <a href="#" class="btn btn-primary" id="export-lembur-btn">
+                        <i class="fas fa-file-excel"></i> Export Lembur
+                    </a>
+                    <a href="{{ route('laporan.lembur.index') }}" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> Laporan Lembur
+                    </a>
+                @enduserType
 
             </div>
 
@@ -67,6 +75,14 @@
                             <th>Makan<br><input type="text" class="filter" data-column="8" placeholder="Makan"></th>
                         @enduserType
                         @userType('admin')
+                            <th>Status Persetujuan<br><input type="text" class="filter" data-column="4"
+                                    placeholder="Approval"></th>
+                            <th>Jam<br><input type="text" class="filter" data-column="5" placeholder="Jam"></th>
+                            <th>Durasi<br><input type="text" class="filter" data-column="6" placeholder="Durasi"></th>
+                            <th>Pekerjaan<br><input type="text" class="filter" data-column="7" placeholder="Pekerjaan"></th>
+                            <th>Makan<br><input type="text" class="filter" data-column="8" placeholder="Makan"></th>
+                        @enduserType
+                        @userType('super')
                             <th>Approval</th>
                             <th>Status Persetujuan<br><input type="text" class="filter" data-column="5"
                                 placeholder="Approval"></th>
@@ -86,7 +102,7 @@
                             <td>{{ $row->employee->division->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
                             <!-- Approval -->
-                            @userType('admin')
+                            @userType('super')
                                 <td>
                                     <form class="approval-form" data-id="{{ $row->id_lembur }}">
                                         @csrf
@@ -136,8 +152,44 @@
                                     </div>
                                 @enduserType
                                 @userType('admin')
-                                    <span class="text-gray-500 italic">Export Only</span>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-icon edit-btn" data-id="{{ $row->id_lembur }}"
+                                            data-employee_name="{{ $row->employee->nama ?? '-' }}"
+                                            data-employee_id="{{ $row->employee->id }}"
+                                            data-tanggal="{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('Y-m-d') }}"
+                                            data-waktu="{{ $row->waktu_lembur }}" data-durasi="{{ $row->durasi_lembur }}"
+                                            data-keterangan="{{ $row->keterangan_lembur }}"
+                                            data-makan="{{ $row->makan_lembur }}">
+                                            <i class="material-symbols-rounded btn-primary">edit_square</i>
+                                        </button>
+
+                                        <button type="button" class="btn btn-icon danger delete-row"
+                                            onclick="showDeletePopup(this.closest('tr'))" title="Hapus">
+                                            <i class="material-symbols-rounded delete-row btn-danger">delete</i>
+                                        </button>
+                                    </div>
                                 @enduserType
+                                @userType('super')
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-icon edit-btn" data-id="{{ $row->id_lembur }}"
+                                            data-employee_name="{{ $row->employee->nama ?? '-' }}"
+                                            data-employee_id="{{ $row->employee->id }}"
+                                            data-tanggal="{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('Y-m-d') }}"
+                                            data-waktu="{{ $row->waktu_lembur }}" data-durasi="{{ $row->durasi_lembur }}"
+                                            data-keterangan="{{ $row->keterangan_lembur }}"
+                                            data-makan="{{ $row->makan_lembur }}">
+                                            <i class="material-symbols-rounded btn-primary">edit_square</i>
+                                        </button>
+
+                                        <button type="button" class="btn btn-icon danger delete-row"
+                                            onclick="showDeletePopup(this.closest('tr'))" title="Hapus">
+                                            <i class="material-symbols-rounded delete-row btn-danger">delete</i>
+                                        </button>
+                                    </div>
+                                @enduserType
+                                {{-- @userType('admin')
+                                    <span class="text-gray-500 italic">Export Only</span>
+                                @enduserType --}}
                             </td>
                         </tr>
                     @endforeach
@@ -280,9 +332,32 @@
                 }
             });
 
+            // function updateRowNumbers() {
+            //     const numbers = table.querySelectorAll('tbody tr td.sticky-col-left');
+            //     numbers.forEach((cell, index) => cell.textContent = index + 1);
+            // }
+
             function updateRowNumbers() {
-                const numbers = table.querySelectorAll('tbody tr td.sticky-col-left');
-                numbers.forEach((cell, index) => cell.textContent = index + 1);
+                const tbody = table.tBodies[0]; // Ambil tbody
+                const rows = tbody.rows; // Ambil koleksi baris langsung dari tbody
+
+                let visibleCounter = 1; // Mulai dari 1 untuk baris yang tampil
+
+                // Loop melalui semua baris dalam tbody
+                for (let i = 0; i < rows.length; i++) {
+                    const currentRow = rows[i];
+
+                    // Periksa apakah baris ini sedang ditampilkan
+                    if (currentRow.style.display !== 'none') {
+                        // Temukan sel pertama (kolom nomor) dalam baris ini dan ubah teksnya
+                        const firstCell = currentRow.cells[0]; // cells[0] adalah kolom 'No'
+                        if (firstCell) {
+                            firstCell.textContent = visibleCounter;
+                            visibleCounter++; // Naikkan nomor untuk baris tampil berikutnya
+                        }
+                    }
+                    // Jika baris disembunyikan (display === 'none'), abaikan saja
+                }
             }
 
             // Modal Edit

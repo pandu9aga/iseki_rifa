@@ -47,6 +47,7 @@
                             <option></option>
                             <option value="admin">admin</option>
                             <option value="leader">leader</option>
+                            <option value="super">super</option>
                         </select>
                     </th>
                     <th><input class="filter" id="filter-nama" type="text" placeholder="Cari Nama" style="width: 100%"/></th>
