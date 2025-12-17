@@ -13,7 +13,9 @@ class EmployeeController extends Controller
     public function read()
     {
         $employees = Employee::with('division')->whereNull('deleted_at')->orderBy('nik')->get();
-        $divisions = Division::withCount('employees')->orderBy('nama')->get();
+        $divisions = Division::withCount(['employees' => function ($query) {
+            $query->whereNull('deleted_at');
+        }])->orderBy('nama')->get();
 
         return view('employees.read', compact('employees', 'divisions'));
     }
@@ -135,4 +137,13 @@ class EmployeeController extends Controller
 
     //     return response()->json(['success' => 'Data pegawai berhasil dihapus.']);
     // }
+	
+	// request nuzul
+	public function totalInDivisions()
+	{
+		$divisions = Division::withCount(['employees' => function ($query) {
+            $query->whereNull('deleted_at');
+        }])->orderBy('nama')->get();
+		return response()->json($divisions);
+	}
 }

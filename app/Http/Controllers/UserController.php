@@ -73,7 +73,7 @@ class UserController extends Controller
             'type' => 'required|string',
             'division' => 'nullable|string',
             'team' => 'nullable|array',
-            'team.*' => 'string',
+            'team.*' => 'nullable|string',
             'password' => 'nullable|string|min:8',
         ]);
 

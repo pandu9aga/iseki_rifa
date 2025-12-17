@@ -81,18 +81,6 @@
                         <a href="{{ url('lembur') }}">Lembur</a>
                     </li>
 
-                    <li class="{{ request()->is('employees') || request()->is('employees/*') ? 'active' : '' }}">
-                        <a href="{{ url('/employees') }}">Pegawai</a>
-                    </li>
-
-                    <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
-                        <a href="{{ url('/users') }}">User</a>
-                    </li>
-
-                    <li class="{{ request()->is('dates') || request()->is('dates/*') ? 'active' : '' }}">
-                        <a href="{{ url('/dates') }}">Tanggal</a>
-                    </li>
-
                     <li class="user-menu">
                         <button onclick="toggleDropdown()" class="btn btn-secondary user-button">
                             Hai, {{ Auth::user()->name }}
@@ -249,15 +237,6 @@
                         <a href="{{ url('lembur') }}">Lembur</a>
                     </li>
 
-                    <li class="{{ request()->is('employees') || request()->is('employees/*') ? 'active' : '' }}">
-                        <a href="{{ url('/employees') }}">Pegawai</a>
-                    </li>
-                    <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
-                        <a href="{{ url('/users') }}">User</a>
-                    </li>
-                    <li class="{{ request()->is('dates') || request()->is('dates/*') ? 'active' : '' }}">
-                        <a href="{{ url('/dates') }}">Tanggal</a>
-                    </li>
                     <li class="user-menu">
                         <button onclick="toggleDropdown()" class="btn btn-secondary user-button">
                             Hai, {{ Auth::user()->name }}

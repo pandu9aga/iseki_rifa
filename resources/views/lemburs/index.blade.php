@@ -279,8 +279,11 @@
                         row.style.display = '';
                         row.querySelector('td.sticky-col-left').textContent = counter++;
 
-                        // ambil kolom durasi (kolom ke-5, index 5)
-                        let durasiText = row.cells[5].textContent.trim();
+                        // ambil kolom durasi (kolom ke-6, index 6)
+                        // let durasiText = row.cells[6].textContent.trim();
+                        // Ambil kolom durasi: 4 kolom dari belakang (Aksi = -1, Makan = -2, Pekerjaan = -3, Durasi = -4)
+                        const durasiCell = row.cells[row.cells.length - 4];
+                        let durasiText = durasiCell ? durasiCell.textContent.trim() : '0';
                         let durasiNum = parseFloat(durasiText.replace(',', '.')) || 0;
                         totalDurasi += durasiNum;
                     } else {

@@ -47,6 +47,9 @@ Route::post('/employees', [EmployeeController::class, 'store'])->name('employees
 Route::put('/employees/{id}', [EmployeeController::class, 'update'])->middleware('auth');
 Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->name('employees.destroy')->middleware('auth');
 
+// request nuzul
+Route::get('/divisioning', [EmployeeController::class, 'totalInDivisions']);
+
 // Users
 Route::get('/users', [UserController::class, 'read'])->name('users.read')->middleware('auth');
 Route::get('/users/new', [UserController::class, 'create'])->middleware('auth');
