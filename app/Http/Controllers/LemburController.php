@@ -26,16 +26,22 @@ class LemburController extends Controller
 {
     public function index(Request $request)
     {
+        $tahunSekarang = now()->year; // ✅ 2025, 2026, dst
+
         // Ambil semua data karyawan (untuk form tambah/edit)
         $employees = Employee::with('division')->get();
 
         // Ambil filter dari request
-        $tanggal = $request->get('tanggal'); // filter perhari
-        $dari    = $request->get('dari');    // filter range mulai
-        $sampai  = $request->get('sampai');  // filter range sampai
+        $tanggal = $request->get('tanggal');
+        $dari    = $request->get('dari');
+        $sampai  = $request->get('sampai');
 
         // Query dasar
-        $query = Lembur::with(['employee', 'employee.division'])->whereHas('employee');
+        $query = Lembur::with([
+            'employee',
+            'employee.division',
+            'employee.nilaiTahunan' => fn($q) => $q->whereYear('tanggal_penilaian', $tahunSekarang)
+        ])->whereHas('employee');
 
         // Filter kalau ada tanggal / range
         if ($tanggal) {
@@ -53,7 +59,6 @@ class LemburController extends Controller
 
         return view('lemburs.index', compact('lemburs', 'employees'));
     }
-
     public function create()
     {
         $employees = Employee::with('division')->whereNull('deleted_at')->get();

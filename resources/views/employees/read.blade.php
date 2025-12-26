@@ -1,232 +1,285 @@
 @extends('layouts.app')
 
 @section('content')
+    <main>
+        @include('components.popupEditEmployee')
+        @include('components.popupDelete')
 
-<main>
-    @include('components.popupEditEmployee')
-    <section class="title-button d-flex flex-row">
-        <h1 class="text-2xl font-bold">Data Pegawai</h1>
-        <section class="btn-group d-flex flex-row">
-            <a href="{{ url('/employees/new') }}" class="btn btn-primary">
-                Tambah Data
-                <i class="material-symbols-rounded">
-                    add
-                </i>
-            </a>
+        <section class="title-button d-flex flex-row justify-between items-center mb-4">
+            <div>
+                <h1 class="text-2xl font-bold">Data Pegawai</h1>
+                @if (isset($tahun))
+                    <p class="text-sm text-gray-600 mt-1">Nilai Tahun: {{ $tahun }}</p>
+                @endif
+            </div>
+            <section class="btn-group d-flex flex-row gap-2">
+                <a href="{{ url('/employees/new') }}" class="btn btn-primary">
+                    Tambah Data
+                    <i class="material-symbols-rounded">add</i>
+                </a>
+                <a href="{{ route('penilaian.index') }}" class="btn btn-primary">
+                    Penilaian Tahunan
+                    <i class="material-symbols-rounded">grading</i>
+                </a>
+            </section>
         </section>
-    </section>
 
-    <section id="summary" class="flex w-full text-sm items-center">
-        <div id="jumlah-by-divisi" class="w-full">
-            @foreach ($divisions as $division)
-            <p>{{ $division->nama }}: {{ $division->employees_count }}</p>
-            @endforeach
-        </div>
+        <!-- 🔸 FILTER TAHUN -->
+        <form method="GET" class="mb-4 flex gap-3 flex-wrap bg-gray-50 p-3 rounded">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tahun Penilaian</label>
+                <select name="tahun" class="form-select mt-1" onchange="this.form.submit()">
+                    @foreach ($tahunOptions as $opt)
+                        <option value="{{ $opt }}" @selected($opt == $tahun)>{{ $opt }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
 
-        <p id="jumlah-data" class="flex justify-end mb-2 text-sm">
-            Jumlah Data: {{ count($employees) }}
-        </p>
-    </section>
-
-    @csrf
-    <section class="container-table table-scroll-wrapper">
-        <table id="employees-table">
-            <thead>
-                <tr>
-                    <th rowspan="2">No</th>
-                    <th>Nama</th>
-                    <th>NIK</th>
-                    <th>Status</th>
-                    <th>Divisi</th>
-                    <th>Tim</th>
-                    <th rowspan="2" class="sticky-col-right">Aksi</th>
-                </tr>
-                <tr>
-                    <th><input class="filter" id="filter-nama" type="text" placeholder="Cari Nama" /></th>
-                    <th><input class="filter" id="filter-nik" type="text" placeholder="Cari NIK" /></th>
-                    <th>
-                        <select name="status" class="select2 filter" data-placeholder="Pilih status" data-allow-clear="true" style="width: 100%" id="filter-status">
-                            <option></option>
-                            <option value="Direct">Direct</option>
-                            <option value="Non Direct">Non Direct</option>
-                        </select>
-                    </th>
-                    <th>
-                        <select name="divisi" id="filter-divisi" class="select2 filter" data-placeholder="Pilih divisi" data-allow-clear="true" style="width: 100%">
-                            <option></option>
-                            @foreach ($divisions as $division)
-                            <option value="{{ $division->nama }}">{{ $division->nama }}</option>
-                            @endforeach
-                        </select>
-                    </th>
-                    <th><input class="filter" id="filter-team" type="text" placeholder="Cari Tim" /></th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach($employees as $index => $employee)
-                <tr data-id="{{ $employee->id }}">
-                    <td class="number">{{ $index + 1 }}</td>
-                    <td>{{ $employee->nama ?? '-' }}</td>
-                    <td>{{ $employee->nik ?? '-' }}</td>
-                    <td>{{ $employee->status ?? '-' }}</td>
-                    <td>{{ $employee->division->nama ?? '-' }}</td>
-                    <td>{{ $employee->team ?? '-' }}</td>
-                    <td class="sticky-col-right">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-icon edit-row">
-                                <i class="material-symbols-rounded btn-primary">
-                                    edit_square
-                                </i>
-                            </button>
-                            <button type="button" class="btn btn-icon"
-                                onclick="showDeletePopup(this.closest('tr'))" title="Hapus">
-                                <i class="material-symbols-rounded delete-row btn-danger">
-                                    delete
-                                </i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+        <section id="summary" class="flex w-full text-sm items-center mb-4">
+            <div id="jumlah-by-divisi" class="w-full">
+                @foreach ($divisions as $division)
+                    <p>{{ $division->nama }}: {{ $division->employees_count }}</p>
                 @endforeach
+            </div>
+            <p id="jumlah-data" class="flex justify-end text-sm">
+                Jumlah Data: {{ count($employees) }}
+            </p>
+        </section>
 
-                <tr id="no-data-row" class="hidden text-center">
-                    <td colspan="7" class="text-gray-500 py-4">Data tidak ditemukan</td>
-                </tr>
-            </tbody>
-        </table>
+        @csrf
+        <section class="container-table table-scroll-wrapper">
+            <table id="employees-table" class="w-full text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th rowspan="2" class="px-3 py-2 text-left">No</th>
+                        <th class="px-3 py-2 text-left">Nama</th>
+                        <th class="px-3 py-2 text-left">Nilai</th>
+                        <th class="px-3 py-2 text-left">NIK</th>
+                        <th class="px-3 py-2 text-left">Status</th>
+                        <th class="px-3 py-2 text-left">Divisi</th>
+                        <th class="px-3 py-2 text-left">Tim</th>
+                        <th rowspan="2" class="px-3 py-2 text-left sticky-col-right">Aksi</th>
+                    </tr>
+                    <tr>
+                        <th><input class="filter w-full px-2 py-1 border rounded" data-column="1" type="text"
+                                placeholder="Cari Nama" /></th>
+                        <th><input class="filter w-full px-2 py-1 border rounded" data-column="2" type="text"
+                                placeholder="Cari Nilai" /></th>
+                        <th><input class="filter w-full px-2 py-1 border rounded" data-column="3" type="text"
+                                placeholder="Cari NIK" /></th>
+                        <th>
+                            <select class="filter w-full px-2 py-1 border rounded" data-column="4" data-exact="true">
+                                <option value="">Semua</option>
+                                <option value="Direct">Direct</option>
+                                <option value="Non Direct">Non Direct</option>
+                            </select>
+                        </th>
+                        <th>
+                            <select class="filter w-full px-2 py-1 border rounded" data-column="5" data-exact="true">
+                                <option value="">Semua Divisi</option>
+                                @foreach ($divisions as $division)
+                                    <option value="{{ $division->nama }}">{{ $division->nama }}</option>
+                                @endforeach
+                            </select>
+                        </th>
+                        <th><input class="filter w-full px-2 py-1 border rounded" data-column="6" type="text"
+                                placeholder="Cari Tim" /></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($employees as $index => $employee)
+                        <tr data-id="{{ $employee->id }}" class="border-t hover:bg-gray-50">
+                            <td class="px-3 py-2 number">{{ $index + 1 }}</td>
+                            <td class="px-3 py-2">{{ $employee->nama ?? '-' }}</td>
+                            <td class="px-3 py-2">{{ $employee->nilaiTahunan->first()?->nilai ?? '-' }}</td>
+                            <td class="px-3 py-2">{{ $employee->nik ?? '-' }}</td>
+                            <td class="px-3 py-2">{{ $employee->status ?? '-' }}</td>
+                            <td class="px-3 py-2">{{ $employee->division?->nama ?? '-' }}</td>
+                            <td class="px-3 py-2">{{ $employee->team ?? '-' }}</td>
+                            <td class="px-3 py-2 sticky-col-right">
+                                <div class="btn-group flex gap-1">
+                                    <button type="button" class="btn btn-icon edit-row">
+                                        <i class="material-symbols-rounded text-blue-600">edit_square</i>
+                                    </button>
+                                    <button type="button" class="btn btn-icon"
+                                        onclick="showDeletePopup(this.closest('tr'))" title="Hapus">
+                                        <i class="material-symbols-rounded delete-row btn-danger">delete</i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
 
-    </section>
-    @include('components.popupDelete')
-</main>
+                    @if ($employees->isEmpty())
+                        <tr>
+                            <td colspan="8" class="text-center py-6 text-gray-500">Tidak ada data karyawan.</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </section>
+    </main>
 
-<script>
-    document.getElementById('confirmDelete').addEventListener('click', function() {
-        setTimeout(() => updateJumlahData('employees-table', 'jumlah-data'), 300);
-    });
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const table = document.getElementById('employees-table');
+            const filters = table.querySelectorAll('.filter');
 
-    // Function untuk delete
-    let rowToDelete = null;
+            // Jalankan filter saat halaman dimuat
+            applyFilters();
 
-    function showDeletePopup(row) {
-        rowToDelete = row;
-        document.getElementById('popupDelete').classList.replace('hidden', 'flex');
-    }
-
-    function hideDeletePopup() {
-        rowToDelete = null;
-        document.getElementById('popupDelete').classList.replace('flex', 'hidden');
-    }
-
-    document.getElementById('cancelDelete').addEventListener('click', hideDeletePopup);
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    document.getElementById('confirmDelete').addEventListener('click', function() {
-        if (rowToDelete) {
-            const id = rowToDelete.getAttribute('data-id');
-            fetch(`/iseki_rifa/public/employees/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                    },
-                })
-                .then(response => {
-                    if (response.ok) {
-                        rowToDelete.remove();
-                        updateRowNumbers();
-                        hideDeletePopup();
-                    } else {
-                        alert('Gagal menghapus data');
-                    }
-                })
-                .catch(() => alert('Error saat menghapus data'));
-        }
-    });
-
-    // Function untuk edit
-    const editModal = document.getElementById('editEmployeeModal');
-    const editForm = document.getElementById('editEmployeeForm');
-    const editNama = document.getElementById('edit-nama');
-    const editNik = document.getElementById('edit-nik');
-    const editStatus = document.getElementById('edit-status');
-    const editDivisi = document.getElementById('edit-divisi');
-    const editTeam = document.getElementById('edit-team');
-    const editId = document.getElementById('edit-id');
-
-    // Show Edit Modal
-    document.querySelectorAll('.edit-row').forEach(button => {
-        button.addEventListener('click', () => {
-            const row = button.closest('tr');
-            const id = row.dataset.id;
-            const nama = row.children[1].textContent;
-            const nik = row.children[2].textContent;
-            const status = row.children[3].textContent;
-            const divisi = row.children[4].textContent;
-            const team = row.children[5].textContent === '-' ? '' : row.children[5].textContent;
-
-            editId.value = id;
-            editNama.value = nama;
-            editNik.value = nik;
-            editStatus.value = status;
-            editDivisi.value = divisi;
-            editTeam.value = team;
-
-            showModal('editEmployeeModal');
-
-            $('#edit-status').val(status).trigger('change');
-            $('#edit-divisi').val(divisi).trigger('change');
-        });
-    });
-
-    function showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        modal.classList.replace('hidden', 'flex');
-    }
-
-    // Close modal
-    function closeEditModal() {
-        editModal.classList.replace('flex', 'hidden');
-    }
-
-    // Handle form submit
-    editForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const id = editId.value;
-        const data = {
-            nama: editNama.value,
-            nik: editNik.value,
-            status: editStatus.value,
-            divisi: editDivisi.value,
-            team: editTeam.value,
-        };
-
-        fetch(`/iseki_rifa/public/employees/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            })
-            .then(response => {
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    alert('Gagal menyimpan perubahan');
-                }
+            // Pasang event listener
+            filters.forEach(filter => {
+                filter.addEventListener('input', applyFilters);
+                filter.addEventListener('change', applyFilters);
             });
-    });
 
-    // Update nomor urut di kolom No setelah hapus baris
-    function updateRowNumbers() {
-        const numbers = document.querySelectorAll('#employees-table tbody tr .number');
-        numbers.forEach((cell, index) => {
-            cell.textContent = index + 1;
+            function applyFilters() {
+                const rows = table.querySelectorAll('tbody tr:not(#no-data-row)');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    let show = true;
+                    filters.forEach(filter => {
+                        const colIndex = parseInt(filter.dataset.column);
+                        const filterValue = filter.value.toLowerCase().trim();
+                        const isExact = filter.dataset.exact === "true";
+                        const cell = row.cells[colIndex];
+
+                        if (filterValue && cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+
+                            if (isExact) {
+                                // Perbandingan eksak untuk select
+                                if (cellText !== filterValue) {
+                                    show = false;
+                                }
+                            } else {
+                                // Perbandingan parsial untuk input teks
+                                if (!cellText.includes(filterValue)) {
+                                    show = false;
+                                }
+                            }
+                        }
+                    });
+
+                    row.style.display = show ? '' : 'none';
+                    if (show) visibleCount++;
+                });
+
+                // Update jumlah data
+                document.getElementById('jumlah-data').textContent = `Jumlah Data: ${visibleCount}`;
+
+                // Tampilkan pesan "tidak ada data" jika perlu
+                const noDataRow = document.querySelector('#employees-table tbody tr:last-child[id="no-data-row"]');
+                if (noDataRow) {
+                    noDataRow.classList.toggle('hidden', visibleCount > 0);
+                }
+            }
+
+            // ==== DELETE ====
+            window.showDeletePopup = function(row) {
+                const popup = document.getElementById('popupDelete');
+                if (popup) {
+                    popup.dataset.targetId = row.dataset.id;
+                    popup.classList.replace('hidden', 'flex');
+                }
+            };
+
+            function hideDeletePopup() {
+                const popup = document.getElementById('popupDelete');
+                if (popup) popup.classList.replace('flex', 'hidden');
+            }
+
+            document.getElementById('cancelDelete')?.addEventListener('click', hideDeletePopup);
+            document.getElementById('confirmDelete')?.addEventListener('click', function() {
+                const popup = document.getElementById('popupDelete');
+                const id = popup?.dataset.targetId;
+                if (!id || !csrfToken) return;
+
+                fetch(`/iseki_rifa/public/employees/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            document.querySelector(`tr[data-id="${id}"]`)?.remove();
+                            hideDeletePopup();
+                            applyFilters();
+                        } else {
+                            alert('Gagal menghapus data');
+                        }
+                    })
+                    .catch(() => alert('Terjadi kesalahan saat menghapus'));
+            });
+
+            // ==== EDIT ====
+            document.querySelectorAll('.edit-row').forEach(button => {
+                button.addEventListener('click', () => {
+                    const row = button.closest('tr');
+                    const cells = row.querySelectorAll('td');
+
+                    const id = row.dataset.id;
+                    const nama = cells[1].textContent;
+                    const nik = cells[3].textContent;
+                    const status = cells[4].textContent;
+                    const divisi = cells[5].textContent;
+                    const team = cells[6].textContent === '-' ? '' : cells[6].textContent;
+
+                    document.getElementById('edit-id').value = id;
+                    document.getElementById('edit-nama').value = nama;
+                    document.getElementById('edit-nik').value = nik;
+                    document.getElementById('edit-status').value = status;
+                    document.getElementById('edit-divisi').value = divisi;
+                    document.getElementById('edit-team').value = team;
+
+                    if (typeof $ !== 'undefined') {
+                        $('#edit-status').val(status).trigger('change');
+                        $('#edit-divisi').val(divisi).trigger('change');
+                    }
+
+                    document.getElementById('editEmployeeModal').classList.replace('hidden',
+                        'flex');
+                });
+            });
+
+            window.closeEditModal = function() {
+                document.getElementById('editEmployeeModal')?.classList.replace('flex', 'hidden');
+            };
+
+            document.getElementById('editEmployeeForm')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-id').value;
+                const data = {
+                    nama: document.getElementById('edit-nama').value,
+                    nik: document.getElementById('edit-nik').value,
+                    status: document.getElementById('edit-status').value,
+                    divisi: document.getElementById('edit-divisi').value,
+                    team: document.getElementById('edit-team').value,
+                };
+
+                fetch(`/iseki_rifa/public/employees/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Gagal menyimpan perubahan');
+                        }
+                    })
+                    .catch(() => alert('Terjadi kesalahan saat menyimpan'));
+            });
         });
-    }
-</script>
+    </script>
 @endsection

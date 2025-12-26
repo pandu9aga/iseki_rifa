@@ -10,16 +10,37 @@ use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
-    public function read()
+    public function read(Request $request)
     {
-        $employees = Employee::with('division')->whereNull('deleted_at')->orderBy('nik')->get();
-        $divisions = Division::withCount(['employees' => function ($query) {
-            $query->whereNull('deleted_at');
-        }])->orderBy('nama')->get();
+        $tahun = $request->input('tahun', date('Y')); // default: tahun sekarang
 
-        return view('employees.read', compact('employees', 'divisions'));
+        // Generate opsi tahun: 2022–2026
+        $tahunOptions = range(date('Y') + 1, date('Y') - 3);
+        rsort($tahunOptions);
+
+        $query = Employee::with([
+            'division',
+            'nilaiTahunan' => fn($q) => $q->whereYear('tanggal_penilaian', $tahun)
+        ])->whereNull('deleted_at');
+
+        // Filter berdasarkan division_id
+        if ($request->filled('division_id')) {
+            $query->where('division_id', $request->division_id);
+        }
+
+        // Filter berdasarkan status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $employees = $query->orderBy('nik')->get();
+
+        $divisions = Division::withCount(['employees' => fn($q) => $q->whereNull('deleted_at')])
+            ->orderBy('nama')
+            ->get();
+
+        return view('employees.read', compact('employees', 'divisions', 'tahun', 'tahunOptions'));
     }
-
     public function create()
     {
         $divisions = Division::orderBy('nama')->get();
@@ -90,11 +111,9 @@ class EmployeeController extends Controller
 
         $employee = Employee::findOrFail($id);
 
-        if ($request->nik == '-')
-        {
+        if ($request->nik == '-') {
             $nik = null;
-        } else
-        {
+        } else {
             $nik = $request->nik;
         }
 
@@ -137,13 +156,13 @@ class EmployeeController extends Controller
 
     //     return response()->json(['success' => 'Data pegawai berhasil dihapus.']);
     // }
-	
-	// request nuzul
-	public function totalInDivisions()
-	{
-		$divisions = Division::withCount(['employees' => function ($query) {
+
+    // request nuzul
+    public function totalInDivisions()
+    {
+        $divisions = Division::withCount(['employees' => function ($query) {
             $query->whereNull('deleted_at');
         }])->orderBy('nama')->get();
-		return response()->json($divisions);
-	}
+        return response()->json($divisions);
+    }
 }
