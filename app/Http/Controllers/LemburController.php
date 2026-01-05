@@ -19,17 +19,17 @@ use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Settings;
 use PhpOffice\PhpSpreadsheet\Style\Font as PhpFont;
-
-
+use phpseclib3\Crypt\EC\Curves\nistb233;
 
 class LemburController extends Controller
 {
     public function index(Request $request)
     {
-        $tahunSekarang = now()->year; // ✅ 2025, 2026, dst
+        $tahun = $request->get('tahun', now()->year);
+        $tahunOptions = range(2025, now()->year + 1);
 
         // Ambil semua data karyawan (untuk form tambah/edit)
-        $employees = Employee::with('division')->get();
+        $employees = Employee::with('division')->with('nilaiTahunan')->get();
 
         // Ambil filter dari request
         $tanggal = $request->get('tanggal');
@@ -40,7 +40,7 @@ class LemburController extends Controller
         $query = Lembur::with([
             'employee',
             'employee.division',
-            'employee.nilaiTahunan' => fn($q) => $q->whereYear('tanggal_penilaian', $tahunSekarang)
+            'employee.nilaiTahunan' => fn($q) => $q->whereYear('tanggal_penilaian', $tahun)
         ])->whereHas('employee');
 
         // Filter kalau ada tanggal / range
@@ -57,8 +57,9 @@ class LemburController extends Controller
         // Urutkan dari tanggal terlama → terbaru
         $lemburs = $query->orderBy('tanggal_lembur', 'asc')->get();
 
-        return view('lemburs.index', compact('lemburs', 'employees'));
+        return view('lemburs.index', compact('lemburs', 'employees', 'tahun', 'tahunOptions'));
     }
+
     public function create()
     {
         $employees = Employee::with('division')->whereNull('deleted_at')->get();

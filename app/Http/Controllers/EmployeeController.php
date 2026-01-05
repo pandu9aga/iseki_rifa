@@ -15,7 +15,7 @@ class EmployeeController extends Controller
         $tahun = $request->input('tahun', date('Y')); // default: tahun sekarang
 
         // Generate opsi tahun: 2022–2026
-        $tahunOptions = range(date('Y') + 1, date('Y') - 3);
+        $tahunOptions = range(date('Y') + 1, 2025);
         rsort($tahunOptions);
 
         $query = Employee::with([

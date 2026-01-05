@@ -7,29 +7,29 @@
             <h3 class="font-bold text-lg">Laporan Lembur Tahun {{ $tahun }}</h3>
         </div>
 
-<section class="flex items-center mb-4">
-    {{-- Kiri: Dropdown tahun + Export --}}
-    <div class="flex gap-2">
-        {{-- Form pilih tahun --}}
-        <form action="{{ route('laporan.lembur.index') }}" method="GET" class="flex items-center gap-2">
-            <select name="tahun" onchange="this.form.submit()" class="form-control">
-                @foreach ($tahunList as $t)
-                    <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
-                @endforeach
-            </select>
-        </form>
+        <section class="flex items-center mb-4">
+            {{-- Kiri: Dropdown tahun + Export --}}
+            <div class="flex gap-2">
+                {{-- Form pilih tahun --}}
+                <form action="{{ route('laporan.lembur.index') }}" method="GET" class="flex items-center gap-2">
+                    <select name="tahun" onchange="this.form.submit()" class="form-control">
+                        @foreach ($tahunList as $t)
+                            <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
+                        @endforeach
+                    </select>
+                </form>
 
-        {{-- Export sesuai tahun --}}
-        <a href="{{ route('laporan.lembur.export', ['tahun' => $tahun]) }}" class="btn btn-primary">
-            <i class="fas fa-file-excel"></i> Export Excel
-        </a>
-    </div>
+                {{-- Export sesuai tahun --}}
+                <a href="{{ route('laporan.lembur.export', ['tahun' => $tahun]) }}" class="btn btn-primary">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </a>
+            </div>
 
-    {{-- Kanan: Tombol Kembali --}}
-    <a href="{{ route('lemburs.index') }}" class="btn btn-secondary ml-auto">
-        <i class="fas fa-arrow-left"></i> Kembali
-    </a>
-</section>
+            {{-- Kanan: Tombol Kembali --}}
+            <a href="{{ route('lemburs.index') }}" class="btn btn-secondary ml-auto">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </section>
 
         <section class="container-table table-scroll-wrapper">
             <table class="table-auto w-full border border-gray-300 mt-4" id="laporan-table">
@@ -44,6 +44,10 @@
                             Divisi<br>
                             <input type="text" class="filter" data-column="2" placeholder="Cari Divisi">
                         </th>
+                        <th>
+                            Nilai<br>
+                            <input type="text" class="filter" data-column="3" placeholder="Cari Nilai">
+                        </th>
                         <th>Total Lembur (Jam)</th>
                     </tr>
                 </thead>
@@ -53,6 +57,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $emp->nama }}</td>
                             <td>{{ $emp->division->nama ?? '-' }}</td>
+                            <td>{{ $emp->nilaiTahunan->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}</td>
                             <td>
                                 @if (fmod($emp->total_lembur ?? 0, 1) == 0)
                                     {{ (int) $emp->total_lembur }}
@@ -84,7 +89,7 @@
                     let show = true;
 
                     filters.forEach(filter => {
-                        const colIndex = filter.dataset.column;
+                        const colIndex = parseInt(filter.dataset.column);
                         const filterValue = filter.value.toLowerCase();
                         const cell = row.cells[colIndex];
 

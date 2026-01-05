@@ -32,7 +32,7 @@ class PenilaianTahunanController extends Controller
             ->get();
 
         // Generate opsi tahun: 2022–2026
-        $tahunOptions = range(date('Y') + 1, date('Y') - 3);
+        $tahunOptions = range(date('Y') + 1, 2025);
         rsort($tahunOptions);
 
         $divisions = Division::orderBy('nama')->get();

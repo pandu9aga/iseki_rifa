@@ -28,6 +28,8 @@
                         <th class="table-cell w-18">Jenis Izin</th>
                         <th class="table-cell w-18">Keterangan</th>
                         <th class="table-cell w-10">Tanggal</th>
+                        <th class="table-cell w-8">Jam Masuk</th>
+                        <th class="table-cell w-8">Jam Keluar</th>
                         <th class="table-cell w-8">Status</th>
                         <th class="table-cell w-10">Divisi</th>
                         <th class="table-cell w-10">Tim</th>
@@ -66,7 +68,16 @@
                         <td>
                             <input type="text" name="keterangan[]"/>
                         </td>
-                        <td>{{ now()->format('d/m/Y') }}</td>
+                        <td>
+                            <input type="date" name="tanggal[]" class="tanggal"
+                                value="{{ now()->format('Y-m-d') }}">
+                        </td>
+                        <td>
+                            <input type="time" name="jam_masuk[]" class="jam_masuk">
+                        </td>
+                        <td>
+                            <input type="time" name="jam_keluar[]" class="jam_keluar">
+                        </td>
                         <td class="status"></td>
                         <td class="divisi"></td>
                         <td class="team"></td>
@@ -79,7 +90,7 @@
                         </td>
                     </tr>
                     <tr id="row-button" class="hover-none">
-                        <td colspan="9">
+                        <td colspan="11">
                             <button type="button" id="add-row" class="btn btn-secondary">
                                 <i class="material-symbols-rounded btn-primary">
                                     add
@@ -153,6 +164,40 @@
         }
     });
 
+    document.getElementById('izin-form').addEventListener('submit', function (e) {
+        const rows = document.querySelectorAll('#cuti-table tbody tr:not(#row-button)');
+        let isValid = true;
+        let errorMessage = '';
+
+        rows.forEach((row, index) => {
+            const jenis = row.querySelector('select[name="jenis_cuti[]"]')?.value;
+            const jamMasuk = row.querySelector('input[name="jam_masuk[]"]')?.value;
+            const jamKeluar = row.querySelector('input[name="jam_keluar[]"]')?.value;
+
+            if (jenis === 'Terlambat' && !jamMasuk) {
+                isValid = false;
+                errorMessage = `Baris ${index + 1}: Jam masuk wajib diisi untuk Terlambat`;
+            }
+
+            if (jenis === 'Pulang Cepat' && !jamKeluar) {
+                isValid = false;
+                errorMessage = `Baris ${index + 1}: Jam keluar wajib diisi untuk Pulang Cepat`;
+            }
+
+            if (jenis === 'Izin Keluar' && (!jamMasuk || !jamKeluar)) {
+                isValid = false;
+                errorMessage = `Baris ${index + 1}: Jam masuk & keluar wajib diisi untuk Izin Keluar`;
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            const errorText = document.getElementById('error-text');
+            errorText.textContent = errorMessage;
+            errorText.classList.remove('hidden');
+        }
+    });
+
     // Fungsi untuk membuat baris baru
     function addRow() {
         const row = document.createElement('tr');
@@ -186,7 +231,15 @@
             <td>
                 <input type="text" name="keterangan[]"/>
             </td>
-            <td>{{ now()->format('d/m/Y') }}</td>
+            <td>
+                <input type="date" name="tanggal[]" value="{{ now()->format('Y-m-d') }}">
+            </td>
+            <td>
+                <input type="time" name="jam_masuk[]" class="jam_masuk">
+            </td>
+            <td>
+                <input type="time" name="jam_keluar[]" class="jam_keluar">
+            </td>
             <td class="status"></td>
             <td class="divisi"></td>
             <td class="team"></td>
@@ -282,5 +335,24 @@
         }
         hideDeletePopup();
     });
+
+    $(document).on('change', '.jenis_cuti', function () {
+        const row = $(this).closest('tr');
+        const jenis = $(this).val();
+
+        const jamMasuk = row.find('.jam_masuk');
+        const jamKeluar = row.find('.jam_keluar');
+
+        jamMasuk.prop('readonly', true).val('');
+        jamKeluar.prop('readonly', true).val('');
+
+        if (jenis === 'Terlambat') jamMasuk.prop('readonly', false);
+        if (jenis === 'Pulang Cepat') jamKeluar.prop('readonly', false);
+        if (jenis === 'Izin Keluar') {
+            jamMasuk.prop('readonly', false);
+            jamKeluar.prop('readonly', false);
+        }
+    });
+
 </script>
 @endsection

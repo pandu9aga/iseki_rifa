@@ -12,7 +12,16 @@ class Absensi extends Model
 {
     use HasFactory; //, LogsActivity;
 
-    protected $fillable = ['employee_id', 'tanggal', 'kategori', 'keterangan', 'is_approved'];
+    protected $fillable = [
+        'employee_id',
+        'tanggal',
+        'kategori',
+        'keterangan',
+        'jam_masuk',
+        'jam_keluar',
+        'is_approved',
+        'id_hrga'
+    ];
 
     protected $casts = [
         'tanggal' => 'date',

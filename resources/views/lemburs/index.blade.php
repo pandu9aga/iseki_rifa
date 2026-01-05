@@ -15,6 +15,18 @@
             <h3 class="font-bold text-lg">Data Lembur</h3>
         </div>
 
+        {{-- Filter Tahun Penilaian --}}
+        <form method="GET" class="mb-4 flex gap-3 flex-wrap bg-gray-50 p-3 rounded">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tahun Penilaian</label>
+                <select name="tahun" class="form-select mt-1" onchange="this.form.submit()">
+                    @foreach ($tahunOptions as $opt)
+                        <option value="{{ $opt }}" @selected($opt == $tahun)>{{ $opt }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
+
         {{-- Tombol sesuai role --}}
         <section class="btn-group flex gap-2 mb-4 items-center justify-between">
             <div class="flex gap-2">
@@ -60,36 +72,37 @@
                     <tr>
                         <th class="sticky-col-left">No</th>
                         <th class="sticky-col-left">Nama<br><input type="text" class="filter" data-column="1" placeholder="Cari Nama"></th>
-                        <th>Divisi<br><input type="text" class="filter" data-column="2" placeholder="Cari Divisi"></th>
+                        <th>Nilai<br><input type="text" class="filter" data-column="2" placeholder="Cari Nilai"></th>
+                        <th>Divisi<br><input type="text" class="filter" data-column="3" placeholder="Cari Divisi"></th>
                         <th>
                             Tanggal<br>
-                            <input id="customDate" name="customDate" type="date" class="filter" data-column="3">
+                            <input id="customDate" name="customDate" type="date" class="filter" data-column="4">
                             <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
                         </th>
                         @userType('leader')
-                            <th>Status Persetujuan<br><input type="text" class="filter" data-column="4"
-                                    placeholder="Approval"></th>
-                            <th>Jam<br><input type="text" class="filter" data-column="5" placeholder="Jam"></th>
-                            <th>Durasi<br><input type="text" class="filter" data-column="6" placeholder="Durasi"></th>
-                            <th>Pekerjaan<br><input type="text" class="filter" data-column="7" placeholder="Pekerjaan"></th>
-                            <th>Makan<br><input type="text" class="filter" data-column="8" placeholder="Makan"></th>
-                        @enduserType
-                        @userType('admin')
-                            <th>Status Persetujuan<br><input type="text" class="filter" data-column="4"
-                                    placeholder="Approval"></th>
-                            <th>Jam<br><input type="text" class="filter" data-column="5" placeholder="Jam"></th>
-                            <th>Durasi<br><input type="text" class="filter" data-column="6" placeholder="Durasi"></th>
-                            <th>Pekerjaan<br><input type="text" class="filter" data-column="7" placeholder="Pekerjaan"></th>
-                            <th>Makan<br><input type="text" class="filter" data-column="8" placeholder="Makan"></th>
-                        @enduserType
-                        @userType('super')
-                            <th>Approval</th>
                             <th>Status Persetujuan<br><input type="text" class="filter" data-column="5"
-                                placeholder="Approval"></th>
+                                    placeholder="Approval"></th>
                             <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
                             <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
                             <th>Pekerjaan<br><input type="text" class="filter" data-column="8" placeholder="Pekerjaan"></th>
                             <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
+                        @enduserType
+                        @userType('admin')
+                            <th>Status Persetujuan<br><input type="text" class="filter" data-column="5"
+                                    placeholder="Approval"></th>
+                            <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
+                            <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
+                            <th>Pekerjaan<br><input type="text" class="filter" data-column="8" placeholder="Pekerjaan"></th>
+                            <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
+                        @enduserType
+                        @userType('super')
+                            <th>Approval</th>
+                            <th>Status Persetujuan<br><input type="text" class="filter" data-column="6"
+                                placeholder="Approval"></th>
+                            <th>Jam<br><input type="text" class="filter" data-column="7" placeholder="Jam"></th>
+                            <th>Durasi<br><input type="text" class="filter" data-column="8" placeholder="Durasi"></th>
+                            <th>Pekerjaan<br><input type="text" class="filter" data-column="9" placeholder="Pekerjaan"></th>
+                            <th>Makan<br><input type="text" class="filter" data-column="10" placeholder="Makan"></th>
                         @enduserType
                         <th class="sticky-col-right">Aksi</th>
                     </tr>
@@ -99,6 +112,7 @@
                         <tr data-id="{{ $row->id_lembur }}">
                             <td class="sticky-col-left">{{ $loop->iteration }}</td>
                             <td class="sticky-col-left">{{ $row->employee->nama ?? '-' }}</td>
+                            <td>{{ $row->employee->nilaiTahunan->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}</td>
                             <td>{{ $row->employee->division->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
                             <!-- Approval -->
@@ -251,7 +265,7 @@
                         if (filterValue && cell) {
                             let cellText = cell.textContent.toLowerCase();
 
-                            if (colIndex == "3") {
+                            if (colIndex == "4") { // Kolom Tanggal sekarang indeks 4
                                 const parts = cellText.split("-");
                                 if (parts.length === 3) {
                                     cellText = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -264,7 +278,7 @@
 
                     // tambahan filter fleksibel untuk toggle date/month
                     if (dateFilter && dateFilter.value) {
-                        const [day, month, year] = row.cells[3].textContent.trim().split("-");
+                        const [day, month, year] = row.cells[4].textContent.trim().split("-"); // Kolom Tanggal sekarang indeks 4
                         if (dateFilter.type === "date") {
                             const filterDate = new Date(dateFilter.value);
                             const rowDate = new Date(`${year}-${month}-${day}`);
@@ -279,8 +293,6 @@
                         row.style.display = '';
                         row.querySelector('td.sticky-col-left').textContent = counter++;
 
-                        // ambil kolom durasi (kolom ke-6, index 6)
-                        // let durasiText = row.cells[6].textContent.trim();
                         // Ambil kolom durasi: 4 kolom dari belakang (Aksi = -1, Makan = -2, Pekerjaan = -3, Durasi = -4)
                         const durasiCell = row.cells[row.cells.length - 4];
                         let durasiText = durasiCell ? durasiCell.textContent.trim() : '0';
@@ -292,7 +304,6 @@
                 }
 
                 // update kotak total durasi
-                // update kotak total durasi (tanpa desimal)
                 document.getElementById('total-durasi').textContent = Math.round(totalDurasi);
             }
 
@@ -335,31 +346,20 @@
                 }
             });
 
-            // function updateRowNumbers() {
-            //     const numbers = table.querySelectorAll('tbody tr td.sticky-col-left');
-            //     numbers.forEach((cell, index) => cell.textContent = index + 1);
-            // }
-
             function updateRowNumbers() {
-                const tbody = table.tBodies[0]; // Ambil tbody
-                const rows = tbody.rows; // Ambil koleksi baris langsung dari tbody
+                const tbody = table.tBodies[0];
+                const rows = tbody.rows;
+                let visibleCounter = 1;
 
-                let visibleCounter = 1; // Mulai dari 1 untuk baris yang tampil
-
-                // Loop melalui semua baris dalam tbody
                 for (let i = 0; i < rows.length; i++) {
                     const currentRow = rows[i];
-
-                    // Periksa apakah baris ini sedang ditampilkan
                     if (currentRow.style.display !== 'none') {
-                        // Temukan sel pertama (kolom nomor) dalam baris ini dan ubah teksnya
-                        const firstCell = currentRow.cells[0]; // cells[0] adalah kolom 'No'
+                        const firstCell = currentRow.cells[0];
                         if (firstCell) {
                             firstCell.textContent = visibleCounter;
-                            visibleCounter++; // Naikkan nomor untuk baris tampil berikutnya
+                            visibleCounter++;
                         }
                     }
-                    // Jika baris disembunyikan (display === 'none'), abaikan saja
                 }
             }
 

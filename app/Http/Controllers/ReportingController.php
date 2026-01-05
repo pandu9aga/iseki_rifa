@@ -224,17 +224,40 @@ class ReportingController extends Controller
         $employeeIds = $request->input('nama', []);
         $jenisCutiList = $request->input('jenis_cuti', []);
         $keteranganCutiList = $request->input('keterangan', []);
-        $tanggal = now()->format('Y-m-d');
+        $tanggalList = $request->input('tanggal', []);
+        $jamMasukList = $request->input('jam_masuk', []);
+        $jamKeluarList = $request->input('jam_keluar', []);
+
 
         foreach ($employeeIds as $index => $employeeId) {
-            $employee = Employee::with('division')->find($employeeId);
+            $employee = Employee::find($employeeId);
+
+            $jenis = $jenisCutiList[$index] ?? '';
+
+            $jamMasuk = $jamMasukList[$index] ?? null;
+            $jamKeluar = $jamKeluarList[$index] ?? null;
+
+            if ($jenis === 'Terlambat') {
+                $jamKeluar = null;
+            }
+
+            if ($jenis === 'Pulang Cepat') {
+                $jamMasuk = null;
+            }
+
+            if (!in_array($jenis, ['Izin Keluar'])) {
+                if ($jenis !== 'Terlambat') $jamMasuk = null;
+                if ($jenis !== 'Pulang Cepat') $jamKeluar = null;
+            }
 
             if ($employee) {
                 Absensi::create([
                     'employee_id' => $employee->id,
-                    'tanggal' => $tanggal,
+                    'tanggal' => $tanggalList[$index],
+                    'jam_masuk' => $jamMasuk,
+                    'jam_keluar' => $jamKeluar,
                     'kategori' => $this->getKategoriCode($jenisCutiList[$index] ?? ''),
-                    'keterangan' => $keteranganCutiList[$index],
+                    'keterangan' => $keteranganCutiList[$index] ?? null,
                 ]);
             }
         }
