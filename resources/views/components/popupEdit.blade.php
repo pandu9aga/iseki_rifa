@@ -31,6 +31,16 @@
                 <input type="text" id="edit-keterangan" name="keterangan" class="input w-full">
             </div>
 
+            <div class="form-control">
+                <label for="edit-jam-masuk">Jam Masuk</label>
+                <input type="time" id="edit-jam-masuk" name="jam_masuk" class="input w-full">
+            </div>
+
+            <div class="form-control">
+                <label for="edit-jam-keluar">Jam Keluar</label>
+                <input type="time" id="edit-jam-keluar" name="jam_keluar" class="input w-full">
+            </div>
+
             <div class="button-group">
                 <button type="button" class="btn btn-neutral" onclick="closeModal('editModal')">Batal</button>
                 <button type="submit" class="btn btn-primary">Simpan</button>

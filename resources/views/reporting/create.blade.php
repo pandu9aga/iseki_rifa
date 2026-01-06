@@ -16,6 +16,15 @@
     </form>
     <p class="text-sm flex w-full justify-end">Jumlah Data:&nbsp;<span id="jumlah-data">{{ old('nama') ? count(old('nama')) : 1 }}</span></p>
 
+    <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
+        Untuk Terlambat wajib mengisi jam masuk
+    </p>
+    <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
+        Untuk Pulang Cepat wajib mengisi jam keluar
+    </p>
+    <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
+        Untuk Izin Keluar wajib mengisi jam masuk & jam keluar
+    </p>
 
     <form action="{{ route('reporting.store') }}" method="POST" id="izin-form" class="g-5">
         @csrf

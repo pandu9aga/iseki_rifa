@@ -17,6 +17,8 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use App\Services\GoogleDriveService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -129,12 +131,30 @@ class ReportingController extends Controller
                 $penggantiText = implode("\n", $penggantiList);
             }
 
+            $keteranganParts = [];
+
+            if (!empty($absen->keterangan)) {
+                $keteranganParts[] = $absen->keterangan;
+            }
+
+            if (!empty($absen->jam_masuk)) {
+                $keteranganParts[] = 'Jam masuk: ' . substr($absen->jam_masuk, 0, 5);
+            }
+
+            if (!empty($absen->jam_keluar)) {
+                $keteranganParts[] = 'Jam keluar: ' . substr($absen->jam_keluar, 0, 5);
+            }
+
+            $keteranganText = $keteranganParts
+                ? implode("\n", $keteranganParts)
+                : '-';
+
             $sheet->fromArray([
                 $index + 1,
                 $absen->employee->nama ?? '-',
                 $absen->kategori_label ?? '-',
                 $absen->tanggal ? $absen->tanggal->format('d/m/Y') : '-',
-                $absen->keterangan ?? '-',
+                $keteranganText,
                 $statusPersetujuan,
                 $absen->employee->status ?? 'Contract',
                 $absen->employee->division->nama ?? '-',
@@ -184,7 +204,7 @@ class ReportingController extends Controller
         return view('reporting.create', compact('employees'));
     }
 
-    public function approve(Request $request, $id)
+    public function approveOld(Request $request, $id)
     {
         $absen = Absensi::findOrFail($id);
         $approval = $request->input('approval');
@@ -219,6 +239,226 @@ class ReportingController extends Controller
         ]);
     }
 
+    public function approve(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $absen = Absensi::with('employee')->lockForUpdate()->findOrFail($id);
+
+            $oldApproval = $absen->is_approved; // SIMPAN STATUS LAMA
+            $approval = $request->input('approval');
+
+            // ===============================
+            // SET STATUS BARU
+            // ===============================
+            if ($approval === 'null') {
+                $absen->is_approved = null;
+            } elseif ($approval === '1') {
+                $absen->is_approved = true;
+            } elseif ($approval === '0') {
+                $absen->is_approved = false;
+            }
+
+            $statusMap = [
+                'leaves' => [
+                    'pending_dept' => 'PENDING_DEPT_HEAD',
+                    'pending_hr'   => 'PENDING_HR_HEAD',
+                    'approve'      => 'APPROVE',
+                    'reject'       => 'REJECTED',
+                    'cancel'       => 'CANCELED',
+                ],
+                'attendance' => [
+                    'pending_dept' => 'PENDING_DEPT_HEAD',
+                    'pending_hr'   => 'PENDING_HR',
+                    'approve'      => 'APPROVE',
+                    'reject'       => 'DECLINED',
+                    'cancel'       => 'CANCELED',
+                ],
+            ];
+
+            /* =================================================
+            JIKA DARI APPROVED → DIBATALKAN (ROLLBACK MIRAI)
+            ================================================= */
+            if ($oldApproval === true && is_null($absen->is_approved)) {
+
+                $modelTypeMap = [
+                    'C'   => 'leaves',
+                    'CSP' => 'leaves',
+                    'CSS' => 'leaves',
+                    'A'   => 'leaves',
+                    'ASP' => 'leaves',
+                    'ASS' => 'leaves',
+                    'S'   => 'leaves',
+                    'CK'  => 'leaves',
+                    'Sk'  => 'leaves',
+                    'T'   => 'attendance',
+                    'IK'  => 'attendance',
+                    'P'   => 'attendance',
+                ];
+
+                $modelType = $modelTypeMap[$absen->kategori] ?? null;
+
+                $status = $statusMap[$modelType]['cancel'];
+
+                if (!$modelType) {
+                    throw new \Exception('Model type tidak dikenali untuk rollback');
+                }
+
+                $rollbackPayload = [
+                    'id_rifa'    => (string) $absen->id,
+                    'model_type' => $modelType,
+                    'status'     => $status,
+                ];
+
+                \Log::info('ROLLBACK MIRAI', $rollbackPayload);
+
+                $rollbackResponse = Http::timeout(10)->post(
+                    'http://192.168.173.207/mirai/public/api/employees/rollback',
+                    $rollbackPayload
+                );
+
+                \Log::info('RESPONSE ROLLBACK MIRAI', [
+                    'status' => $rollbackResponse->status(),
+                    'body'   => $rollbackResponse->body(),
+                ]);
+
+                if (!$rollbackResponse->successful()) {
+                    throw new \Exception('Rollback MIRAI gagal');
+                }
+            }
+
+            /* ======================================
+            JIKA APPROVE → KIRIM API MIRAI
+            ====================================== */
+            if ($oldApproval !== true && $absen->is_approved === true) {
+
+                [$jenisCuti, $remark] = $this->mapKategoriUntukApi($absen);
+
+                $modelTypeMap = [
+                    'C'   => 'leaves',
+                    'CSP' => 'leaves',
+                    'CSS' => 'leaves',
+                    'A'   => 'leaves',
+                    'ASP' => 'leaves',
+                    'ASS' => 'leaves',
+                    'S'   => 'leaves',
+                    'CK'  => 'leaves',
+                    'Sk'  => 'leaves',
+                    'T'   => 'attendance',
+                    'IK'  => 'attendance',
+                    'P'   => 'attendance',
+                ];
+
+                $modelType = $modelTypeMap[$absen->kategori] ?? null;
+
+                if (!$modelType) {
+                    throw new \Exception('Model type tidak dikenali');
+                }
+
+                $status = $statusMap[$modelType]['pending_hr'];
+
+                $payload = [
+                    'id_rifa'       => (string) $absen->id,
+                    'employee_code' => (string) $absen->employee->nik,
+                    'request_date'  => $absen->tanggal->format('Y-m-d'),
+                    'jenis_cuti'    => $jenisCuti,
+                    'remark'        => $remark,
+                    'status'        => $status,
+                    'start_time'    => null,
+                    'end_time'      => null,
+                ];
+
+                if (in_array($absen->kategori, ['T', 'IK']) && $absen->jam_masuk) {
+                    $payload['start_time'] = \Carbon\Carbon::parse($absen->jam_masuk)->format('H:i');
+                }
+
+                if (in_array($absen->kategori, ['P', 'IK']) && $absen->jam_keluar) {
+                    $payload['end_time'] = \Carbon\Carbon::parse($absen->jam_keluar)->format('H:i');
+                }
+
+                \Log::info('KIRIM MIRAI', $payload);
+
+                $response = Http::timeout(10)->post(
+                    'http://192.168.173.207/mirai/public/api/employees/leave-attendance',
+                    $payload
+                );
+
+                if (!$response->successful()) {
+                    throw new \Exception('Gagal sinkron ke sistem MIRAI');
+                }
+            }
+
+            // ===============================
+            // SAVE DB SETELAH SEMUA API OK
+            // ===============================
+            $absen->save();
+            DB::commit();
+
+            /* ===============================
+            RESPONSE UI
+            =============================== */
+            if (is_null($absen->is_approved)) {
+                $label = 'Menunggu Persetujuan';
+                $class = 'bg-yellow';
+            } elseif ($absen->is_approved === true) {
+                $label = 'Disetujui';
+                $class = 'bg-success';
+            } else {
+                $label = 'Ditolak';
+                $class = 'bg-red';
+            }
+
+            return response()->json([
+                'status_label' => $label,
+                'status_class' => $class,
+                'button_html'  => view('partials.approval-buttons', compact('absen'))->render(),
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            \Log::error('Approve absensi gagal', [
+                'absen_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function mapKategoriUntukApi(Absensi $absen): array
+    {
+        $map = [
+            'C'   => 'Cuti',
+            'CSP' => 'Cuti Setengah Hari Pagi',
+            'CSS' => 'Cuti Setengah Hari Siang',
+            'T'   => 'Terlambat',
+            'IK'  => 'Keluar di jam Kerja, Kembali ke Perusahaan',
+            'P'   => 'Pulang Cepat',
+            'A'   => 'Absen',
+            'ASP' => 'Absen Setengah Hari Pagi',
+            'ASS' => 'Absen Setengah Hari Siang',
+            'S'   => 'Sakit',
+            'CK'  => 'Cuti Khusus',
+            'Sk'  => 'Absen', // khusus serikat
+        ];
+
+        $jenisCuti = $map[$absen->kategori] ?? $absen->kategori;
+
+        // remark default
+        $remark = $absen->keterangan ?: '-';
+
+        // khusus Serikat
+        if ($absen->kategori === 'Sk') {
+            $remark = 'serikat' . ($absen->keterangan ? ' - ' . $absen->keterangan : '');
+        }
+
+        return [$jenisCuti, $remark];
+    }
+
     public function store(Request $request)
     {
         $employeeIds = $request->input('nama', []);
@@ -234,20 +474,25 @@ class ReportingController extends Controller
 
             $jenis = $jenisCutiList[$index] ?? '';
 
-            $jamMasuk = $jamMasukList[$index] ?? null;
-            $jamKeluar = $jamKeluarList[$index] ?? null;
+            $jamMasuk  = $jamMasukList[$index] ?: null;
+            $jamKeluar = $jamKeluarList[$index] ?: null;
 
-            if ($jenis === 'Terlambat') {
-                $jamKeluar = null;
-            }
+            switch ($jenis) {
+                case 'Terlambat':
+                    $jamKeluar = null;
+                    break;
 
-            if ($jenis === 'Pulang Cepat') {
-                $jamMasuk = null;
-            }
+                case 'Pulang Cepat':
+                    $jamMasuk = null;
+                    break;
 
-            if (!in_array($jenis, ['Izin Keluar'])) {
-                if ($jenis !== 'Terlambat') $jamMasuk = null;
-                if ($jenis !== 'Pulang Cepat') $jamKeluar = null;
+                case 'Izin Keluar':
+                    // dua-duanya boleh
+                    break;
+
+                default:
+                    $jamMasuk = null;
+                    $jamKeluar = null;
             }
 
             if ($employee) {
@@ -382,23 +627,33 @@ class ReportingController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'kategori' => 'required|string',
-            'tanggal' => 'required|date',
+            'kategori'   => 'required|string',
+            'tanggal'    => 'required|date',
+            'keterangan' => 'nullable|string',
+            'jam_masuk'  => 'nullable',
+            'jam_keluar' => 'nullable',
         ]);
 
         $absensi = Absensi::findOrFail($id);
         $absensi->load('employee');
 
         $absensi->update([
-            'kategori' => $this->getKategoriCode($request->kategori),
-            'tanggal' => $request->tanggal,
-            'keterangan' => $request->keterangan,
-            'is_approved' => null,
-            'approved_at' => null,
-            'updated_at' => now(),
+            'kategori'     => $this->getKategoriCode($request->kategori),
+            'tanggal'      => $request->tanggal,
+            'keterangan'   => $request->keterangan,
+            'jam_masuk'    => $request->jam_masuk,
+            'jam_keluar'   => $request->jam_keluar,
+
+            // reset approval karena data berubah
+            'is_approved'  => null,
+            'approved_at'  => null,
+            'updated_at'   => now(),
         ]);
 
-        // Tambah atau update Report
+        /**
+         * Update / create report harian
+         * tetap pakai logic lama supaya tidak merusak data existing
+         */
         $userId = Auth::id();
         $today = now()->startOfDay();
 
@@ -408,15 +663,17 @@ class ReportingController extends Controller
                 'created_at' => Report::query()
                     ->where('user_id', $userId)
                     ->whereDate('created_at', $today)
-                    ->value('created_at') ?? now()
+                    ->value('created_at') ?? now(),
             ],
             [
                 'updated_at' => now(),
-                'divisi' => Auth::user()->division,
+                'divisi'     => Auth::user()->division,
             ]
         );
 
-        return response()->json(['message' => 'Data berhasil diupdate.'], 200);
+        return response()->json([
+            'message' => 'Data berhasil diupdate.',
+        ], 200);
     }
 
     public function destroy($id)
