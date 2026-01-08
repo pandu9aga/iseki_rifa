@@ -183,20 +183,20 @@
             const jamMasuk = row.querySelector('input[name="jam_masuk[]"]')?.value;
             const jamKeluar = row.querySelector('input[name="jam_keluar[]"]')?.value;
 
-            if (jenis === 'Terlambat' && !jamMasuk) {
-                isValid = false;
-                errorMessage = `Baris ${index + 1}: Jam masuk wajib diisi untuk Terlambat`;
-            }
+            // if (jenis === 'Terlambat' && !jamMasuk) {
+            //     isValid = false;
+            //     errorMessage = `Baris ${index + 1}: Jam masuk wajib diisi untuk Terlambat`;
+            // }
 
-            if (jenis === 'Pulang Cepat' && !jamKeluar) {
-                isValid = false;
-                errorMessage = `Baris ${index + 1}: Jam keluar wajib diisi untuk Pulang Cepat`;
-            }
+            // if (jenis === 'Pulang Cepat' && !jamKeluar) {
+            //     isValid = false;
+            //     errorMessage = `Baris ${index + 1}: Jam keluar wajib diisi untuk Pulang Cepat`;
+            // }
 
-            if (jenis === 'Izin Keluar' && (!jamMasuk || !jamKeluar)) {
-                isValid = false;
-                errorMessage = `Baris ${index + 1}: Jam masuk & keluar wajib diisi untuk Izin Keluar`;
-            }
+            // if (jenis === 'Izin Keluar' && (!jamMasuk || !jamKeluar)) {
+            //     isValid = false;
+            //     errorMessage = `Baris ${index + 1}: Jam masuk & keluar wajib diisi untuk Izin Keluar`;
+            // }
         });
 
         if (!isValid) {
