@@ -62,6 +62,21 @@ return [
             ]) : [],
         ],
 
+        'mirai' => [
+            'driver' => env('DB_MIRAI_CONNECTION', 'mysql'),
+            'host' => env('DB_MIRAI_HOST', '127.0.0.1'),
+            'port' => env('DB_MIRAI_PORT', '3306'),
+            'database' => env('DB_MIRAI_DATABASE', 'forge'),
+            'username' => env('DB_MIRAI_USERNAME', 'forge'),
+            'password' => env('DB_MIRAI_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

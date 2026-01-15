@@ -13,16 +13,16 @@ function filterCutiTable() {
 
     rows.forEach(row => {
         if (row.id === 'no-data-row') return;
-        const isWithAuth = row.cells.length === 12; // admin punya 12 kolom, leader 11
+        const isWithAuth = row.cells.length === 13; // admin punya 13 kolom, leader 12
 
         const nama = row.cells[1].textContent.toLowerCase();
         const jenisCuti = row.cells[2].textContent.toLowerCase();
         const tanggal = formatTanggalKeYMD(row.cells[3].textContent.toLowerCase());
         const keterangan = row.cells[4].textContent.toLowerCase();
-        const approval_status = row.cells[isWithAuth ? 6 : 5].textContent.toLowerCase();
-        const team = row.cells[isWithAuth ? 8 : 7].textContent.toLowerCase();
-        const status = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase().trim(); // <-- tambahkan .trim()
-        const divisi = row.cells[isWithAuth ? 10 : 9].textContent.toLowerCase();
+        const approval_status = row.cells[isWithAuth ? 7 : 6].textContent.toLowerCase();
+        const team = row.cells[isWithAuth ? 9 : 8].textContent.toLowerCase();
+        const status = row.cells[isWithAuth ? 10 : 9].textContent.toLowerCase().trim(); // <-- tambahkan .trim()
+        const divisi = row.cells[isWithAuth ? 11 : 10].textContent.toLowerCase();
 
         // Filter partial untuk teks bebas
         const matchNama = nama.includes(filterNama);

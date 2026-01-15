@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Employee extends Model
 {
@@ -31,5 +32,24 @@ class Employee extends Model
     {
         return $this->hasMany(NilaiPegawai::class, 'employee_id');
         // TANPA whereYear di sini!
+    }
+
+    public function getSaldoCutiAttribute()
+    {
+        $internalEmployeeId = DB::connection('mirai')->table('employees')
+            ->where('employee_number', $this->nik)
+            ->value('id');
+
+        if (!$internalEmployeeId) {
+            return 0;
+        }
+
+        $balance = DB::connection('mirai')->table('leave_balances')
+            ->where('employee_id', $internalEmployeeId)
+            ->where('year', now()->year)
+            ->where('status', 'FINAL')
+            ->value('remaining_leave');
+
+        return $balance ?? 0;
     }
 }

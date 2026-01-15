@@ -7,6 +7,8 @@ use App\Models\Division;
 use App\Models\Employee;
 use App\Models\Report;
 use App\Models\SpecialDate;
+use App\Models\MiraiEmployee;
+use App\Models\MiraiLeaveBalance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;

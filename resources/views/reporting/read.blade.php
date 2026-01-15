@@ -203,6 +203,7 @@
                         <th>Jenis Izin</th>
                         <th>Tanggal</th>
                         <th>Keterangan</th>
+                        <th rowspan="2">Sisa Cuti</th>
                         @userType('super')
                             <th rowspan="2">Approvement</th>
                         @enduserType
@@ -301,6 +302,13 @@
 
                                 @if (!$absen->keterangan && !$absen->jam_masuk && !$absen->jam_keluar)
                                     -
+                                @endif
+                            </td>
+                            <td>
+                                @if($absen->employee->saldo_cuti)
+                                    <strong>{{ $absen->employee->saldo_cuti }}</strong> hari
+                                @else
+                                    <span class="text-gray-500">Data tidak ditemukan</span>
                                 @endif
                             </td>
                             @php
