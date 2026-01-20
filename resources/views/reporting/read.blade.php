@@ -352,7 +352,7 @@
                                 @if($absen->employee->saldo_cuti)
                                     <strong>{{ $absen->employee->saldo_cuti }}</strong> hari
                                 @else
-                                    <span class="text-gray-500">Data tidak ditemukan</span>
+                                    <span class="text-gray-500">-</span>
                                 @endif
                             </td>
                             @php
