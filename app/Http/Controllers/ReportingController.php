@@ -1047,4 +1047,18 @@ class ReportingController extends Controller
         $writer->save('php://output');
         exit;
     }
+
+    public function memberApprove(Request $request, $id)
+    {
+        $absen = Absensi::findOrFail($id);
+
+        $approval = $request->approval;
+        $absen->member_approved = $approval === 'null' ? null : (bool)$approval;
+        $absen->save();
+
+        return response()->json([
+            'cell_html' => view('partials.member-approval-cell', compact('absen'))->render()
+        ]);
+    }
+
 }

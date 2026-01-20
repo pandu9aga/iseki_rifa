@@ -19,7 +19,8 @@ class Absensi extends Model
         'keterangan',
         'jam_masuk',
         'jam_keluar',
-        'is_approved'
+        'is_approved',
+        'member_approved',
     ];
 
     protected $casts = [

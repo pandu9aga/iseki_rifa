@@ -59,6 +59,7 @@
                         <th class="px-3 py-2 text-left">Status</th>
                         <th class="px-3 py-2 text-left">Divisi</th>
                         <th class="px-3 py-2 text-left">Tim</th>
+                        <th class="px-3 py-2 text-left">Password</th>
                         <th rowspan="2" class="px-3 py-2 text-left sticky-col-right">Aksi</th>
                     </tr>
                     <tr>
@@ -83,8 +84,14 @@
                                 @endforeach
                             </select>
                         </th>
-                        <th><input class="filter w-full px-2 py-1 border rounded" data-column="6" type="text"
-                                placeholder="Cari Tim" /></th>
+                        <th>
+                            <input class="filter w-full px-2 py-1 border rounded" data-column="6" type="text"
+                                placeholder="Cari Tim" />
+                        </th>
+                        <th>
+                            <input class="filter w-full px-2 py-1 border rounded" data-column="7" type="text"
+                                placeholder="Cari Password" />
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,6 +104,7 @@
                             <td class="px-3 py-2">{{ $employee->status ?? '-' }}</td>
                             <td class="px-3 py-2">{{ $employee->division?->nama ?? '-' }}</td>
                             <td class="px-3 py-2">{{ $employee->team ?? '-' }}</td>
+                            <td class="px-3 py-2">{{ $employee->password ?? '-' }}</td>
                             <td class="px-3 py-2 sticky-col-right">
                                 <div class="btn-group flex gap-1">
                                     <button type="button" class="btn btn-icon edit-row">
@@ -230,6 +238,7 @@
                     const status = cells[4].textContent;
                     const divisi = cells[5].textContent;
                     const team = cells[6].textContent === '-' ? '' : cells[6].textContent;
+                    const password = cells[7].textContent;
 
                     document.getElementById('edit-id').value = id;
                     document.getElementById('edit-nama').value = nama;
@@ -237,6 +246,7 @@
                     document.getElementById('edit-status').value = status;
                     document.getElementById('edit-divisi').value = divisi;
                     document.getElementById('edit-team').value = team;
+                    document.getElementById('edit-password').value = password;
 
                     if (typeof $ !== 'undefined') {
                         $('#edit-status').val(status).trigger('change');
@@ -261,6 +271,7 @@
                     status: document.getElementById('edit-status').value,
                     divisi: document.getElementById('edit-divisi').value,
                     team: document.getElementById('edit-team').value,
+                    password: document.getElementById('edit-password').value,
                 };
 
                 fetch(`/iseki_rifa/public/employees/${id}`, {

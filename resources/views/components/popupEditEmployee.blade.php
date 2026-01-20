@@ -39,6 +39,11 @@
                 <input type="text" id="edit-team" name="team" class="input w-full">
             </div>
 
+            <div class="form-control">
+                <label for="edit-password">Password</label>
+                <input type="text" id="edit-password" name="password" class="input w-full" maxlength="3">
+            </div>
+
             <div class="button-group">
                 <button type="button" class="btn btn-neutral" onclick="closeEditModal()">Batal</button>
                 <button type="submit" class="btn btn-primary">Simpan</button>

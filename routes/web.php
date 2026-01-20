@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\CheckUserType;
+use App\Http\Middleware\CheckEmployeeLogin;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\UserController;
@@ -9,7 +9,7 @@ use App\Http\Controllers\DateController;
 use App\Http\Controllers\ReplacementController;
 use App\Http\Controllers\LemburController;
 use App\Http\Controllers\LaporanLemburController;
-use App\Http\Controllers\PenilaianTahunanController; // <-- Tambahkan ini
+use App\Http\Controllers\PenilaianTahunanController;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 // Guest routes
 Route::get('/', function () {
-    if (Auth::check()) {
+    if (Auth::check() || (session()->has('employee_login') && session('employee_login'))) {
         return redirect()->route('reporting');
     }
     return app(AuthController::class)->showLogin();
@@ -37,7 +37,24 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Request Nuzul
 Route::get('/divisioning', [EmployeeController::class, 'totalInDivisions']);
 
-// Authenticated routes
+// Route untuk employee
+Route::middleware(CheckEmployeeLogin::class)->group(function () {
+    Route::get('/employee/reporting', [ReportingController::class, 'read'])->name('employee.reporting');
+    Route::put('/reporting/{id}/member-approve', [ReportingController::class, 'memberApprove']);
+    Route::get('/employee/reporting/create', [ReportingController::class, 'create']);
+    Route::post('/employee/reporting', [ReportingController::class, 'store'])->name('employee.reporting.store');
+    Route::get('/employee/employee/details', [ReportingController::class, 'getEmployeeDetails'])->name('employee.details');
+    Route::get('/employee/reporting/export', [ReportingController::class, 'export']);
+    Route::put('/employee/reporting/{id}', [ReportingController::class, 'update'])->name('employee.reporting.update');
+    Route::delete('/employee/reporting/{id}', [ReportingController::class, 'destroy'])->name('employee.reporting.destroy');
+    Route::put('/employee/reporting/{id}/approve', [ReportingController::class, 'approve'])->name('employee.reporting.approve');
+    Route::get('/employee/reporting/daily-report', [ReportingController::class, 'dailyReport']);
+    Route::post('/employee/reporting/nihil', [ReportingController::class, 'storeNihil'])->name('employee.reporting.nihil');
+    Route::get('/employee/reporting/download-pdf', [ReportingController::class, 'pdf'])->name('employee.reporting.pdf');
+    Route::get('/employee/reporting/download-excel', [ReportingController::class, 'excel'])->name('employee.reporting.excel');
+});
+
+// Authenticated routes (user biasa)
 Route::middleware('auth')->group(function () {
 
     // Reporting

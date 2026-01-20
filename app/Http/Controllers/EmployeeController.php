@@ -7,6 +7,7 @@ use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class EmployeeController extends Controller
 {
@@ -92,6 +93,7 @@ class EmployeeController extends Controller
             Employee::create([
                 'nama' => $nama,
                 'nik' => $nikList[$index] ?? null,
+                'password' => $this->generateRandomPassword(),
                 'status' => $statusList[$index] ?? null,
                 'division_id' => $divisionList[$index] ?? null,
                 'team' => $teamList[$index] ?? null,
@@ -103,10 +105,16 @@ class EmployeeController extends Controller
         return redirect()->route('employees.read')->with('success', 'Data berhasil disimpan!');
     }
 
+    private function generateRandomPassword()
+    {
+        return Str::lower(Str::random(3)); // 3 karakter acak huruf dan angka, lowercase
+    }
+
     public function update(Request $request, $id)
     {
         $request->validate([
             'nama' => 'required|string',
+            'password' => 'nullable|string|max:3', // Validasi maksimal 3 karakter
         ]);
 
         $employee = Employee::findOrFail($id);
@@ -121,6 +129,7 @@ class EmployeeController extends Controller
         $employee->update([
             'nama' => $request->nama,
             'nik' => $nik,
+            'password' => $request->password, // Update password jika diisi
             'status' => $request->status ?? null,
             'division_id' => $division->id ?? null,
             'team' => $request->team ?? null,

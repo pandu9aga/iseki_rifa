@@ -42,6 +42,7 @@
         @include('components.popupEdit')
         @include('components.popupDailyReport')
 
+        @userType('leader', 'admin', 'super')
         <h4 class="font-bold mt-4">
             Laporan hari ini :
             <span style="color: #ec057d;">{{ now()->format('d M Y') }}</span>
@@ -64,6 +65,7 @@
         <h5>
             Leader Yang Telah Submit :
         </h5>
+
         <table class="table-auto w-full border border-gray-300 mt-4">
             <thead class="bg-gray-100">
                 <tr>
@@ -82,7 +84,9 @@
                         <td class="border px-4 py-2">{{ $report->user->name }}</td>
                         <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
                         <td class="border px-4 py-2">
-                            {{ is_array($report->user->team) ? implode(', ', $report->user->team) : $report->user->team ?? 'Tanpa Team' }}
+                            {{ is_array($report->user->team) 
+                                ? implode(', ', $report->user->team) 
+                                : $report->user->team ?? 'Tanpa Team' }}
                         </td>
                         <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
                         <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
@@ -92,6 +96,8 @@
         </table>
 
         <br>
+        @enduserType
+
         <section class="title-button d-flex flex-row">
             <h1 class="font-bold">List Perizinan</h1>
             <section class="btn-group d-flex flex-row">
@@ -168,9 +174,11 @@
             </section>
         </section>
 
+        @userType('leader', 'admin', 'super')
         {{-- <a href="{{ route('reporting.pdf') }}" class="btn btn-primary">Download PDF</a> --}}
         <a href="{{ route('reporting.excel') }}" class="btn btn-primary">Data Perizinan <i
                 class="material-symbols-rounded">download</i></a>
+        @enduserType
 
         <p id="jumlah-data" class="flex justify-end mb-2 text-sm">
             Jumlah Data: {{ count($absensis) }}
@@ -208,15 +216,29 @@
                             <th rowspan="2">Approvement</th>
                         @enduserType
                         <th>Status Persetujuan</th>
-                        <th rowspan="2">Pengganti</th>
+                        <th>Persetujuan Member</th>
+                        {{-- Kolom Pengganti hanya untuk non-employee --}}
+                        @if(!(session()->has('employee_login') && session('employee_login')))
+                            <th rowspan="2">Pengganti</th>
+                        @endif
                         <th>Tim</th>
                         <th>Status</th>
                         <th>Divisi</th>
                         <th rowspan="2" class="sticky-col-right">Aksi</th>
                     </tr>
                     <tr>
-                        <th class="sticky-col-left"><input class="filter" id="filter-nama" type="text"
-                                placeholder="Cari Nama" /></th>
+                        <th class="sticky-col-left">
+                            <input
+                                class="filter"
+                                id="filter-nama"
+                                type="text"
+                                placeholder="Cari Nama"
+                                value="{{ session()->has('employee_login') && session('employee_login') 
+                                    ? session('employee_user')->name 
+                                    : '' }}"
+                                {{ session()->has('employee_login') && session('employee_login') ? 'readonly' : '' }}
+                            />
+                        </th>
                         <th>
                             <select name="jenis_cuti" class="select2 filter" data-placeholder="Pilih jenis izin"
                                 data-allow-clear="true" style="width: 100%;" id="filter-jenis">
@@ -236,8 +258,16 @@
                             </select>
                         </th>
                         {{-- <th><input class="filter" id="filter-tanggal" type="month" value="{{ request('bulan', now()->format('Y-m')) }}" /></th> --}}
-                        <th><input class="filter" id="filter-tanggal" type="date"
-                                value="{{ request('tanggal', now()->format('Y-m-d')) }}" /></th>
+                        <th>
+                            <input
+                                class="filter"
+                                id="filter-tanggal"
+                                type="date"
+                                value="{{ (session()->has('employee_login') && session('employee_login'))
+                                    ? ''
+                                    : request('tanggal', now()->format('Y-m-d')) }}"
+                            />
+                        </th>
                         <th><input type="text" class="filter" id="filter-keterangan" placeholder="Cari Keterangan" />
                         </th>
                         {{-- <th><input type="text" class="filter" id="filter-pengganti" placeholder="Cari Pengganti" /></th> --}}
@@ -245,6 +275,20 @@
                             <select name="approval_status" class="select2 filter"
                                 data-placeholder="Pilih status persetujuan" data-allow-clear="true" style="width: 100%"
                                 id="filter-approval-status">
+                                <option></option>
+                                <option value="Disetujui">Disetujui</option>
+                                <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
+                                <option value="Ditolak">Ditolak</option>
+                            </select>
+                        </th>
+                        <th>
+                            <select name="approval_member_status" class="select2 filter"
+                                data-placeholder="Pilih status persetujuan" data-allow-clear="true" style="width: 100%"
+                                id="filter-approval-member-status"
+                                @if((session()->has('employee_login') && session('employee_login')))
+                                disabled
+                                @endif
+                                >
                                 <option></option>
                                 <option value="Disetujui">Disetujui</option>
                                 <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
@@ -345,11 +389,52 @@
                                 </td>
                             @enduserType
 
-                            <td class="status text-center h-full text-sm {{ $stylingClass }}">
+                            <td class="status-super text-center h-full text-sm {{ $stylingClass }}">
                                 <span>
                                     {{ $status }}
                                 </span>
                             </td>
+                            @php
+                                if (is_null($absen->member_approved)) {
+                                    $statusMember = 'Menunggu Persetujuan';
+                                    $stylingClassMember = 'bg-yellow';
+                                } elseif ($absen->member_approved === 1) {
+                                    $statusMember = 'Disetujui';
+                                    $stylingClassMember = 'bg-success';
+                                } else {
+                                    $statusMember = 'Ditolak';
+                                    $stylingClassMember = 'bg-red';
+                                }
+                            @endphp
+                            <td class="status-member text-center h-full text-sm {{ $stylingClassMember }}">
+                                @if(session()->has('employee_login') && session('employee_login'))
+                                    <form class="member-approval-form" data-id="{{ $absen->id }}">
+                                        @csrf
+                                        @method('PUT')
+
+                                        @if (is_null($absen->member_approved))
+                                            <div class="flex flex-col btn-group">
+                                                <button type="button" data-value="1"
+                                                    class="btn bg-success text-sm rounded member-approve-btn">
+                                                    Setujui
+                                                </button>
+                                                <button type="button" data-value="0"
+                                                    class="btn bg-red text-sm rounded member-approve-btn">
+                                                    Tolak
+                                                </button>
+                                            </div>
+                                        @else
+                                            <button type="button" data-value="null"
+                                                class="btn {{ $stylingClassMember }} text-sm rounded member-approve-btn">
+                                                Batalkan
+                                            </button>
+                                        @endif
+                                    </form>
+                                @else
+                                    <span>{{ $statusMember }}</span>
+                                @endif
+                            </td>
+                            @if(!(session()->has('employee_login') && session('employee_login')))
                             <td>
                                 <div style="display: inline-flex; align-items: center; gap: 5px;">
                                     <span>{{ \App\Models\Replacement::where('absensi_id', $absen->id)->count() }} ; </span>
@@ -361,37 +446,43 @@
                                     </button>
                                 </div>
                             </td>
+                            @endif
                             <td>{{ $absen->employee->team ?? '-' }}</td>
                             <td>{{ $absen->employee->status ?? '-' }}</td>
                             <td>{{ $absen->employee->division->nama ?? '-' }}</td>
                             <td class="sticky-col-right">
-                                {{-- @if (is_null($absen->is_approved) || auth()->user()->type === 'super') --}}
-                                @if (is_null($absen->is_approved))
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-icon edit-row">
-                                            <i class="material-symbols-rounded btn-primary">
-                                                edit_square
-                                            </i>
-                                        </button>
+                                @php
+                                    $isEmployee = session()->has('employee_login') && session('employee_login');
+                                    $disableAction = $isEmployee || !is_null($absen->is_approved);
+                                @endphp
 
-                                        <button type="button" class="btn btn-icon danger"
+                                <div class="btn-group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-icon edit-row"
+                                        {{ $disableAction ? 'disabled' : '' }}
+                                        style="{{ $disableAction ? 'opacity: 0.2;' : '' }}"
+                                    >
+                                        <i class="material-symbols-rounded btn-primary">
+                                            edit_square
+                                        </i>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-icon danger"
+                                        {{ $disableAction ? 'disabled' : '' }}
+                                        style="{{ $disableAction ? 'opacity: 0.2;' : '' }}"
+                                        @unless($disableAction)
                                             onclick="showDeletePopup(this.closest('tr'))"
-                                            title="Hapus">
-                                            <i class="material-symbols-rounded btn-danger">
-                                                delete
-                                            </i>
-                                        </button>
-                                    </div>
-                                @else
-                                    <div class="btn-group">
-                                        <button class="btn btn-icon edit-row" style="opacity: 20%;" disabled>
-                                            <i class="material-symbols-rounded">edit_square</i>
-                                        </button>
-                                        <button class="btn btn-icon danger" style="opacity: 20%;" disabled>
-                                            <i class="material-symbols-rounded btn-danger">delete</i>
-                                        </button>
-                                    </div>
-                                @endif
+                                        @endunless
+                                        title="Hapus"
+                                    >
+                                        <i class="material-symbols-rounded btn-danger">
+                                            delete
+                                        </i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -580,7 +671,7 @@
                         })
                         .then(data => {
                             const row = document.querySelector(`tr[data-id="${id}"]`);
-                            const statusCell = row.querySelector('.status');
+                            const statusCell = row.querySelector('.status-super')
 
                             // Update status label & warna
                             statusCell.textContent = data.status_label;
@@ -694,6 +785,46 @@
                 cell.textContent = index + 1;
             });
         }
+    </script>
+    <script>
+        function attachMemberApprovalListeners(context = document) {
+            context.querySelectorAll('.member-approve-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const approval = this.dataset.value;
+                    const form = this.closest('.member-approval-form');
+                    const id = form.dataset.id;
+
+                    fetch(`/iseki_rifa/public/reporting/${id}/member-approve`, {
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ approval })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        const row = document.querySelector(`tr[data-id="${id}"]`);
+                        const oldCell = row.querySelector('td.status-member');
+
+                        const template = document.createElement('template');
+                        template.innerHTML = data.cell_html.trim();
+
+                        const newCell = template.content.firstElementChild;
+                        oldCell.replaceWith(newCell);
+
+                        attachMemberApprovalListeners(newCell);
+                    })
+                    .catch(() => {
+                        showApprovalNotif('Gagal menyimpan persetujuan member', 'error');
+                    });
+                });
+            });
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            attachMemberApprovalListeners();
+        });
     </script>
     <script>
         document.addEventListener('click', function(e) {
