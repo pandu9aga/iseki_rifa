@@ -37,12 +37,143 @@
             color: #000;
         }
 
+        .table-scroll-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* 📱 HP (<= 640px) */
+        @media (max-width: 640px) {
+            .table-scroll-wrapper {
+                width: max-content;
+            }
+        }
+
+        #cuti-table {
+            width: max-content;     /* ⬅️ jangan dipaksa 100% */
+            min-width: 100%;        /* ⬅️ desktop tetap full */
+            border-collapse: collapse;
+        }
+
     </style>
     <main>
         @include('components.popupEdit')
         @include('components.popupDailyReport')
 
-        @userType('leader', 'admin', 'super')
+        @userType('leader')
+        <h4 class="font-bold mt-4">
+            Laporan hari ini :
+            <span style="color: #ec057d;">{{ now()->format('d M Y') }}</span>
+        </h4>
+
+        <div class="badge-container">
+            <h5 style="margin-bottom: 5pt;">Status Tim yang Sudah Submit:</h5>
+            @foreach ($allTeams as $team)
+                @php
+                    $flatTeams = array_map('strtolower', array_merge(...$teamsWithReport));
+                    $isSubmitted = in_array(strtolower($team), $flatTeams);
+                @endphp
+
+                <span class="badge {{ $isSubmitted ? 'badge-submitted' : 'badge-pending' }}">
+                    {{ ucwords($team) }}
+                </span>
+            @endforeach
+        </div>
+
+        <h5>
+            Leader Yang Telah Submit :
+        </h5>
+
+        <table class="table-auto w-full border border-gray-300 mt-4">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="border px-4 py-2 text-center">No</th>
+                    <th class="border px-4 py-2">Nama</th>
+                    <th class="border px-4 py-2">Divisi</th>
+                    <th class="border px-4 py-2">Team</th>
+                    <th class="border px-4 py-2">Submit Laporan</th>
+                    <th class="border px-4 py-2">Update Laporan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($reportToday as $i => $report)
+                    <tr>
+                        <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
+                        <td class="border px-4 py-2">{{ $report->user->name }}</td>
+                        <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
+                        <td class="border px-4 py-2">
+                            {{ is_array($report->user->team) 
+                                ? implode(', ', $report->user->team) 
+                                : $report->user->team ?? 'Tanpa Team' }}
+                        </td>
+                        <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <br>
+        @enduserType
+
+        @userType('admin')
+        <h4 class="font-bold mt-4">
+            Laporan hari ini :
+            <span style="color: #ec057d;">{{ now()->format('d M Y') }}</span>
+        </h4>
+
+        <div class="badge-container">
+            <h5 style="margin-bottom: 5pt;">Status Tim yang Sudah Submit:</h5>
+            @foreach ($allTeams as $team)
+                @php
+                    $flatTeams = array_map('strtolower', array_merge(...$teamsWithReport));
+                    $isSubmitted = in_array(strtolower($team), $flatTeams);
+                @endphp
+
+                <span class="badge {{ $isSubmitted ? 'badge-submitted' : 'badge-pending' }}">
+                    {{ ucwords($team) }}
+                </span>
+            @endforeach
+        </div>
+
+        <h5>
+            Leader Yang Telah Submit :
+        </h5>
+
+        <table class="table-auto w-full border border-gray-300 mt-4">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="border px-4 py-2 text-center">No</th>
+                    <th class="border px-4 py-2">Nama</th>
+                    <th class="border px-4 py-2">Divisi</th>
+                    <th class="border px-4 py-2">Team</th>
+                    <th class="border px-4 py-2">Submit Laporan</th>
+                    <th class="border px-4 py-2">Update Laporan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($reportToday as $i => $report)
+                    <tr>
+                        <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
+                        <td class="border px-4 py-2">{{ $report->user->name }}</td>
+                        <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
+                        <td class="border px-4 py-2">
+                            {{ is_array($report->user->team) 
+                                ? implode(', ', $report->user->team) 
+                                : $report->user->team ?? 'Tanpa Team' }}
+                        </td>
+                        <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <br>
+        @enduserType
+
+        @userType('super')
         <h4 class="font-bold mt-4">
             Laporan hari ini :
             <span style="color: #ec057d;">{{ now()->format('d M Y') }}</span>
