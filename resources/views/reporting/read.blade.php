@@ -16,6 +16,16 @@
             text-transform: capitalize;
         }
 
+        .badge-small {
+            display: inline-block;
+            padding: 3px 6px;
+            margin: 2px 2px 4px 0;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 12px;
+            text-transform: capitalize;
+        }
+
         .badge-submitted {
             background-color: #ec057d;
             color: white;
@@ -464,15 +474,15 @@
                                 @endif
 
                                 @if ($absen->jam_masuk)
-                                    <small class="text-gray-600">
+                                    <span class="badge badge-small badge-submitted">
                                         Jam masuk: {{ $absen->jam_masuk }}
-                                    </small><br>
+                                    </span> 
                                 @endif
 
                                 @if ($absen->jam_keluar)
-                                    <small class="text-gray-600">
+                                    <span class="badge badge-small badge-submitted">
                                         Jam keluar: {{ $absen->jam_keluar }}
-                                    </small>
+                                    </span>
                                 @endif
 
                                 @if (!$absen->keterangan && !$absen->jam_masuk && !$absen->jam_keluar)
