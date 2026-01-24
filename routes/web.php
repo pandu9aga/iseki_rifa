@@ -10,6 +10,7 @@ use App\Http\Controllers\ReplacementController;
 use App\Http\Controllers\LemburController;
 use App\Http\Controllers\LaporanLemburController;
 use App\Http\Controllers\PenilaianTahunanController;
+use App\Http\Controllers\BudgetController;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -100,6 +101,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/lembur/{id}', [LemburController::class, 'destroy'])->name('lemburs.destroy');
     Route::get('/export-lembur', [LemburController::class, 'exportLembur'])->name('export.lembur');
     Route::put('/lembur/{id}/approve', [LemburController::class, 'approve'])->name('lembur.approve');
+
+    // ✅ BUDGET LEMBUR — DIPERBAIKI (HANYA 2 ROUTE)
+    Route::get('/budget-lembur', [BudgetController::class, 'index'])->name('budget.lembur.index');
+    Route::post('/budget-lembur', [BudgetController::class, 'bulkUpdate'])->name('budget.lembur.bulk-update');
 
     // Laporan Lembur
     Route::prefix('laporan')->name('laporan.')->group(function () {

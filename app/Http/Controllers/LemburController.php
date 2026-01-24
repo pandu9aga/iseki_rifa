@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lembur;
 use App\Models\Employee;
+use App\Models\Budget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -16,10 +17,6 @@ use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageMargins;
 use Carbon\Carbon;
-use PhpOffice\PhpSpreadsheet\Style\Font;
-use PhpOffice\PhpSpreadsheet\Settings;
-use PhpOffice\PhpSpreadsheet\Style\Font as PhpFont;
-use phpseclib3\Crypt\EC\Curves\nistb233;
 
 class LemburController extends Controller
 {
@@ -28,37 +25,64 @@ class LemburController extends Controller
         $tahun = $request->get('tahun', now()->year);
         $tahunOptions = range(2025, now()->year + 1);
 
-        // Ambil semua data karyawan (untuk form tambah/edit)
-        $employees = Employee::with('division')->with('nilaiTahunan')->get();
+        // === TENTUKAN BULAN REFERENSI DEFAULT ===
+        $bulanReferensi = now()->format('Y-m');
 
-        // Ambil filter dari request
-        $tanggal = $request->get('tanggal');
-        $dari    = $request->get('dari');
-        $sampai  = $request->get('sampai');
+        // === AMBIL SEMUA DATA BUDGET UNTUK JAVASCRIPT ===
+        $allBudgets = Budget::all();
+        $budgetData = [];
+        foreach ($allBudgets as $budget) {
+            $budgetData[$budget->Tanggal_Budget] = $budget->Jumlah_Budget;
+        }
 
-        // Query dasar
+        // === HITUNG TOTAL DURASI BULAN INI (DEFAULT) ===
+        $startOfMonth = Carbon::parse($bulanReferensi)->startOfMonth();
+        $endOfMonth = Carbon::parse($bulanReferensi)->endOfMonth();
+
+        $totalDurasiBulanIni = Lembur::whereBetween('tanggal_lembur', [$startOfMonth, $endOfMonth])
+            ->sum('durasi_lembur');
+
+        // === AMBIL BUDGET BULAN INI ===
+        $budgetRecord = Budget::where('Tanggal_Budget', $bulanReferensi)->first();
+        $budgetValue = $budgetRecord?->Jumlah_Budget ?? 0;
+        $selisih = $budgetValue - $totalDurasiBulanIni;
+
+        // === QUERY UNTUK TABEL ===
+        $employees = Employee::with('division', 'nilaiTahunan')->get();
+
         $query = Lembur::with([
             'employee',
             'employee.division',
             'employee.nilaiTahunan' => fn($q) => $q->whereYear('tanggal_penilaian', $tahun)
         ])->whereHas('employee');
 
-        // Filter kalau ada tanggal / range
-        if ($tanggal) {
-            $query->whereDate('tanggal_lembur', $tanggal);
+        // Filter tampilan tabel (opsional, untuk URL params)
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal_lembur', $request->tanggal);
         }
-        if ($dari) {
-            $query->whereDate('tanggal_lembur', '>=', $dari);
+        if ($request->filled('dari')) {
+            $query->whereDate('tanggal_lembur', '>=', $request->dari);
         }
-        if ($sampai) {
-            $query->whereDate('tanggal_lembur', '<=', $sampai);
+        if ($request->filled('sampai')) {
+            $query->whereDate('tanggal_lembur', '<=', $request->sampai);
         }
 
-        // Urutkan dari tanggal terlama → terbaru
         $lemburs = $query->orderBy('tanggal_lembur', 'asc')->get();
 
-        return view('lemburs.index', compact('lemburs', 'employees', 'tahun', 'tahunOptions'));
+        return view('lemburs.index', compact(
+            'lemburs',
+            'employees',
+            'tahun',
+            'tahunOptions',
+            'totalDurasiBulanIni',
+            'budgetValue',
+            'selisih',
+            'bulanReferensi',
+            'budgetData' // ← Kirim semua data budget ke view
+        ));
     }
+
+    // ... sisanya tetap sama seperti sebelumnya ...
 
     public function create()
     {
@@ -79,12 +103,10 @@ class LemburController extends Controller
         ]);
 
         foreach ($request->employee_id as $index => $emp_id) {
-
             $tanggal     = $request->tanggal_lembur[$index];
             $jamMulai    = $request->jam_mulai[$index] ?? null;
             $jamSelesai  = $request->jam_selesai[$index] ?? null;
 
-            // Jika jam tidak lengkap, tetap insert (opsional)
             if (!$jamMulai || !$jamSelesai) {
                 $this->insertLembur($emp_id, $index, $request);
                 continue;
@@ -93,7 +115,6 @@ class LemburController extends Controller
             $newStart = Carbon::createFromFormat('H:i', $jamMulai);
             $newEnd   = Carbon::createFromFormat('H:i', $jamSelesai);
 
-            // Ambil lembur existing employee di tanggal yang sama
             $existingLembur = Lembur::where('employee_id', $emp_id)
                 ->whereDate('tanggal_lembur', $tanggal)
                 ->get();
@@ -103,25 +124,20 @@ class LemburController extends Controller
             foreach ($existingLembur as $lembur) {
                 if (!$lembur->waktu_lembur) continue;
 
-                // Pecah "18:00 - 21:00"
                 [$oldStart, $oldEnd] = array_map('trim', explode('-', $lembur->waktu_lembur));
-
                 $oldStart = Carbon::createFromFormat('H:i', $oldStart);
                 $oldEnd   = Carbon::createFromFormat('H:i', $oldEnd);
 
-                // Cek overlap
                 if ($newStart < $oldEnd && $newEnd > $oldStart) {
                     $isBentrok = true;
                     break;
                 }
             }
 
-            // Jika bentrok → SKIP
             if ($isBentrok) {
                 continue;
             }
 
-            // Jika tidak bentrok → INSERT
             $this->insertLembur($emp_id, $index, $request);
         }
 
@@ -151,7 +167,6 @@ class LemburController extends Controller
         $lembur = Lembur::findOrFail($id);
         $employees = Employee::with('division')->get();
 
-        // Split waktu_lembur jadi jam_mulai dan jam_selesai
         if ($lembur->waktu_lembur) {
             [$jam_mulai, $jam_selesai] = explode(' - ', $lembur->waktu_lembur);
         } else {
@@ -159,8 +174,6 @@ class LemburController extends Controller
             $jam_selesai = '';
         }
 
-        // Cek kalau view yang dipakai popup atau halaman biasa
-        // Kalau popup, kita bisa render view component
         return view('components.popupEditLembur', compact('lembur', 'employees', 'jam_mulai', 'jam_selesai'));
     }
 
@@ -177,7 +190,6 @@ class LemburController extends Controller
         ]);
 
         $lembur = Lembur::findOrFail($id);
-
         $employee = Employee::with('division')->findOrFail($request->employee_id);
 
         $lembur->update([
@@ -188,7 +200,6 @@ class LemburController extends Controller
             'makan_lembur' => $request->makan_lembur,
         ]);
 
-        // return redirect()->route('lemburs.index')->with('success', 'Data lembur berhasil diupdate');
         return response()->json([
             'success' => true,
             'message' => 'Data lembur berhasil diupdate'
@@ -200,13 +211,11 @@ class LemburController extends Controller
         $lembur = Lembur::findOrFail($id);
         $lembur->delete();
 
-        // return redirect()->route('lemburs.index')->with('success', 'Data lembur berhasil dihapus');
         return response()->json([
             'success' => true,
             'message' => 'Data lembur berhasil dihapus'
         ]);
     }
-
 
     public function approve(Request $request, $id)
     {
@@ -217,12 +226,11 @@ class LemburController extends Controller
             $lembur->approval_lembur = true;
         } elseif ($approval === '0') {
             $lembur->approval_lembur = false;
-        } else { // 'null' = batalkan
+        } else {
             $lembur->approval_lembur = null;
         }
         $lembur->save();
 
-        // Tentukan label & class
         if (is_null($lembur->approval_lembur)) {
             $status_label = 'Menunggu Persetujuan';
             $status_class = 'bg-yellow';
@@ -248,7 +256,6 @@ class LemburController extends Controller
             'button_html' => $button_html,
         ]);
     }
-
 
     public function exportLembur(Request $request)
     {
