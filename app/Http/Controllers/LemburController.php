@@ -275,7 +275,8 @@ class LemburController extends Controller
             $query->whereDate('tanggal_lembur', '<=', $sampai);
         }
 
-        $lemburs = $query->get();
+        // Urutkan berdasarkan id untuk memastikan urutan tetap
+        $lemburs = $query->orderBy('id_lembur')->get();
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -289,9 +290,10 @@ class LemburController extends Controller
         $chunks = $lemburs->chunk(24);
 
         $sheetIndex = 0;
+        $globalIndex = 1; // Inisialisasi indeks global
+
         foreach ($chunks as $chunk) {
             if ($sheetIndex > 0) {
-                // $sheet = $spreadsheet->createSheet();
                 $sheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Sheet ' . ($sheetIndex + 1));
                 $spreadsheet->addSheet($sheet);
             }
@@ -437,7 +439,7 @@ class LemburController extends Controller
                 $sheet->getStyle("H{$row}")->getAlignment()->setWrapText(true);
                 $sheet->getStyle("J{$row}:K{$row}")->getAlignment()->setWrapText(true);
 
-                $sheet->setCellValue("A{$row}", $i + 1);
+                $sheet->setCellValue("A{$row}", $globalIndex); // Gunakan indeks global
                 $sheet->setCellValue("B{$row}", $item->employee->nama ?? '');
                 $sheet->setCellValue("C{$row}", $item->employee->division->nama ?? '');
                 $sheet->setCellValue("E{$row}", \Carbon\Carbon::parse($item->tanggal_lembur)->format('d-m-Y'));
@@ -446,6 +448,8 @@ class LemburController extends Controller
                 $sheet->setCellValue("H{$row}", $item->keterangan_lembur ?? '');
                 $sheet->setCellValue("I{$row}", $item->makan_lembur ?? '');
                 $sheet->setCellValue("J{$row}", '');
+                
+                $globalIndex++; // Tambahkan indeks global setiap kali data ditambahkan
             }
 
             // ========== ATUR LEBAR ROW DATA (14-37) ==========
