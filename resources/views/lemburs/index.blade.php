@@ -174,7 +174,6 @@
 
                     <!-- Aksi -->
                     <td class="sticky-col-right">
-                        @userType(['leader', 'admin', 'super'])
                         <div class="btn-group">
                             <button type="button" class="btn btn-icon edit-btn"
                                 data-id="{{ $row->id_lembur }}"
@@ -193,7 +192,6 @@
                                 <i class="material-symbols-rounded delete-row btn-danger">delete</i>
                             </button>
                         </div>
-                        @enduserType
                     </td>
                 </tr>
                 @endforeach

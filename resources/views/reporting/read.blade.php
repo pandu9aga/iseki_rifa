@@ -817,7 +817,7 @@
                             // Update status label & warna
                             statusCell.textContent = data.status_label;
                             statusCell.className =
-                                `status text-center h-full text-sm ${data.status_class}`;
+                                `status-super text-center h-full text-sm ${data.status_class}`;
 
                             // Update tombol approve
                             form.innerHTML = data.button_html;
