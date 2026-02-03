@@ -1,70 +1,100 @@
-# 📦 Laravel Reporting App
+# Iseki Rifa - Reporting & Overtime Management System
 
-## 📋 Deskripsi
-Aplikasi pelaporan berbasis Laravel untuk mencatat dan mengelola data perizinan pegawai secara efisien.
+## 📋 Overview
 
-## ✨ Fitur
+**Iseki Rifa** is a comprehensive Human Resources and Operational reporting system built with Laravel. It is designed to manage employee attendance reports, overtime (Lembur) workflows, and annual performance assessments. The system provides a robust framework for recording daily activities, managing department budgets for overtime, and generating professional-grade PDF and Excel reports.
 
-### 1. Modul Report
-- Tambah data perizinan
-- Laporan harian (teks)
-- Laporan bulanan (format `.xlsx`)
-- Menampilkan seluruh data perizinan dengan fitur filter
-- Edit dan hapus data perizinan
+## ✨ Key Features
 
-### 2. Modul Pegawai
-- Tambah data pegawai
-- Menampilkan seluruh data pegawai dengan fitur filter
-- Edit dan hapus data pegawai
+### 1. Advanced Reporting Module
+*   **Daily & Monthly Reports**: Track daily attendance and export monthly summaries.
+*   **Approval Workflows**: Integrated approval system for reports (Member & Supervisor levels).
+*   **Special Report Types**: Support for "Nihil" reports (zero activity) to ensure 100% compliance.
+*   **Multi-Format Export**: Generate reports in **PDF** (via DomPDF/Browsershot) and **Excel** (via PHPSpreadsheet).
 
-## 🚀 Langkah Instalasi
+### 2. Overtime (Lembur) Management
+*   **Submission & Approval**: Streamlined workflow for overtime requests and multi-stage approvals.
+*   **Budget Tracking**: Dedicated module to manage and bulk-update overtime budgets per division.
+*   **Detailed Analytics**: Export comprehensive overtime reports to monitor costs and hours.
 
-### 1. Clone atau Extract
-Extract file ZIP ke direktori lokal.
+### 3. HR & Assessment Modules
+*   **Annual Performance Assessment**: Record and track annual employee evaluations (`Penilaian Tahunan`).
+*   **Employee & User CRUD**: Full management of employee profiles (NIK, Division, etc.) and system users.
+*   **Replacement Tracking**: System for managing employee replacements (`Pengganti`) based on attendance data.
+*   **Division Management**: Real-time insights into headcount across different divisions.
 
-### 2. Install Dependency
-```bash
-composer install
-```
+### 4. Utility Features
+*   **Special Date Management**: Track holidays and special work dates.
+*   **Activity Logging**: Integrated activity logs for auditing system changes (via Spatie Activity Log).
+*   **Google API Integration**: Prepared for Google Cloud services integration.
 
-### 3. Setup Database
+## 🛠️ Technology Stack
 
-* Buat database baru bernama `reportabsendb`
-* Import file `backup.sql` ke dalam database tersebut
+### Backend
+*   **Framework**: [Laravel 12.x](https://laravel.com)
+*   **Language**: PHP ^8.2
+*   **Database**: MySQL / MariaDB (Primary)
+*   **Key Libraries**:
+    *   `phpoffice/phpspreadsheet`: Advanced Excel manipulation.
+    *   `barryvdh/laravel-dompdf`: PDF generation.
+    *   `spatie/browsershot`: High-quality HTML to Image/PDF conversion.
+    *   `spatie/laravel-activitylog`: System audit trails.
+    *   `google/apiclient`: Google Cloud connectivity.
 
-### 4. Konfigurasi Environment
+### Frontend
+*   **Build Tool**: [Vite](https://vitejs.dev)
+*   **Styling**: [Tailwind CSS v4.0](https://tailwindcss.com)
+*   **HTTP Client**: Axios
 
-Salin file `.env.example` menjadi `.env`:
+## 🚀 Installation & Setup
 
-```bash
-cp .env.example .env
-```
+1.  **Clone the Repository**
+    ```bash
+    git clone <repository-url>
+    cd iseki_rifa
+    ```
 
-Lalu ubah bagian koneksi database:
+2.  **Install PHP Dependencies**
+    ```bash
+    composer install
+    ```
 
-```env
-DB_DATABASE=reportabsendb
-DB_USERNAME=root
-DB_PASSWORD=  # isi jika ada password
-```
+3.  **Install Node Dependencies**
+    ```bash
+    npm install
+    ```
 
-### 5. Generate Key
+4.  **Environment Configuration**
+    *   Copy the `.env.example` file:
+        ```bash
+        cp .env.example .env
+        ```
+    *   Set your `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`.
+    *   Ensure `APP_LOCALE=id` for Indonesian language support.
 
-```bash
-php artisan key:generate
-```
+5.  **Database Migration & Seeding**
+    ```bash
+    php artisan key:generate
+    php artisan migrate
+    # If a backup.sql is provided:
+    # mysql -u root -p reportabsendb < backup.sql
+    ```
 
-### 6. Jalankan Server
+6.  **Build Frontend**
+    ```bash
+    npm run build
+    ```
 
-```bash
-php artisan serve
-```
+7.  **Run Development Server**
+    ```bash
+    php artisan serve
+    ```
 
----
+## 📝 Usage
 
-## ✅ Catatan
+*   **Employee Portal**: Access the `/employee/reporting` route for self-service reporting.
+*   **Admin Dashboard**: Manage users, employees, and process assessments via the authenticated administrative routes.
 
-* Folder `vendor/` dan file `.env` tidak disertakan dalam ZIP, pastikan langkah instalasi dilakukan dengan benar.
-* Bahasa lokal: Indonesia (`APP_LOCALE=id`)
+## 📄 License
 
----
+This project is proprietary.
