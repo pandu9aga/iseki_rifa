@@ -26,6 +26,9 @@
         <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
             Untuk Izin Keluar wajib mengisi jam masuk & jam keluar
         </p>
+        <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
+            Untuk Salah Fingerprint wajib mengisi jam masuk atau jam keluar
+        </p>
 
         <form action="{{ route('reporting.store') }}" method="POST" id="izin-form" class="g-5">
             @csrf
@@ -215,56 +218,56 @@
         function addRow() {
             const row = document.createElement('tr');
             row.innerHTML = `
-                    <td class="number"></td>
-                    <td>
-                        <select name="nama[]" class="form-control select2 nama" data-placeholder="Pilih Pegawai" onchange="handleNamaEnter(event, this)" style="width: 100%">
-                            <option></option>
-                            @foreach ($employees as $employee)
-                                <option value="{{ $employee->id }}">{{ $employee->nama }}</option>
-                            @endforeach
-                        </select>
-                    </td>
-                    <td>
-                        <select name="jenis_cuti[]" data-placeholder="Pilih jenis izin" class="select2 jenis_cuti" style="width: 100%">
-                            <option></option>
-                            <option value="Cuti">Cuti</option>
-                            <option value="Cuti Setengah Hari Pagi">Cuti Setengah Hari Pagi</option>
-                            <option value="Cuti Setengah Hari Siang">Cuti Setengah Hari Siang</option>
-                            <option value="Terlambat">Terlambat</option>
-                            <option value="Izin Keluar">Izin Keluar</option>
-                            <option value="Pulang Cepat">Pulang Cepat</option>
-                            <option value="Absen">Absen</option>
-                            <option value="Absen Setengah Hari Pagi">Absen Setengah Hari Pagi</option>
-                            <option value="Absen Setengah Hari Siang">Absen Setengah Hari Siang</option>
-                            <option value="Sakit">Sakit</option>
-                            <option value="Cuti Khusus">Cuti Khusus</option>
-                            <option value="Serikat">Serikat</option>
-                            <option value="Salah Fingerprint">Salah Fingerprint</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input type="text" name="keterangan[]"/>
-                    </td>
-                    <td>
-                        <input type="date" name="tanggal[]" value="{{ now()->format('Y-m-d') }}">
-                    </td>
-                    <td>
-                        <input type="time" name="jam_masuk[]" class="jam_masuk">
-                    </td>
-                    <td>
-                        <input type="time" name="jam_keluar[]" class="jam_keluar">
-                    </td>
-                    <td class="status"></td>
-                    <td class="divisi"></td>
-                    <td class="team"></td>
-                    <td class="sticky-col-right">
-                        <button type="button" class="btn btn-icon danger delete-row">
-                            <i class="material-symbols-rounded delete-row btn-danger">
-                                delete
-                            </i>
-                        </button>
-                    </td>
-                `;
+                                <td class="number"></td>
+                                <td>
+                                    <select name="nama[]" class="form-control select2 nama" data-placeholder="Pilih Pegawai" onchange="handleNamaEnter(event, this)" style="width: 100%">
+                                        <option></option>
+                                        @foreach ($employees as $employee)
+                                            <option value="{{ $employee->id }}">{{ $employee->nama }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="jenis_cuti[]" data-placeholder="Pilih jenis izin" class="select2 jenis_cuti" style="width: 100%">
+                                        <option></option>
+                                        <option value="Cuti">Cuti</option>
+                                        <option value="Cuti Setengah Hari Pagi">Cuti Setengah Hari Pagi</option>
+                                        <option value="Cuti Setengah Hari Siang">Cuti Setengah Hari Siang</option>
+                                        <option value="Terlambat">Terlambat</option>
+                                        <option value="Izin Keluar">Izin Keluar</option>
+                                        <option value="Pulang Cepat">Pulang Cepat</option>
+                                        <option value="Absen">Absen</option>
+                                        <option value="Absen Setengah Hari Pagi">Absen Setengah Hari Pagi</option>
+                                        <option value="Absen Setengah Hari Siang">Absen Setengah Hari Siang</option>
+                                        <option value="Sakit">Sakit</option>
+                                        <option value="Cuti Khusus">Cuti Khusus</option>
+                                        <option value="Serikat">Serikat</option>
+                                        <option value="Salah Fingerprint">Salah Fingerprint</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" name="keterangan[]"/>
+                                </td>
+                                <td>
+                                    <input type="date" name="tanggal[]" value="{{ now()->format('Y-m-d') }}">
+                                </td>
+                                <td>
+                                    <input type="time" name="jam_masuk[]" class="jam_masuk">
+                                </td>
+                                <td>
+                                    <input type="time" name="jam_keluar[]" class="jam_keluar">
+                                </td>
+                                <td class="status"></td>
+                                <td class="divisi"></td>
+                                <td class="team"></td>
+                                <td class="sticky-col-right">
+                                    <button type="button" class="btn btn-icon danger delete-row">
+                                        <i class="material-symbols-rounded delete-row btn-danger">
+                                            delete
+                                        </i>
+                                    </button>
+                                </td>
+                            `;
             tableBody.insertBefore(row, document.getElementById('row-button'));
             window.updateRowNumbers();
 
