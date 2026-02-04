@@ -396,6 +396,7 @@
                                 <option value="Sakit">Sakit</option>
                                 <option value="Cuti Khusus">Cuti Khusus</option>
                                 <option value="Serikat">Serikat</option>
+                                <option value="Salah Fingerprint">Salah Fingerprint</option>
                             </select>
                         </th>
                         {{-- <th><input class="filter" id="filter-tanggal" type="month" value="{{ request('bulan', now()->format('Y-m')) }}" /></th> --}}

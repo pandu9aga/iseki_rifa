@@ -96,6 +96,7 @@ class ReportingController extends Controller
 
     public function excel(){
         $absensis = Absensi::with('employee', 'employee.division', 'replacements.employee')
+            ->where('kategori', '!=', 'SF')
             ->orderBy('tanggal')
             ->get();
 
@@ -297,6 +298,7 @@ class ReportingController extends Controller
                     'T'   => 'attendance',
                     'IK'  => 'attendance',
                     'P'   => 'attendance',
+                    'SF'  => 'attendance',
                 ];
 
                 $modelType = $modelTypeMap[$absen->kategori] ?? null;
@@ -350,6 +352,7 @@ class ReportingController extends Controller
                     'T'   => 'attendance',
                     'IK'  => 'attendance',
                     'P'   => 'attendance',
+                    'SF'  => 'attendance',
                 ];
 
                 $modelType = $modelTypeMap[$absen->kategori] ?? null;
@@ -371,11 +374,11 @@ class ReportingController extends Controller
                     'end_time'      => null,
                 ];
 
-                if (in_array($absen->kategori, ['T', 'IK']) && $absen->jam_masuk) {
+                if (in_array($absen->kategori, ['T', 'IK', 'SF']) && $absen->jam_masuk) {
                     $payload['start_time'] = \Carbon\Carbon::parse($absen->jam_masuk)->format('H:i');
                 }
 
-                if (in_array($absen->kategori, ['P', 'IK']) && $absen->jam_keluar) {
+                if (in_array($absen->kategori, ['P', 'IK', 'SF']) && $absen->jam_keluar) {
                     $payload['end_time'] = \Carbon\Carbon::parse($absen->jam_keluar)->format('H:i');
                 }
 
@@ -446,6 +449,7 @@ class ReportingController extends Controller
             'S'   => 'Sakit',
             'CK'  => 'Cuti Khusus',
             'Sk'  => 'Absen', // khusus serikat
+            'SF'  => 'Salah Fingerprint',
         ];
 
         $jenisCuti = $map[$absen->kategori] ?? $absen->kategori;
@@ -489,6 +493,7 @@ class ReportingController extends Controller
                     break;
 
                 case 'Izin Keluar':
+                case 'Salah Fingerprint':
                     // dua-duanya boleh
                     break;
 
@@ -602,6 +607,7 @@ class ReportingController extends Controller
             'Sakit' => 'S',
             'Cuti Khusus' => 'CK',
             'Serikat' => 'Sk',
+            'Salah Fingerprint' => 'SF',
             default => '',
         };
     }
@@ -730,9 +736,11 @@ class ReportingController extends Controller
 
         $absensisMonth = Absensi::whereYear('tanggal', $year)
             ->whereMonth('tanggal', $month)
+            ->where('kategori', '!=', 'SF')
             ->get();
         $absensisYear = Absensi::whereYear('tanggal', $year)
             ->whereMonth('tanggal', '<=', $month)
+            ->where('kategori', '!=', 'SF')
             ->get();
 
         // Summary per divisi & status

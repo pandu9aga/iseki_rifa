@@ -23,6 +23,7 @@
                     <option value="Sakit">Sakit</option>
                     <option value="Cuti Khusus">Cuti Khusus</option>
                     <option value="Serikat">Serikat</option>
+                    <option value="Salah Fingerprint">Salah Fingerprint</option>
                 </select>
             </div>
 

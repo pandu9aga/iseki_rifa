@@ -70,6 +70,7 @@ class Absensi extends Model
             'S' => 'Sakit',
             'CK' => 'Cuti Khusus',
             'Sk' => 'Serikat',
+            'SF' => 'Salah Fingerprint',
             default => $this->kategori,
         };
     }
