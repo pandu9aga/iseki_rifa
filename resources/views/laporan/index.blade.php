@@ -30,6 +30,15 @@
                 <option value="{{ $num }}" @selected(!empty($bulan) && (int)$bulan===$num)>{{ $nama }}</option>
                 @endforeach
             </select>
+
+            <select name="pekerjaan" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Semua Pekerjaan --</option>
+                <option value="Produksi" @selected($pekerjaan=='Produksi' )>Produksi</option>
+                <option value="Maintenance" @selected($pekerjaan=='Maintenance' )>Maintenance</option>
+                <option value="Kaizen" @selected($pekerjaan=='Kaizen' )>Kaizen</option>
+                <option value="5S" @selected($pekerjaan=='5S' )>5S</option>
+                <option value="Pekerjaan Leader/PIC Lembur" @selected($pekerjaan=='Pekerjaan Leader/PIC Lembur' )>Leader/PIC</option>
+            </select>
         </form>
 
         {{-- Tengah/Kanan: Tombol Export & Kembali --}}
@@ -55,6 +64,28 @@
             </a>
         </div>
     </section>
+
+    {{-- Kotak Ringkasan Breakdown Jam per Kategori (Selalu Tampil jika ada data) --}}
+    @if(isset($breakdownKategori))
+    <section class="flex flex-wrap gap-2 mb-4 items-center justify-end">
+        <div class="text-xs font-semibold text-gray-500 mr-2">Breakdown:</div>
+        <div class="bg-purple-50 border border-purple-200 px-2 py-1 rounded text-xs">
+            <span class="text-purple-700">Prod: <b>{{ number_format($breakdownKategori['Produksi'] ?? 0, 1) }}</b></span>
+        </div>
+        <div class="bg-orange-50 border border-orange-200 px-2 py-1 rounded text-xs">
+            <span class="text-orange-700">Mtc: <b>{{ number_format($breakdownKategori['Maintenance'] ?? 0, 1) }}</b></span>
+        </div>
+        <div class="bg-teal-50 border border-teal-200 px-2 py-1 rounded text-xs">
+            <span class="text-teal-700">Kaizen: <b>{{ number_format($breakdownKategori['Kaizen'] ?? 0, 1) }}</b></span>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 px-2 py-1 rounded text-xs">
+            <span class="text-yellow-700">5S: <b>{{ number_format($breakdownKategori['5S'] ?? 0, 1) }}</b></span>
+        </div>
+        <div class="bg-indigo-50 border border-indigo-200 px-2 py-1 rounded text-xs">
+            <span class="text-indigo-700">Leader: <b>{{ number_format($breakdownKategori['Pekerjaan Leader/PIC Lembur'] ?? 0, 1) }}</b></span>
+        </div>
+    </section>
+    @endif
 
     {{-- Kotak Informasi Budget & Durasi (hanya tampil jika bulan dipilih) --}}
     @if(!empty($bulan) && isset($bulanList[$bulan]))

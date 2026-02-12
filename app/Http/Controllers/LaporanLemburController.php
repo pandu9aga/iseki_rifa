@@ -18,6 +18,7 @@ class LaporanLemburController extends Controller
     {
         $tahun = $request->get('tahun', now()->year);
         $bulan = $request->get('bulan');
+        $pekerjaan = $request->get('pekerjaan'); // Ambil filter pekerjaan
 
         // Validasi bulan
         if ($bulan !== null && (!is_numeric($bulan) || $bulan < 1 || $bulan > 12)) {
@@ -39,12 +40,16 @@ class LaporanLemburController extends Controller
                         ->orWhereYear('deleted_at', '<=', $tahun);
                 }
             })
-            ->withSum(['lemburs as total_lembur' => function ($query) use ($tahun, $bulan) {
+            ->withSum(['lemburs as total_lembur' => function ($query) use ($tahun, $bulan, $pekerjaan) {
                 if ($bulan) {
                     $endDate = now()->setDate($tahun, $bulan, 1)->endOfMonth()->toDateString();
                     $query->whereBetween('tanggal_lembur', ["$tahun-$bulan-01", $endDate]);
                 } else {
                     $query->whereYear('tanggal_lembur', $tahun);
+                }
+
+                if ($pekerjaan) {
+                    $query->where('keterangan_lembur', $pekerjaan);
                 }
             }], 'durasi_lembur')
             ->orderBy('nik')
@@ -55,12 +60,53 @@ class LaporanLemburController extends Controller
         $budgetBulanan = 0;
         $selisihBudget = 0;
 
+        // Hitung Breakdown Jam per Kategori
+        $breakdownKategori = [
+            'Produksi' => 0,
+            'Maintenance' => 0,
+            'Kaizen' => 0,
+            '5S' => 0,
+            'Pekerjaan Leader/PIC Lembur' => 0
+        ];
+
+        // Query dasar untuk statistik
+        $statsQuery = Lembur::query();
+        if ($bulan) {
+            $statsQuery->whereYear('tanggal_lembur', $tahun)
+                ->whereMonth('tanggal_lembur', $bulan);
+        } else {
+            $statsQuery->whereYear('tanggal_lembur', $tahun);
+        }
+
+        // Hitung breakdown tanpa filter pekerjaan (agar user melihat proporsi utuh)
+        // Atau jika user ingin breakdown berubah sesuai filter? 
+        // Biasanya breakdown menunjukkan total dari data yang tampil.
+        // Jika ada filter pekerjaan, breakdown akan 0 semua kecuali yang dipilih. 
+        // Tapi user minta "misal dalam bulan itu total lembur dengan ketegori pekerjaan perodusi berapa jam",
+        // jadi lebih baik breakdown selalu menampilkan semua kategori untuk periode tersebut.
+
+        $rawBreakdown = (clone $statsQuery)
+            ->selectRaw('keterangan_lembur, sum(durasi_lembur) as total_jam')
+            ->groupBy('keterangan_lembur')
+            ->pluck('total_jam', 'keterangan_lembur');
+
+        foreach ($breakdownKategori as $key => $val) {
+            if (isset($rawBreakdown[$key])) {
+                $breakdownKategori[$key] = $rawBreakdown[$key];
+            }
+        }
+
+        // Handle keterangan lama/manual yang mungkin masuk ke 'Lainnya' jika perlu, tapi requirement hanya 5 opsi ini.
+
         if ($bulan) {
             $bulanReferensi = sprintf('%d-%02d', $tahun, $bulan);
 
-            $totalDurasiBulanan = Lembur::whereYear('tanggal_lembur', $tahun)
-                ->whereMonth('tanggal_lembur', $bulan)
-                ->sum('durasi_lembur');
+            // Jika ada filter pekerjaan, total durasi bulanan harus ikut terfilter
+            if ($pekerjaan) {
+                $totalDurasiBulanan = $statsQuery->where('keterangan_lembur', $pekerjaan)->sum('durasi_lembur');
+            } else {
+                $totalDurasiBulanan = $statsQuery->sum('durasi_lembur');
+            }
 
             $budgetRecord = Budget::where('Tanggal_Budget', $bulanReferensi)->first();
             $budgetBulanan = $budgetRecord?->Jumlah_Budget ?? 0;
@@ -95,11 +141,13 @@ class LaporanLemburController extends Controller
             'employees',
             'tahun',
             'bulan',
+            'pekerjaan',
             'tahunList',
             'bulanList',
             'totalDurasiBulanan',
             'budgetBulanan',
-            'selisihBudget'
+            'selisihBudget',
+            'breakdownKategori'
         ));
     }
 
@@ -107,6 +155,7 @@ class LaporanLemburController extends Controller
     {
         $tahun = $request->get('tahun', now()->year);
         $bulan = $request->get('bulan');
+        $pekerjaan = $request->get('pekerjaan'); // Ambil filter pekerjaan
 
         // Validasi bulan
         if ($bulan !== null && (!is_numeric($bulan) || $bulan < 1 || $bulan > 12)) {
@@ -132,12 +181,18 @@ class LaporanLemburController extends Controller
         // Tambahkan relasi lembur dengan filter tahun/bulan
         if ($bulan) {
             $endDate = now()->setDate($tahun, $bulan, 1)->endOfMonth()->toDateString();
-            $query->withSum(['lemburs as total_lembur' => function ($q) use ($tahun, $bulan, $endDate) {
+            $query->withSum(['lemburs as total_lembur' => function ($q) use ($tahun, $bulan, $endDate, $pekerjaan) {
                 $q->whereBetween('tanggal_lembur', ["$tahun-$bulan-01", $endDate]);
+                if ($pekerjaan) {
+                    $q->where('keterangan_lembur', $pekerjaan);
+                }
             }], 'durasi_lembur');
         } else {
-            $query->withSum(['lemburs as total_lembur' => function ($q) use ($tahun) {
+            $query->withSum(['lemburs as total_lembur' => function ($q) use ($tahun, $pekerjaan) {
                 $q->whereYear('tanggal_lembur', $tahun);
+                if ($pekerjaan) {
+                    $q->where('keterangan_lembur', $pekerjaan);
+                }
             }], 'durasi_lembur');
         }
 

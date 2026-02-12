@@ -11,8 +11,8 @@
                 {{-- <select id="edit-employee_id" class="form-control select2" disabled>
                     @foreach ($employees as $emp)
                         <option value="{{ $emp->id }}">{{ $emp->nama }} - {{ $emp->division->nama ?? '-' }}
-                        </option>
-                    @endforeach
+                </option>
+                @endforeach
                 </select> --}}
                 <input type="text" id="edit-employee_name" class="form-control w-full mb-3" disabled>
                 <input type="hidden" id="edit-employee_id" class="form-control w-full mb-3" required>
@@ -40,8 +40,15 @@
             </div>
 
             <div class="form-control">
-                <label class="block mb-2 font-semibold">Keterangan</label>
-                <textarea id="edit-keterangan_lembur" class="form-control w-full mb-3"></textarea>
+                <label class="block mb-2 font-semibold">Pekerjaan</label>
+                <select id="edit-keterangan_lembur" class="form-control w-full mb-3" required>
+                    <option value="">-- Pilih Pekerjaan --</option>
+                    <option value="Produksi">Produksi</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Kaizen">Kaizen</option>
+                    <option value="5S">5S</option>
+                    <option value="Pekerjaan Leader/PIC Lembur">Pekerjaan Leader/PIC Lembur</option>
+                </select>
             </div>
 
             <div class="form-control">

@@ -94,6 +94,25 @@
         </div>
     </section>
 
+    <!-- Ringkasan Jam per Kategori Pekerjaan -->
+    <section class="flex flex-wrap gap-2 mb-4 items-center">
+        <div class="text-sm font-semibold text-gray-600 mr-2">Jam per Kategori:</div>
+        <div class="bg-purple-100 border border-purple-300 px-3 py-1 rounded shadow text-sm">
+            <span class="text-purple-700 font-semibold">Produksi: <span id="jam-produksi">0</span> jam</span>
+        </div>
+        <div class="bg-orange-100 border border-orange-300 px-3 py-1 rounded shadow text-sm">
+            <span class="text-orange-700 font-semibold">Maintenance: <span id="jam-maintenance">0</span> jam</span>
+        </div>
+        <div class="bg-teal-100 border border-teal-300 px-3 py-1 rounded shadow text-sm">
+            <span class="text-teal-700 font-semibold">Kaizen: <span id="jam-kaizen">0</span> jam</span>
+        </div>
+        <div class="bg-yellow-100 border border-yellow-300 px-3 py-1 rounded shadow text-sm">
+            <span class="text-yellow-700 font-semibold">5S: <span id="jam-5s">0</span> jam</span>
+        </div>
+        <div class="bg-indigo-100 border border-indigo-300 px-3 py-1 rounded shadow text-sm">
+            <span class="text-indigo-700 font-semibold">Leader/PIC: <span id="jam-leader">0</span> jam</span>
+        </div>
+    </section>
     <!-- Tabel -->
     <section class="container-table table-scroll-wrapper">
         <table class="table-auto w-full border border-gray-300 mt-4" id="lembur-table">
@@ -112,14 +131,32 @@
                     <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval"></th>
                     <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
                     <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
-                    <th>Pekerjaan<br><input type="text" class="filter" data-column="8" placeholder="Pekerjaan"></th>
+                    <th>Pekerjaan<br>
+                        <select class="filter" data-column="8" id="filter-pekerjaan-leader">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
                     <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
                     @enduserType
                     @userType('admin')
                     <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval"></th>
                     <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
                     <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
-                    <th>Pekerjaan<br><input type="text" class="filter" data-column="8" placeholder="Pekerjaan"></th>
+                    <th>Pekerjaan<br>
+                        <select class="filter" data-column="8" id="filter-pekerjaan-admin">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
                     <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
                     @enduserType
                     @userType('super')
@@ -127,7 +164,16 @@
                     <th>Status Persetujuan<br><input type="text" class="filter" data-column="6" placeholder="Approval"></th>
                     <th>Jam<br><input type="text" class="filter" data-column="7" placeholder="Jam"></th>
                     <th>Durasi<br><input type="text" class="filter" data-column="8" placeholder="Durasi"></th>
-                    <th>Pekerjaan<br><input type="text" class="filter" data-column="9" placeholder="Pekerjaan"></th>
+                    <th>Pekerjaan<br>
+                        <select class="filter" data-column="9" id="filter-pekerjaan-super">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
                     <th>Makan<br><input type="text" class="filter" data-column="10" placeholder="Makan"></th>
                     @enduserType
                     <th class="sticky-col-right">Aksi</th>
@@ -246,6 +292,13 @@
             let totalDurasi = 0;
             let currentBulan = null;
 
+            // Inisialisasi total jam per kategori
+            let jamProduksi = 0;
+            let jamMaintenance = 0;
+            let jamKaizen = 0;
+            let jam5S = 0;
+            let jamLeader = 0;
+
             for (let row of rows) {
                 let show = true;
                 filters.forEach(filter => {
@@ -264,7 +317,12 @@
                             }
                         }
 
-                        if (!cellText.includes(filterValue)) show = false;
+                        // Exact match untuk dropdown pekerjaan
+                        if (filter.tagName === 'SELECT' && colIndex >= 8) { // Asumsi kolom pekerjaan ada di index 8 atau 9
+                            if (cellText.trim() !== filterValue) show = false;
+                        } else {
+                            if (!cellText.includes(filterValue)) show = false;
+                        }
                     }
                 });
 
@@ -287,11 +345,22 @@
                     row.style.display = '';
                     row.querySelector('td.sticky-col-left').textContent = counter++;
 
-                    // Ambil kolom durasi
+                    // Ambil kolom durasi (selalu di index length-4)
                     const durasiCell = row.cells[row.cells.length - 4];
                     let durasiText = durasiCell ? durasiCell.textContent.trim() : '0';
                     let durasiNum = parseFloat(durasiText.replace(',', '.')) || 0;
                     totalDurasi += durasiNum;
+
+                    // Ambil kolom pekerjaan (selalu di index length-3)
+                    const pekerjaanCell = row.cells[row.cells.length - 3];
+                    const pekerjaanText = pekerjaanCell ? pekerjaanCell.textContent.trim().toLowerCase() : '';
+
+                    if (pekerjaanText === 'produksi') jamProduksi += durasiNum;
+                    else if (pekerjaanText === 'maintenance') jamMaintenance += durasiNum;
+                    else if (pekerjaanText === 'kaizen') jamKaizen += durasiNum;
+                    else if (pekerjaanText === '5s') jam5S += durasiNum;
+                    else if (pekerjaanText.includes('leader') || pekerjaanText.includes('pic')) jamLeader += durasiNum;
+
                 } else {
                     row.style.display = 'none';
                 }
@@ -299,6 +368,13 @@
 
             // Update display total durasi
             updateBudgetInfo(totalDurasi, currentBulan);
+
+            // Update display ringkasan kategori
+            document.getElementById('jam-produksi').textContent = jamProduksi.toFixed(1);
+            document.getElementById('jam-maintenance').textContent = jamMaintenance.toFixed(1);
+            document.getElementById('jam-kaizen').textContent = jamKaizen.toFixed(1);
+            document.getElementById('jam-5s').textContent = jam5S.toFixed(1);
+            document.getElementById('jam-leader').textContent = jamLeader.toFixed(1);
         }
 
         function updateBudgetInfo(totalDurasi, bulan) {

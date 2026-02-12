@@ -448,7 +448,7 @@ class LemburController extends Controller
                 $sheet->setCellValue("H{$row}", $item->keterangan_lembur ?? '');
                 $sheet->setCellValue("I{$row}", $item->makan_lembur ?? '');
                 $sheet->setCellValue("J{$row}", '');
-                
+
                 $globalIndex++; // Tambahkan indeks global setiap kali data ditambahkan
             }
 
