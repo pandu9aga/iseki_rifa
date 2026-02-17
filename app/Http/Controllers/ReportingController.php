@@ -33,6 +33,37 @@ class ReportingController extends Controller
             ->orderBy('tanggal', 'desc')
             ->get();
 
+        // Ambil data status dari mirai
+        $miraiAttendances = DB::connection('mirai')->table('attendances')
+            ->whereIn('id_rifa', $absensis->pluck('id'))
+            ->get()
+            ->keyBy('id_rifa');
+
+        $miraiLeaves = DB::connection('mirai')->table('leaves')
+            ->whereIn('id_rifa', $absensis->pluck('id'))
+            ->get()
+            ->keyBy('id_rifa');
+
+        foreach ($absensis as $absen) {
+            $miraiStatus = null;
+            if ($miraiAttendances->has($absen->id)) {
+                $miraiStatus = $miraiAttendances->get($absen->id)->status;
+            } elseif ($miraiLeaves->has($absen->id)) {
+                $miraiStatus = $miraiLeaves->get($absen->id)->status;
+            }
+
+            if ($miraiStatus === 'APPROVE') {
+                $absen->hr_approval_label = 'Disetujui';
+                $absen->hr_approval_class = 'bg-success';
+            } elseif (in_array($miraiStatus, ['REJECTED', 'DECLINED'])) {
+                $absen->hr_approval_label = 'Ditolak';
+                $absen->hr_approval_class = 'bg-red';
+            } else {
+                $absen->hr_approval_label = 'Menunggu Persetujuan';
+                $absen->hr_approval_class = 'bg-yellow';
+            }
+        }
+
         $reportToday = Report::with('user')
             ->whereDate('created_at', now())
             ->get();
@@ -362,13 +393,15 @@ class ReportingController extends Controller
                 }
 
                 $status = $statusMap[$modelType]['pending_hr'];
+				
+				$additional = $absen->kategori === 'S' ? 'Sakit - ' : '';
 
                 $payload = [
                     'id_rifa'       => (string) $absen->id,
                     'employee_code' => (string) $absen->employee->nik,
                     'request_date'  => $absen->tanggal->format('Y-m-d'),
                     'jenis_cuti'    => $jenisCuti,
-                    'remark'        => $remark,
+                    'remark'        => $additional . $remark,
                     'status'        => $status,
                     'start_time'    => null,
                     'end_time'      => null,

@@ -358,6 +358,7 @@
                         @enduserType
                         <th>Status Persetujuan</th>
                         <th>Persetujuan Member</th>
+                        <th>Persetujuan HR</th>
                         {{-- Kolom Pengganti hanya untuk non-employee --}}
                         @if(!(session()->has('employee_login') && session('employee_login')))
                             <th rowspan="2">Pengganti</th>
@@ -437,6 +438,16 @@
                                 <option value="Ditolak">Ditolak</option>
                             </select>
                         </th>
+                        <th>
+                            <select name="approval_hr_status" class="select2 filter"
+                                data-placeholder="Pilih status persetujuan" data-allow-clear="true" style="width: 100%"
+                                id="filter-approval-hr-status">
+                                <option></option>
+                                <option value="Disetujui">Disetujui</option>
+                                <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
+                                <option value="Ditolak">Ditolak</option>
+                            </select>
+                        </th>
                         <th><input class="filter" id="filter-team" type="text" placeholder="Cari Tim" /></th>
                         <th>
                             <select name="status" class="select2 filter" data-placeholder="Pilih status"
@@ -466,10 +477,10 @@
                             data-jam-keluar="{{ $absen->jam_keluar }}">
                             {{-- <td class="sticky-col-left number">{{ $index + 1 }}</td> --}}
                             <td class="sticky-col-left number">{{ $loop->iteration }}</td>
-                            <td class="sticky-col-left">{{ $absen->employee->nama ?? '-' }}</td>
-                            <td>{{ $absen->kategori_label }}</td>
-                            <td>{{ $absen->tanggal->format('d/m/Y') }}</td>
-                            <td>
+                            <td class="sticky-col-left col-nama">{{ $absen->employee->nama ?? '-' }}</td>
+                            <td class="col-jenis">{{ $absen->kategori_label }}</td>
+                            <td class="col-tanggal">{{ $absen->tanggal->format('d/m/Y') }}</td>
+                            <td class="col-keterangan">
                                 @if ($absen->keterangan)
                                     {!! nl2br(e($absen->keterangan)) !!}<br>
                                 @endif
@@ -490,7 +501,7 @@
                                     -
                                 @endif
                             </td>
-                            <td>
+                            <td class="col-sisa-cuti">
                                 @if($absen->employee->saldo_cuti)
                                     <strong>{{ $absen->employee->saldo_cuti }}</strong> hari
                                 @else
@@ -576,8 +587,11 @@
                                     <span>{{ $statusMember }}</span>
                                 @endif
                             </td>
+                            <td class="status-hr text-center h-full text-sm {{ $absen->hr_approval_class }}">
+                                <span>{{ $absen->hr_approval_label }}</span>
+                            </td>
                             @if(!(session()->has('employee_login') && session('employee_login')))
-                            <td>
+                            <td class="col-pengganti">
                                 <div style="display: inline-flex; align-items: center; gap: 5px;">
                                     <span>{{ \App\Models\Replacement::where('absensi_id', $absen->id)->count() }} ; </span>
                                     <button type="button" class="btn btn-icon btn-view-replacement"
@@ -589,9 +603,9 @@
                                 </div>
                             </td>
                             @endif
-                            <td>{{ $absen->employee->team ?? '-' }}</td>
-                            <td>{{ $absen->employee->status ?? '-' }}</td>
-                            <td>{{ $absen->employee->division->nama ?? '-' }}</td>
+                            <td class="col-tim">{{ $absen->employee->team ?? '-' }}</td>
+                            <td class="col-status">{{ $absen->employee->status ?? '-' }}</td>
+                            <td class="col-divisi">{{ $absen->employee->division->nama ?? '-' }}</td>
                             <td class="sticky-col-right">
                                 @php
                                     $isEmployee = session()->has('employee_login') && session('employee_login');
@@ -637,7 +651,7 @@
                             <td colspan="10" class="text-gray-500 py-4">Data tidak ditemukan</td>
                         @enduserType
                         @userType('super')
-                            <td colspan="11" class="text-gray-500 py-4">Data tidak ditemukan</td>
+                            <td colspan="12" class="text-gray-500 py-4">Data tidak ditemukan</td>
                         @enduserType
                     </tr>
                 </tbody>
