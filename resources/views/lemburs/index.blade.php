@@ -10,9 +10,9 @@
     @include('components.popupDeleteLembur')
 
     <!-- Judul & tombol tambah -->
-    <div class="mb-4">
+    <div class="mb-8" style="margin-bottom: 2rem;">
         <br>
-        <h3 class="font-bold text-lg">Data Lembur</h3>
+        <h3 class="font-bold text-2xl">Data Lembur</h3>
     </div>
 
     {{-- Filter Tahun Penilaian --}}
@@ -21,73 +21,77 @@
             <label class="block text-sm font-medium text-gray-700">Tahun Penilaian</label>
             <select name="tahun" class="form-select mt-1" onchange="this.form.submit()">
                 @foreach ($tahunOptions as $opt)
-                <option value="{{ $opt }}" @selected($opt==$tahun)>{{ $opt }}</option>
+                    <option value="{{ $opt }}" @selected($opt == $tahun)>{{ $opt }}</option>
                 @endforeach
             </select>
         </div>
     </form>
 
     {{-- Tombol sesuai role --}}
-    <section class="btn-group flex gap-2 mb-4 items-center justify-between">
-        <div class="flex gap-2">
+    <section class="btn-group flex flex-wrap gap-8 mb-10 items-center justify-between"
+        style="gap: 2rem; margin-bottom: 0.2rem;">
+        <div class="flex gap-4" style="gap: 1rem;">
             @userType('leader')
             <a href="{{ route('lemburs.create') }}" class="btn btn-primary">
                 <span>Tambah Data</span>
                 <i class="material-symbols-rounded">add</i>
             </a>
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
-                <i class="fas fa-file-excel"></i> Export Lembur
+                <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
             </a>
             @enduserType
 
             @userType('admin')
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
-                <i class="fas fa-file-excel"></i> Export Lembur
+                <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
             </a>
             <a href="{{ route('laporan.lembur.index') }}" class="btn btn-primary">
-                <i class="fas fa-chart-line"></i> Laporan Lembur
+                <i class="fas fa-chart-line mr-2" style="margin-right: 0.5rem;"></i> Laporan Lembur
             </a>
             <a href="{{ route('budget.lembur.index') }}" class="btn btn-primary">
-                <i class="fas fa-wallet"></i> Budget Lembur
+                <i class="fas fa-wallet mr-2" style="margin-right: 0.5rem;"></i> Budget Lembur
             </a>
             @enduserType
 
             @userType('super')
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
-                <i class="fas fa-file-excel"></i> Export Lembur
+                <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
             </a>
             <a href="{{ route('laporan.lembur.index') }}" class="btn btn-primary">
-                <i class="fas fa-chart-line"></i> Laporan Lembur
+                <i class="fas fa-chart-line mr-2" style="margin-right: 0.5rem;"></i> Laporan Lembur
             </a>
             <a href="{{ route('budget.lembur.index') }}" class="btn btn-primary">
-                <i class="fas fa-wallet"></i> Budget Lembur
+                <i class="fas fa-wallet mr-2" style="margin-right: 0.5rem;"></i> Budget Lembur
             </a>
             @enduserType
         </div>
 
         <!-- Kotak Informasi Budget & Durasi -->
-        <div class="flex gap-3">
+        <div class="flex gap-8" style="gap: 2rem;">
 
             <!-- Budget Bulanan -->
-            <div class="bg-green-100 border border-green-300 px-4 py-2 rounded shadow text-sm">
-                <div class="text-gray-600 text-xs mb-1">Budget (<span id="bulan-budget-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
+            <div class="bg-green-100 border border-green-300 px-6 py-3 rounded shadow text-sm">
+                <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Budget (<span
+                        id="bulan-budget-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
                 <div class="text-green-700 text-base font-semibold">
                     <span id="budget-display">{{ number_format($budgetValue, 1) }}</span> jam
                 </div>
             </div>
             <!-- Total Durasi -->
-            <div class="bg-blue-100 border border-blue-300 px-4 py-2 rounded shadow text-sm">
-                <div class="text-gray-600 text-xs mb-1">Total Durasi (<span id="bulan-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
+            <div class="bg-blue-100 border border-blue-300 px-6 py-3 rounded shadow text-sm">
+                <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Total Durasi (<span
+                        id="bulan-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
                 <div class="text-blue-700 text-base font-semibold">
                     <span id="total-durasi-display">{{ number_format($totalDurasiBulanIni, 1) }}</span> jam
                 </div>
             </div>
 
             <!-- Selisih -->
-            <div id="selisih-box" class="border px-4 py-2 rounded shadow text-sm 
+            <div id="selisih-box" class="border px-6 py-3 rounded shadow text-sm 
                 {{ $selisih >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300' }}">
-                <div class="text-gray-600 text-xs mb-1">Selisih</div>
-                <div id="selisih-text" class="text-base font-semibold {{ $selisih >= 0 ? 'text-green-700' : 'text-red-700' }}">
+                <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Selisih</div>
+                <div id="selisih-text"
+                    class="text-base font-semibold {{ $selisih >= 0 ? 'text-green-700' : 'text-red-700' }}">
                     {{ $selisih >= 0 ? '+' : '' }}<span id="selisih-display">{{ number_format($selisih, 1) }}</span> jam
                 </div>
             </div>
@@ -95,21 +99,21 @@
     </section>
 
     <!-- Ringkasan Jam per Kategori Pekerjaan -->
-    <section class="flex flex-wrap gap-2 mb-4 items-center">
+    <section class="flex flex-wrap gap-6 mb-10 items-center" style="gap: 1.5rem; margin-bottom: 0.2rem;">
         <div class="text-sm font-semibold text-gray-600 mr-2">Jam per Kategori:</div>
-        <div class="bg-purple-100 border border-purple-300 px-3 py-1 rounded shadow text-sm">
+        <div class="bg-purple-100 border border-purple-300 px-4 py-2 rounded shadow text-sm">
             <span class="text-purple-700 font-semibold">Produksi: <span id="jam-produksi">0</span> jam</span>
         </div>
-        <div class="bg-orange-100 border border-orange-300 px-3 py-1 rounded shadow text-sm">
+        <div class="bg-orange-100 border border-orange-300 px-4 py-2 rounded shadow text-sm">
             <span class="text-orange-700 font-semibold">Maintenance: <span id="jam-maintenance">0</span> jam</span>
         </div>
-        <div class="bg-teal-100 border border-teal-300 px-3 py-1 rounded shadow text-sm">
+        <div class="bg-teal-100 border border-teal-300 px-4 py-2 rounded shadow text-sm">
             <span class="text-teal-700 font-semibold">Kaizen: <span id="jam-kaizen">0</span> jam</span>
         </div>
-        <div class="bg-yellow-100 border border-yellow-300 px-3 py-1 rounded shadow text-sm">
+        <div class="bg-yellow-100 border border-yellow-300 px-4 py-2 rounded shadow text-sm">
             <span class="text-yellow-700 font-semibold">5S: <span id="jam-5s">0</span> jam</span>
         </div>
-        <div class="bg-indigo-100 border border-indigo-300 px-3 py-1 rounded shadow text-sm">
+        <div class="bg-indigo-100 border border-indigo-300 px-4 py-2 rounded shadow text-sm">
             <span class="text-indigo-700 font-semibold">Leader/PIC: <span id="jam-leader">0</span> jam</span>
         </div>
     </section>
@@ -119,7 +123,8 @@
             <thead>
                 <tr>
                     <th class="sticky-col-left">No</th>
-                    <th class="sticky-col-left">Nama<br><input type="text" class="filter" data-column="1" placeholder="Cari Nama"></th>
+                    <th class="sticky-col-left">Nama<br><input type="text" class="filter" data-column="1"
+                            placeholder="Cari Nama"></th>
                     <th>Nilai<br><input type="text" class="filter" data-column="2" placeholder="Cari Nilai"></th>
                     <th>Divisi<br><input type="text" class="filter" data-column="3" placeholder="Cari Divisi"></th>
                     <th>
@@ -128,7 +133,8 @@
                         <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
                     </th>
                     @userType('leader')
-                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval"></th>
+                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval">
+                    </th>
                     <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
                     <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
                     <th>Pekerjaan<br>
@@ -144,7 +150,8 @@
                     <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
                     @enduserType
                     @userType('admin')
-                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval"></th>
+                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval">
+                    </th>
                     <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
                     <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
                     <th>Pekerjaan<br>
@@ -161,7 +168,8 @@
                     @enduserType
                     @userType('super')
                     <th>Approval</th>
-                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="6" placeholder="Approval"></th>
+                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="6" placeholder="Approval">
+                    </th>
                     <th>Jam<br><input type="text" class="filter" data-column="7" placeholder="Jam"></th>
                     <th>Durasi<br><input type="text" class="filter" data-column="8" placeholder="Durasi"></th>
                     <th>Pekerjaan<br>
@@ -184,7 +192,8 @@
                 <tr data-id="{{ $row->id_lembur }}">
                     <td class="sticky-col-left">{{ $loop->iteration }}</td>
                     <td class="sticky-col-left">{{ $row->employee->nama ?? '-' }}</td>
-                    <td>{{ $row->employee->nilaiTahunan->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}</td>
+                    <td>{{ $row->employee->nilaiTahunan->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}
+                    </td>
                     <td>{{ $row->employee->division->nama ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
 
@@ -195,22 +204,23 @@
                             @csrf
                             @method('PUT')
                             @if (is_null($row->approval_lembur))
-                            <div class="flex flex-col btn-group">
-                                <button type="button" data-value="1"
-                                    class="btn bg-success text-sm rounded approve-btn">Setujui</button>
-                                <button type="button" data-value="0"
-                                    class="btn bg-red text-sm rounded approve-btn">Tolak</button>
-                            </div>
+                                <div class="flex flex-col btn-group">
+                                    <button type="button" data-value="1"
+                                        class="btn bg-success text-sm rounded approve-btn">Setujui</button>
+                                    <button type="button" data-value="0"
+                                        class="btn bg-red text-sm rounded approve-btn">Tolak</button>
+                                </div>
                             @else
-                            <button type="button" data-value="null"
-                                class="btn bg-yellow text-sm rounded approve-btn">Batalkan</button>
+                                <button type="button" data-value="null"
+                                    class="btn bg-yellow text-sm rounded approve-btn">Batalkan</button>
                             @endif
                         </form>
                     </td>
                     @enduserType
 
                     <!-- Status Persetujuan (semua role) -->
-                    <td class="status text-center h-full text-sm {{ $row->approval_lembur === null ? 'bg-yellow' : ($row->approval_lembur ? 'bg-success' : 'bg-red') }}">
+                    <td
+                        class="status text-center h-full text-sm {{ $row->approval_lembur === null ? 'bg-yellow' : ($row->approval_lembur ? 'bg-success' : 'bg-red') }}">
                         {{ is_null($row->approval_lembur) ? 'Menunggu Persetujuan' : ($row->approval_lembur ? 'Disetujui' : 'Ditolak') }}
                     </td>
                     <td>{{ $row->waktu_lembur }}</td>
@@ -221,15 +231,12 @@
                     <!-- Aksi -->
                     <td class="sticky-col-right">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-icon edit-btn"
-                                data-id="{{ $row->id_lembur }}"
+                            <button type="button" class="btn btn-icon edit-btn" data-id="{{ $row->id_lembur }}"
                                 data-employee_name="{{ $row->employee->nama ?? '-' }}"
                                 data-employee_id="{{ $row->employee->id }}"
                                 data-tanggal="{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('Y-m-d') }}"
-                                data-waktu="{{ $row->waktu_lembur }}"
-                                data-durasi="{{ $row->durasi_lembur }}"
-                                data-keterangan="{{ $row->keterangan_lembur }}"
-                                data-makan="{{ $row->makan_lembur }}">
+                                data-waktu="{{ $row->waktu_lembur }}" data-durasi="{{ $row->durasi_lembur }}"
+                                data-keterangan="{{ $row->keterangan_lembur }}" data-makan="{{ $row->makan_lembur }}">
                                 <i class="material-symbols-rounded btn-primary">edit_square</i>
                             </button>
 
@@ -268,7 +275,7 @@
         // Toggle date/month
         const toggleBtn = document.getElementById('toggleType');
         if (toggleBtn) {
-            toggleBtn.addEventListener('click', function() {
+            toggleBtn.addEventListener('click', function () {
                 if (dateFilter.type === "date") {
                     dateFilter.type = "month";
                     this.textContent = "Date";
@@ -421,7 +428,7 @@
         // Export Lembur
         const exportBtn = document.getElementById('export-lembur-btn');
         if (exportBtn) {
-            exportBtn.addEventListener('click', function(e) {
+            exportBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 const tanggal = dateFilter ? dateFilter.value : '';
                 let url = "{{ route('export.lembur') }}";
@@ -432,11 +439,11 @@
 
         // Modal Delete
         let rowToDelete = null;
-        window.showDeletePopup = function(row) {
+        window.showDeletePopup = function (row) {
             rowToDelete = row;
             document.getElementById('popupDelete').classList.replace('hidden', 'flex');
         };
-        window.hideDeletePopup = function() {
+        window.hideDeletePopup = function () {
             rowToDelete = null;
             document.getElementById('popupDelete').classList.replace('flex', 'hidden');
         };
@@ -511,7 +518,7 @@
         // Submit Edit
         const editForm = document.getElementById('editLemburForm');
         if (editForm) {
-            editForm.addEventListener('submit', function(e) {
+            editForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const id = document.getElementById('edit-lembur-id').value;
                 const data = {
@@ -551,22 +558,22 @@
 
     function attachApprovalListeners(context = document) {
         context.querySelectorAll('.approve-btn').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const approval = this.dataset.value;
                 const form = this.closest('.approval-form');
                 const id = form.dataset.id;
 
                 fetch(`/iseki_rifa/public/lembur/${id}/approve`, {
-                        method: 'PUT',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            approval: approval
-                        })
+                    method: 'PUT',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        approval: approval
                     })
+                })
                     .then(response => response.json())
                     .then(data => {
                         const row = document.querySelector(`tr[data-id="${id}"]`);
