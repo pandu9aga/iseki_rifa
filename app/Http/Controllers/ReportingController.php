@@ -505,8 +505,9 @@ class ReportingController extends Controller
 
         // khusus Pulang Cepat Dengan Surat: format remark dengan "Dengan Surat - "
         if ($absen->kategori === 'P' && str_starts_with($absen->keterangan ?? '', 'Dengan Surat')) {
-            // Keterangan tersimpan: "Dengan Surat" atau "Dengan Surat | manual_text"
-            $manualPart = trim(str_replace(['Dengan Surat |', 'Dengan Surat'], '', $absen->keterangan));
+            // Keterangan tersimpan: "Dengan Surat" atau "Dengan Surat - manual_text" atau "Dengan Surat | manual_text"
+            $manualPart = trim(preg_replace('/^Dengan Surat/i', '', $absen->keterangan ?? ''));
+            $manualPart = ltrim($manualPart, '- |'); 
             $remark = 'Dengan Surat' . ($manualPart ? ' - ' . $manualPart : '');
         }
 
