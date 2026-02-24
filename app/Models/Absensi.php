@@ -63,7 +63,9 @@ class Absensi extends Model
             'CSS' => 'Cuti Setengah Hari Siang',
             'T' => 'Terlambat',
             'IK' => 'Izin Keluar',
-            'P' => 'Pulang Cepat',
+            'P' => str_starts_with($this->keterangan ?? '', 'Dengan Surat')
+                ? 'Pulang Cepat Dengan Surat'
+                : 'Pulang Cepat',
             'A' => 'Absen',
             'ASP' => 'Absen Setengah Hari Pagi',
             'ASS' => 'Absen Setengah Hari Siang',

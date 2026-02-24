@@ -19,6 +19,7 @@
                     <option value="Terlambat">Terlambat</option>
                     <option value="Izin Keluar">Izin Keluar</option>
                     <option value="Pulang Cepat">Pulang Cepat</option>
+                    <option value="Pulang Cepat Dengan Surat">Pulang Cepat Dengan Surat</option>
                     <option value="Absen">Absen</option>
                     <option value="Sakit">Sakit</option>
                     <option value="Cuti Khusus">Cuti Khusus</option>

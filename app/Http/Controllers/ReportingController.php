@@ -102,7 +102,7 @@ class ReportingController extends Controller
         //     ->get();
 
         // $pdf = Pdf::loadView('reporting.pdf', compact('absensis', 'date'));
-        
+
         // return $pdf->download('rekap_absensi.pdf');
         $date = '2025-07-14';
         $absensis = Absensi::with('employee', 'employee.division')
@@ -111,7 +111,7 @@ class ReportingController extends Controller
             ->get();
 
         $pdf = Pdf::loadView('reporting.pdf', compact('absensis', 'date'));
-        
+
         // Simpan dulu ke storage
         $fileName = 'rekap_absensi_' . now()->format('Ymd_His') . '.pdf';
         $filePath = storage_path('app/' . $fileName);
@@ -125,7 +125,8 @@ class ReportingController extends Controller
         return "PDF berhasil di-upload ke Google Drive!";
     }
 
-    public function excel(){
+    public function excel()
+    {
         $absensis = Absensi::with('employee', 'employee.division', 'replacements.employee')
             ->where('kategori', '!=', 'SF')
             ->orderBy('tanggal')
@@ -137,8 +138,16 @@ class ReportingController extends Controller
 
         // Header
         $headers = [
-            'No', 'Nama', 'Jenis Izin', 'Tanggal', 'Keterangan',
-            'Status Persetujuan', 'Status', 'Divisi', 'Tim', 'Pengganti'
+            'No',
+            'Nama',
+            'Jenis Izin',
+            'Tanggal',
+            'Keterangan',
+            'Status Persetujuan',
+            'Status',
+            'Divisi',
+            'Tim',
+            'Pengganti'
         ];
         $sheet->fromArray($headers, NULL, 'A1');
 
@@ -393,8 +402,8 @@ class ReportingController extends Controller
                 }
 
                 $status = $statusMap[$modelType]['pending_hr'];
-				
-				$additional = $absen->kategori === 'S' ? 'Sakit - ' : '';
+
+                $additional = $absen->kategori === 'S' ? 'Sakit - ' : '';
 
                 $payload = [
                     'id_rifa'       => (string) $absen->id,
@@ -452,7 +461,6 @@ class ReportingController extends Controller
                 'status_class' => $class,
                 'button_html'  => view('partials.approval-buttons', compact('absen'))->render(),
             ]);
-
         } catch (\Throwable $e) {
             DB::rollBack();
 
@@ -495,6 +503,13 @@ class ReportingController extends Controller
             $remark = 'serikat' . ($absen->keterangan ? ' - ' . $absen->keterangan : '');
         }
 
+        // khusus Pulang Cepat Dengan Surat: format remark dengan "Dengan Surat - "
+        if ($absen->kategori === 'P' && str_starts_with($absen->keterangan ?? '', 'Dengan Surat')) {
+            // Keterangan tersimpan: "Dengan Surat" atau "Dengan Surat | manual_text"
+            $manualPart = trim(str_replace(['Dengan Surat |', 'Dengan Surat'], '', $absen->keterangan));
+            $remark = 'Dengan Surat' . ($manualPart ? ' - ' . $manualPart : '');
+        }
+
         return [$jenisCuti, $remark];
     }
 
@@ -516,12 +531,23 @@ class ReportingController extends Controller
             $jamMasuk  = $jamMasukList[$index] ?: null;
             $jamKeluar = $jamKeluarList[$index] ?: null;
 
+            // Jika "Pulang Cepat Dengan Surat", prepend keterangan otomatis
+            if ($jenis === 'Pulang Cepat Dengan Surat') {
+                $manualKeterangan = $keteranganCutiList[$index] ?? '';
+                // Hapus prefix "Dengan Surat" yang sudah ada agar tidak double
+                $manualKeterangan = preg_replace('/^Dengan Surat\s*[-|]?\s*/i', '', $manualKeterangan);
+                $keteranganCutiList[$index] = $manualKeterangan
+                    ? 'Dengan Surat - ' . $manualKeterangan
+                    : 'Dengan Surat';
+            }
+
             switch ($jenis) {
                 case 'Terlambat':
                     $jamKeluar = null;
                     break;
 
                 case 'Pulang Cepat':
+                case 'Pulang Cepat Dengan Surat':
                     $jamMasuk = null;
                     break;
 
@@ -634,6 +660,7 @@ class ReportingController extends Controller
             'Terlambat' => 'T',
             'Izin Keluar' => 'IK',
             'Pulang Cepat' => 'P',
+            'Pulang Cepat Dengan Surat' => 'P',
             'Absen' => 'A',
             'Absen Setengah Hari Pagi' => 'ASP',
             'Absen Setengah Hari Siang' => 'ASS',
@@ -678,10 +705,20 @@ class ReportingController extends Controller
         $absensi = Absensi::findOrFail($id);
         $absensi->load('employee');
 
+        // Handle keterangan otomatis untuk Pulang Cepat Dengan Surat
+        $keterangan = $request->keterangan;
+        if ($request->kategori === 'Pulang Cepat Dengan Surat') {
+            // Hapus prefix "Dengan Surat" yang sudah ada agar tidak double
+            $keterangan = preg_replace('/^Dengan Surat\s*[-|]?\s*/i', '', $keterangan ?? '');
+            $keterangan = $keterangan
+                ? 'Dengan Surat - ' . $keterangan
+                : 'Dengan Surat';
+        }
+
         $absensi->update([
             'kategori'     => $this->getKategoriCode($request->kategori),
             'tanggal'      => $request->tanggal,
-            'keterangan'   => $request->keterangan,
+            'keterangan'   => $keterangan,
             'jam_masuk'    => $request->jam_masuk,
             'jam_keluar'   => $request->jam_keluar,
 
@@ -731,7 +768,7 @@ class ReportingController extends Controller
     }
 
     public function export(Request $request)
-    {   
+    {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         Carbon::setLocale('id');
@@ -741,11 +778,11 @@ class ReportingController extends Controller
         $dateObj = Carbon::createFromDate($year, $month, 1);
 
         $specialDates = SpecialDate::whereYear('tanggal', $year)
-        ->whereMonth('tanggal', $month)
-        ->get()
-        ->keyBy(function ($item) {
-            return Carbon::parse($item->tanggal)->format('Y-m-d');
-        });
+            ->whereMonth('tanggal', $month)
+            ->get()
+            ->keyBy(function ($item) {
+                return Carbon::parse($item->tanggal)->format('Y-m-d');
+            });
 
         $daysInMonth = $dateObj->daysInMonth;
         $monthName = strtoupper($dateObj->translatedFormat('F'));
@@ -866,8 +903,8 @@ class ReportingController extends Controller
 
         $absensiLookupYear = [];
         foreach ($absensisYear as $absen) {
-            if(!$absen->is_approved) continue;
-            
+            if (!$absen->is_approved) continue;
+
             $empId = $absen->employee_id;
             $kategori = $absen->kategori;
             if (!isset($absensiLookupYear[$empId])) {
@@ -1101,5 +1138,4 @@ class ReportingController extends Controller
             'cell_html' => view('partials.member-approval-cell', compact('absen'))->render()
         ]);
     }
-
 }
