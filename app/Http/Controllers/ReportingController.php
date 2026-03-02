@@ -495,6 +495,11 @@ class ReportingController extends Controller
 
         $jenisCuti = $map[$absen->kategori] ?? $absen->kategori;
 
+        // khusus Pulang Cepat (Tanpa Surat) -> map ke Izin Keluar (IK) label agar bisa sinkron sebagai attendance
+        if ($absen->kategori === 'P' && !str_starts_with($absen->keterangan ?? '', 'Dengan Surat')) {
+            $jenisCuti = $map['P'];
+        }
+
         // remark default
         $remark = $absen->keterangan ?: '-';
 
