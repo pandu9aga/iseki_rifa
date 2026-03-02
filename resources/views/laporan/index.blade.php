@@ -65,50 +65,49 @@
         </div>
     </section>
 
-    {{-- Kotak Ringkasan Breakdown Jam per Kategori (Selalu Tampil jika ada data) --}}
+    {{-- Ringkasan Jam per Kategori — sama persis seperti index lembur --}}
     @if(isset($breakdownKategori))
-    <section class="flex flex-wrap gap-2 mb-4 items-center justify-end">
-        <div class="text-xs font-semibold text-gray-500 mr-2">Breakdown:</div>
-        <div class="bg-purple-50 border border-purple-200 px-2 py-1 rounded text-xs">
-            <span class="text-purple-700">Prod: <b>{{ number_format($breakdownKategori['Produksi'] ?? 0, 1) }}</b></span>
+    <section class="flex flex-wrap items-center" style="gap: 1.5rem; margin-bottom: 0.5rem;">
+        <div class="text-sm font-semibold text-gray-600">Jam per Kategori:</div>
+        <div class="bg-purple-100 border border-purple-300 px-4 py-2 rounded shadow text-sm">
+            <span class="text-purple-700 font-semibold">Produksi: {{ number_format($breakdownKategori['Produksi'] ?? 0, 1) }} jam</span>
         </div>
-        <div class="bg-orange-50 border border-orange-200 px-2 py-1 rounded text-xs">
-            <span class="text-orange-700">Mtc: <b>{{ number_format($breakdownKategori['Maintenance'] ?? 0, 1) }}</b></span>
+        <div class="bg-orange-100 border border-orange-300 px-4 py-2 rounded shadow text-sm">
+            <span class="text-orange-700 font-semibold">Maintenance: {{ number_format($breakdownKategori['Maintenance'] ?? 0, 1) }} jam</span>
         </div>
-        <div class="bg-teal-50 border border-teal-200 px-2 py-1 rounded text-xs">
-            <span class="text-teal-700">Kaizen: <b>{{ number_format($breakdownKategori['Kaizen'] ?? 0, 1) }}</b></span>
+        <div class="bg-teal-100 border border-teal-300 px-4 py-2 rounded shadow text-sm">
+            <span class="text-teal-700 font-semibold">Kaizen: {{ number_format($breakdownKategori['Kaizen'] ?? 0, 1) }} jam</span>
         </div>
-        <div class="bg-yellow-50 border border-yellow-200 px-2 py-1 rounded text-xs">
-            <span class="text-yellow-700">5S: <b>{{ number_format($breakdownKategori['5S'] ?? 0, 1) }}</b></span>
+        <div class="bg-yellow-100 border border-yellow-300 px-4 py-2 rounded shadow text-sm">
+            <span class="text-yellow-700 font-semibold">5S: {{ number_format($breakdownKategori['5S'] ?? 0, 1) }} jam</span>
         </div>
-        <div class="bg-indigo-50 border border-indigo-200 px-2 py-1 rounded text-xs">
-            <span class="text-indigo-700">Leader: <b>{{ number_format($breakdownKategori['Pekerjaan Leader/PIC Lembur'] ?? 0, 1) }}</b></span>
+        <div class="bg-indigo-100 border border-indigo-300 px-4 py-2 rounded shadow text-sm">
+            <span class="text-indigo-700 font-semibold">Leader/PIC: {{ number_format($breakdownKategori['Pekerjaan Leader/PIC Lembur'] ?? 0, 1) }} jam</span>
         </div>
     </section>
     @endif
 
     {{-- Kotak Informasi Budget & Durasi (hanya tampil jika bulan dipilih) --}}
     @if(!empty($bulan) && isset($bulanList[$bulan]))
-    <section class="flex gap-3 mb-4 justify-end">
+    <section class="flex flex-wrap items-center" style="gap: 2rem; margin-bottom: 1rem; margin-top: 0.75rem;">
         <!-- Budget Bulanan -->
-        <div class="bg-green-100 border border-green-300 px-4 py-2 rounded shadow text-sm">
-            <div class="text-gray-600 text-xs mb-1">Budget ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
+        <div class="bg-green-100 border border-green-300 px-6 py-3 rounded shadow text-sm">
+            <div class="text-gray-600 text-xs" style="margin-bottom: 0.5rem;">Budget ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
             <div class="text-green-700 text-base font-semibold">
                 {{ number_format($budgetBulanan, 1) }} jam
             </div>
         </div>
         <!-- Total Durasi Bulanan -->
-        <div class="bg-blue-100 border border-blue-300 px-4 py-2 rounded shadow text-sm">
-            <div class="text-gray-600 text-xs mb-1">Total Durasi ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
+        <div class="bg-blue-100 border border-blue-300 px-6 py-3 rounded shadow text-sm">
+            <div class="text-gray-600 text-xs" style="margin-bottom: 0.5rem;">Total Durasi ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
             <div class="text-blue-700 text-base font-semibold">
                 {{ number_format($totalDurasiBulanan, 1) }} jam
             </div>
         </div>
-
         <!-- Selisih (Budget - Durasi) -->
-        <div class="border px-4 py-2 rounded shadow text-sm 
+        <div class="border px-6 py-3 rounded shadow text-sm
             {{ $selisihBudget >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300' }}">
-            <div class="text-gray-600 text-xs mb-1">Selisih</div>
+            <div class="text-gray-600 text-xs" style="margin-bottom: 0.5rem;">Selisih</div>
             <div class="text-base font-semibold {{ $selisihBudget >= 0 ? 'text-green-700' : 'text-red-700' }}">
                 {{ $selisihBudget >= 0 ? '+' : '' }}{{ number_format($selisihBudget, 1) }} jam
             </div>
