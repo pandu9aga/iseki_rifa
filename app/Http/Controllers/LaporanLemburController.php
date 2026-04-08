@@ -273,7 +273,7 @@ class LaporanLemburController extends Controller
         foreach ($employees as $i => $emp) {
             $sheet->setCellValue("A{$row}", $i + 1);
             $sheet->setCellValue("B{$row}", $emp->nama);
-            $sheet->setCellValue("C{$row}", $emp->division->nama ?? '-');
+            $sheet->setCellValue("C{$row}", $emp->division?->nama ?? '-');
 
             // Ambil nilai akhir tahun
             $nilaiAkhir = $emp->nilaiTahunan

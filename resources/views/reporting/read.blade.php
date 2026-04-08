@@ -116,12 +116,12 @@
             @foreach ($reportToday as $i => $report)
             <tr>
                 <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
-                <td class="border px-4 py-2">{{ $report->user->name }}</td>
-                <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
+                <td class="border px-4 py-2">{{ $report->user?->name ?? '-' }}</td>
+                <td class="border px-4 py-2">{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
                 <td class="border px-4 py-2">
-                    {{ is_array($report->user->team) 
+                    {{ is_array($report->user?->team) 
                                 ? implode(', ', $report->user->team) 
-                                : $report->user->team ?? 'Tanpa Team' }}
+                                : $report->user?->team ?? 'Tanpa Team' }}
                 </td>
                 <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
                 <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
@@ -172,12 +172,12 @@
             @foreach ($reportToday as $i => $report)
             <tr>
                 <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
-                <td class="border px-4 py-2">{{ $report->user->name }}</td>
-                <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
+                <td class="border px-4 py-2">{{ $report->user?->name ?? '-' }}</td>
+                <td class="border px-4 py-2">{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
                 <td class="border px-4 py-2">
-                    {{ is_array($report->user->team) 
+                    {{ is_array($report->user?->team) 
                                 ? implode(', ', $report->user->team) 
-                                : $report->user->team ?? 'Tanpa Team' }}
+                                : $report->user?->team ?? 'Tanpa Team' }}
                 </td>
                 <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
                 <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
@@ -228,12 +228,12 @@
             @foreach ($reportToday as $i => $report)
             <tr>
                 <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
-                <td class="border px-4 py-2">{{ $report->user->name }}</td>
-                <td class="border px-4 py-2">{{ $report->user->division ?? 'Tanpa Divisi' }}</td>
+                <td class="border px-4 py-2">{{ $report->user?->name ?? '-' }}</td>
+                <td class="border px-4 py-2">{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
                 <td class="border px-4 py-2">
-                    {{ is_array($report->user->team) 
+                    {{ is_array($report->user?->team) 
                                 ? implode(', ', $report->user->team) 
-                                : $report->user->team ?? 'Tanpa Team' }}
+                                : $report->user?->team ?? 'Tanpa Team' }}
                 </td>
                 <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
                 <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
@@ -482,7 +482,7 @@
                     data-jam-keluar="{{ $absen->jam_keluar }}">
                     {{-- <td class="sticky-col-left number">{{ $index + 1 }}</td> --}}
                     <td class="sticky-col-left number">{{ $loop->iteration }}</td>
-                    <td class="sticky-col-left col-nama">{{ $absen->employee->nama ?? '-' }}</td>
+                    <td class="sticky-col-left col-nama">{{ $absen->employee?->nama ?? '-' }}</td>
                     <td class="col-jenis">{{ $absen->kategori_label }}</td>
                     <td class="col-tanggal">{{ $absen->tanggal->format('d/m/Y') }}</td>
                     <td class="col-keterangan">
@@ -507,7 +507,7 @@
                         @endif
                     </td>
                     <td class="col-sisa-cuti">
-                        @if($absen->employee->saldo_cuti)
+                        @if($absen->employee?->saldo_cuti)
                         <strong>{{ $absen->employee->saldo_cuti }}</strong> hari
                         @else
                         <span class="text-gray-500">-</span>
@@ -608,9 +608,9 @@
                         </div>
                     </td>
                     @endif
-                    <td class="col-tim">{{ $absen->employee->team ?? '-' }}</td>
-                    <td class="col-status">{{ $absen->employee->status ?? '-' }}</td>
-                    <td class="col-divisi">{{ $absen->employee->division->nama ?? '-' }}</td>
+                    <td class="col-tim">{{ $absen->employee?->team ?? '-' }}</td>
+                    <td class="col-status">{{ $absen->employee?->status ?? '-' }}</td>
+                    <td class="col-divisi">{{ $absen->employee?->division?->nama ?? '-' }}</td>
                     <td class="sticky-col-right">
                         @php
                         $isEmployee = session()->has('employee_login') && session('employee_login');

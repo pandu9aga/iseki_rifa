@@ -151,7 +151,7 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3 border border-gray-300 text-center">{{ $loop->iteration }}</td>
                         <td class="px-4 py-3 border border-gray-300">{{ $emp->nama }}</td>
-                        <td class="px-4 py-3 border border-gray-300 text-center">{{ $emp->division->nama ?? '-' }}</td>
+                        <td class="px-4 py-3 border border-gray-300 text-center">{{ $emp->division?->nama ?? '-' }}</td>
                         <td class="px-4 py-3 border border-gray-300 text-center">
                             {{ $emp->nilaiTahunan->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}
                         </td>

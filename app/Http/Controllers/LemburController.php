@@ -152,7 +152,7 @@ class LemburController extends Controller
 
         Lembur::create([
             'employee_id'       => $emp_id,
-            'division'          => $employee->division->nama ?? '-',
+            'division'          => $employee->division?->nama ?? '-',
             'tanggal_lembur'    => $request->tanggal_lembur[$index] ?? null,
             'waktu_lembur'      => ($request->jam_mulai[$index] ?? '') . ' - ' . ($request->jam_selesai[$index] ?? ''),
             'durasi_lembur'     => $request->durasi_lembur[$index] ?? null,

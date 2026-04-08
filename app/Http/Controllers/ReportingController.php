@@ -165,7 +165,7 @@ class ReportingController extends Controller
                 foreach ($absen->replacements as $rep) {
                     $penggantiList[] = sprintf(
                         "%s (%s) - %s",
-                        $rep->employee->nama ?? '-',
+                        $rep->employee?->nama ?? '-',
                         $rep->production_number ?? '-',
                         $rep->created_at ? \Carbon\Carbon::parse($rep->created_at)->format('d/m/Y H:i') : '-'
                     );
@@ -194,14 +194,14 @@ class ReportingController extends Controller
 
             $sheet->fromArray([
                 $index + 1,
-                $absen->employee->nama ?? '-',
+                $absen->employee?->nama ?? '-',
                 $absen->kategori_label ?? '-',
                 $absen->tanggal ? $absen->tanggal->format('d/m/Y') : '-',
                 $keteranganText,
                 $statusPersetujuan,
-                $absen->employee->status ?? 'Contract',
-                $absen->employee->division->nama ?? '-',
-                $absen->employee->team ?? '-',
+                $absen->employee?->status ?? 'Contract',
+                $absen->employee?->division?->nama ?? '-',
+                $absen->employee?->team ?? '-',
                 $penggantiText
             ], NULL, 'A' . $row);
 
@@ -407,7 +407,7 @@ class ReportingController extends Controller
 
                 $payload = [
                     'id_rifa'       => (string) $absen->id,
-                    'employee_code' => (string) $absen->employee->nik,
+                    'employee_code' => (string) $absen->employee?->nik,
                     'request_date'  => $absen->tanggal->format('Y-m-d'),
                     'jenis_cuti'    => $jenisCuti,
                     'remark'        => $additional . $remark,
@@ -593,7 +593,7 @@ class ReportingController extends Controller
             ],
             [
                 'updated_at' => now(),
-                'divisi' => Auth::user()->division,
+                'divisi' => Auth::user()?->division,
             ]
         );
 
@@ -633,7 +633,7 @@ class ReportingController extends Controller
         $absensis = Absensi::with(['employee.division'])
             ->whereDate('tanggal', $tanggal)
             ->get()
-            ->groupBy(fn($item) => $item->employee->division->nama ?? 'Lainnya');
+            ->groupBy(fn($item) => $item->employee?->division?->nama ?? 'Lainnya');
 
         Carbon::setLocale('id');
         $formattedText = "Dear bu Yuli\n\n\n\nBerikut informasi absensi department produksi tanggal " . Carbon::parse($tanggal)->translatedFormat('d F Y') . "\n\n";
@@ -644,7 +644,7 @@ class ReportingController extends Controller
             foreach ($absensis as $divisi => $items) {
                 $formattedText .= "Prod. " . $divisi . "\n";
                 foreach ($items as $index => $item) {
-                    $formattedText .= ($index + 1) . ". " . ($item->employee->nama ?? '-') . " (" . $item->kategori_label . ")\n";
+                    $formattedText .= ($index + 1) . ". " . ($item->employee?->nama ?? '-') . " (" . $item->kategori_label . ")\n";
                 }
                 $formattedText .= "\n";
             }
@@ -686,7 +686,7 @@ class ReportingController extends Controller
         if ($employee) {
             return response()->json([
                 'status' => $employee->status,
-                'divisi' => $employee->division->nama ?? '',
+                'divisi' => $employee->division?->nama ?? '',
                 'team' => $employee->team ?? '',
             ]);
         }
@@ -751,7 +751,7 @@ class ReportingController extends Controller
             ],
             [
                 'updated_at' => now(),
-                'divisi'     => Auth::user()->division,
+                'divisi'     => Auth::user()?->division,
             ]
         );
 

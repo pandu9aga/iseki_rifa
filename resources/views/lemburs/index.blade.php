@@ -191,10 +191,10 @@
                 @foreach ($lemburs as $row)
                 <tr data-id="{{ $row->id_lembur }}">
                     <td class="sticky-col-left">{{ $loop->iteration }}</td>
-                    <td class="sticky-col-left">{{ $row->employee->nama ?? '-' }}</td>
-                    <td>{{ $row->employee->nilaiTahunan->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}
+                    <td class="sticky-col-left">{{ $row->employee?->nama ?? '-' }}</td>
+                    <td>{{ $row->employee?->nilaiTahunan?->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}
                     </td>
-                    <td>{{ $row->employee->division->nama ?? '-' }}</td>
+                    <td>{{ $row->employee?->division?->nama ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
 
                     <!-- Approval (hanya super) -->
@@ -232,8 +232,8 @@
                     <td class="sticky-col-right">
                         <div class="btn-group">
                             <button type="button" class="btn btn-icon edit-btn" data-id="{{ $row->id_lembur }}"
-                                data-employee_name="{{ $row->employee->nama ?? '-' }}"
-                                data-employee_id="{{ $row->employee->id }}"
+                                data-employee_name="{{ $row->employee?->nama ?? '-' }}"
+                                data-employee_id="{{ $row->employee?->id }}"
                                 data-tanggal="{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('Y-m-d') }}"
                                 data-waktu="{{ $row->waktu_lembur }}" data-durasi="{{ $row->durasi_lembur }}"
                                 data-keterangan="{{ $row->keterangan_lembur }}" data-makan="{{ $row->makan_lembur }}">

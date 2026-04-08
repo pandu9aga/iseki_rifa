@@ -35,7 +35,7 @@
                 <tr data-id="{{ $absen->id }}">
                     {{-- <td class="sticky-col-left number">{{ $index + 1 }}</td> --}}
                     <td class="sticky-col-left number">{{ $loop->iteration }}</td>
-                    <td>{{ $absen->employee->nama ?? '-' }}</td>
+                    <td>{{ $absen->employee?->nama ?? '-' }}</td>
                     <td>{{ $absen->tanggal->format('d/m/Y') }}</td>
                     <td>
                         <div style="display: inline-flex; align-items: center; gap: 5px;">

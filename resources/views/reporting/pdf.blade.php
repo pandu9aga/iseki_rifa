@@ -27,6 +27,15 @@
             vertical-align: top;
         }
     </style>
+
+    <!-- Dynamic Favicon -->
+    <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
+    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("calendar_month", "Rifa"); });</script>
+
+    <!-- Dynamic Favicon Assets -->
+    <link rel="stylesheet" href="/iseki_pro_app/css/icon.css">
+    <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
+    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("calendar_month", "Rifa"); });</script>
 </head>
 <body>
     {{ $date }}
@@ -49,7 +58,7 @@
             @forelse($absensis as $index => $absen)
             <tr>
                 <td>{{ $loop->iteration }}</td>
-                <td>{{ $absen->employee->nama ?? '-' }}</td>
+                <td>{{ $absen->employee?->nama ?? '-' }}</td>
                 <td>{{ $absen->kategori_label }}</td>
                 <td>{{ $absen->tanggal->format('d/m/Y') }}</td>
                 <td>{!! $absen->keterangan ? nl2br(e($absen->keterangan)) : '-' !!}</td>
@@ -63,9 +72,9 @@
                     }
                 @endphp
                 <td><span>{{ $status }}</span></td>
-                <td>{{ $absen->employee->status ?? 'Contract' }}</td>
-                <td>{{ $absen->employee->division->nama ?? '-' }}</td>
-                <td>{{ $absen->employee->team ?? '-' }}</td>
+                <td>{{ $absen->employee?->status ?? 'Contract' }}</td>
+                <td>{{ $absen->employee?->division?->nama ?? '-' }}</td>
+                <td>{{ $absen->employee?->team ?? '-' }}</td>
             </tr>
             @empty
             <tr>
