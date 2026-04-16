@@ -358,7 +358,7 @@ class ReportingController extends Controller
                 \Log::info('ROLLBACK MIRAI', $rollbackPayload);
 
                 $rollbackResponse = Http::timeout(10)->post(
-                    'http://192.168.173.207/mirai/public/api/employees/rollback',
+                    env('MIRAI_API_URL') . '/employees/rollback',
                     $rollbackPayload
                 );
 
@@ -427,7 +427,7 @@ class ReportingController extends Controller
                 \Log::info('KIRIM MIRAI', $payload);
 
                 $response = Http::timeout(10)->post(
-                    'http://192.168.173.207/mirai/public/api/employees/leave-attendance',
+                    env('MIRAI_API_URL') . '/employees/leave-attendance',
                     $payload
                 );
 
