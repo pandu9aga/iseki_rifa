@@ -53,7 +53,6 @@ Route::middleware(CheckEmployeeLogin::class)->group(function () {
     Route::post('/employee/reporting/nihil', [ReportingController::class, 'storeNihil'])->name('employee.reporting.nihil');
     Route::get('/employee/reporting/download-pdf', [ReportingController::class, 'pdf'])->name('employee.reporting.pdf');
     Route::get('/employee/reporting/download-excel', [ReportingController::class, 'excel'])->name('employee.reporting.excel');
-    Route::get('/employee/lembur', [LemburController::class, 'index'])->name('employee.lemburs.index');
 });
 
 // Authenticated routes (user biasa)

@@ -34,11 +34,8 @@
 
                 {{-- Cek apakah user login sebagai employee --}}
                 @if(session()->has('employee_login') && session('employee_login'))
-                    <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') || request()->is('employee/reporting') ? 'active' : '' }}">
-                        <a href="{{ route('employee.reporting') }}">Absensi</a>
-                    </li>
-                    <li class="{{ request()->is('employee/lembur') ? 'active' : '' }}">
-                        <a href="{{ route('employee.lemburs.index') }}">Lembur</a>
+                    <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
+                        <a href="{{ route('employee.reporting') }}">Report</a>
                     </li>
                     <li class="user-menu">
                         <button onclick="toggleDropdown()" class="btn btn-secondary user-button">
@@ -66,7 +63,7 @@
                     {{-- Navbar untuk user biasa --}}
                     @userType('leader')
                         <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                            <a href="{{ url('/') }}">Absensi</a>
+                            <a href="{{ url('/') }}">Report</a>
                         </li>
                         <li class="{{ request()->is('lemburs') || request()->is('lemburs/*') ? 'active' : '' }}">
                             <a href="{{ route('lemburs.index') }}">Lembur</a>
@@ -97,7 +94,7 @@
 
                     @userType('admin')
                         <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                            <a href="{{ url('/') }}">Absensi</a>
+                            <a href="{{ url('/') }}">Report</a>
                         </li>
                         <li class="{{ request()->is('/') || request()->is('lembur') || request()->is('reporting/*') ? 'active' : '' }}">
                             <a href="{{ url('lembur') }}">Lembur</a>
@@ -131,7 +128,7 @@
 
                     @userType('super')
                         <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                            <a href="{{ url('/') }}">Absensi</a>
+                            <a href="{{ url('/') }}">Report</a>
                         </li>
                         <li class="{{ request()->is('/') || request()->is('lembur') || request()->is('reporting/*') ? 'active' : '' }}">
                             <a href="{{ url('lembur') }}">Lembur</a>
@@ -210,11 +207,8 @@
 
                 {{-- Cek apakah user login sebagai employee --}}
                 @if(session()->has('employee_login') && session('employee_login'))
-                    <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') || request()->is('employee/reporting')  ? 'active' : '' }}">
-                        <a href="{{ route('employee.reporting') }}">Absensi</a>
-                    </li>
-                    <li class="{{ request()->is('employee/lembur') ? 'active' : '' }}">
-                        <a href="{{ route('employee.lemburs.index') }}">Lembur</a>
+                    <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
+                        <a href="{{ route('employee.reporting') }}">Report</a>
                     </li>
                     <li class="user-menu">
                         <button onclick="toggleDropdown()" class="btn btn-secondary user-button">
@@ -242,7 +236,7 @@
                     {{-- Drawer navbar untuk user biasa --}}
                     @userType('leader')
                         <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                            <a href="{{ url('/') }}">Absensi</a>
+                            <a href="{{ url('/') }}">Report</a>
                         </li>
                         <li class="{{ request()->is('lemburs') || request()->is('lemburs/*') ? 'active' : '' }}">
                             <a href="{{ route('lemburs.index') }}">Lembur</a>
@@ -273,7 +267,7 @@
 
                     @userType('admin')
                         <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                            <a href="{{ url('/') }}">Absensi</a>
+                            <a href="{{ url('/') }}">Report</a>
                         </li>
                         <li class="{{ request()->is('/') || request()->is('lembur') || request()->is('reporting/*') ? 'active' : '' }}">
                             <a href="{{ url('lembur') }}">Lembur</a>
@@ -307,7 +301,7 @@
 
                     @userType('super')
                         <li class="{{ request()->is('/') || request()->is('reporting') || request()->is('reporting/*') ? 'active' : '' }}">
-                            <a href="{{ url('/') }}">Absensi</a>
+                            <a href="{{ url('/') }}">Report</a>
                         </li>
                         <li class="{{ request()->is('/') || request()->is('lembur') || request()->is('reporting/*') ? 'active' : '' }}">
                             <a href="{{ url('lembur') }}">Lembur</a>
