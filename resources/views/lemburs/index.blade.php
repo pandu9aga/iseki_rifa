@@ -15,6 +15,7 @@
         <h3 class="font-bold text-2xl">Data Lembur</h3>
     </div>
 
+    @if(Auth::check())
     {{-- Filter Tahun Penilaian --}}
     <form method="GET" class="mb-4 flex gap-3 flex-wrap bg-gray-50 p-3 rounded">
         <div>
@@ -113,10 +114,11 @@
         <div class="bg-yellow-100 border border-yellow-300 px-4 py-2 rounded shadow text-sm">
             <span class="text-yellow-700 font-semibold">5S: <span id="jam-5s">0</span> jam</span>
         </div>
-        <div class="bg-indigo-100 border border-indigo-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-indigo-700 font-semibold">Leader/PIC: <span id="jam-leader">0</span> jam</span>
-        </div>
-    </section>
+            <div class="bg-indigo-100 border border-indigo-300 px-4 py-2 rounded shadow text-sm">
+                <span class="text-indigo-700 font-semibold">Leader/PIC: <span id="jam-leader">0</span> jam</span>
+            </div>
+        </section>
+    @endif
     <!-- Tabel -->
     <section class="container-table table-scroll-wrapper">
         <table class="table-auto w-full border border-gray-300 mt-4" id="lembur-table">
@@ -124,7 +126,7 @@
                 <tr>
                     <th class="sticky-col-left">No</th>
                     <th class="sticky-col-left">Nama<br><input type="text" class="filter" data-column="1"
-                            placeholder="Cari Nama"></th>
+                            placeholder="Cari Nama" @if(!Auth::check() && session('employee_login')) value="{{ session('employee_user')->name }}" readonly style="background-color: #e9ecef; cursor: not-allowed;" @endif></th>
                     <th>Nilai<br><input type="text" class="filter" data-column="2" placeholder="Cari Nilai"></th>
                     <th>Divisi<br><input type="text" class="filter" data-column="3" placeholder="Cari Divisi"></th>
                     <th>
@@ -184,7 +186,28 @@
                     </th>
                     <th>Makan<br><input type="text" class="filter" data-column="10" placeholder="Makan"></th>
                     @enduserType
+
+                    @if(!Auth::check() && session('employee_login'))
+                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval">
+                    </th>
+                    <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
+                    <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
+                    <th>Pekerjaan<br>
+                        <select class="filter" data-column="8" id="filter-pekerjaan-employee">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
+                    <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
+                    @endif
+                    
+                    @if(Auth::check())
                     <th class="sticky-col-right">Aksi</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -229,6 +252,7 @@
                     <td>{{ $row->makan_lembur }}</td>
 
                     <!-- Aksi -->
+                    @if(Auth::check())
                     <td class="sticky-col-right">
                         <div class="btn-group">
                             <button type="button" class="btn btn-icon edit-btn" data-id="{{ $row->id_lembur }}"
@@ -246,6 +270,7 @@
                             </button>
                         </div>
                     </td>
+                    @endif
                 </tr>
                 @endforeach
             </tbody>
@@ -268,7 +293,12 @@
         // Set default tanggal hari ini
         const today = new Date().toISOString().split('T')[0];
         if (dateFilter) {
+            @if(!Auth::check() && session('employee_login'))
+            // Kosongkan untuk employee agar muncul semua data by default
+            dateFilter.value = '';
+            @else
             dateFilter.value = today;
+            @endif
             filterTable();
         }
 
@@ -377,14 +407,19 @@
             updateBudgetInfo(totalDurasi, currentBulan);
 
             // Update display ringkasan kategori
-            document.getElementById('jam-produksi').textContent = jamProduksi.toFixed(1);
-            document.getElementById('jam-maintenance').textContent = jamMaintenance.toFixed(1);
-            document.getElementById('jam-kaizen').textContent = jamKaizen.toFixed(1);
-            document.getElementById('jam-5s').textContent = jam5S.toFixed(1);
-            document.getElementById('jam-leader').textContent = jamLeader.toFixed(1);
+            if (document.getElementById('jam-produksi')) {
+                document.getElementById('jam-produksi').textContent = jamProduksi.toFixed(1);
+                document.getElementById('jam-maintenance').textContent = jamMaintenance.toFixed(1);
+                document.getElementById('jam-kaizen').textContent = jamKaizen.toFixed(1);
+                document.getElementById('jam-5s').textContent = jam5S.toFixed(1);
+                document.getElementById('jam-leader').textContent = jamLeader.toFixed(1);
+            }
         }
 
         function updateBudgetInfo(totalDurasi, bulan) {
+            // Jika elemen tidak ada di DOM (contoh: untuk user employee), skip proses ini
+            if (!document.getElementById('total-durasi-display')) return;
+
             // Update total durasi
             document.getElementById('total-durasi-display').textContent = totalDurasi.toFixed(1);
 

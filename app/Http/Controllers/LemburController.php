@@ -67,7 +67,15 @@ class LemburController extends Controller
             $query->whereDate('tanggal_lembur', '<=', $request->sampai);
         }
 
-        $lemburs = $query->orderBy('tanggal_lembur', 'asc')->get();
+        // === FILTER UNTUK EMPLOYEE LOGIN (HANYA MELIHAT DATA SENDIRI) ===
+        if (session()->has('employee_login') && session('employee_login')) {
+            $nik = session('employee_user')->username;
+            $query->whereHas('employee', function ($q) use ($nik) {
+                $q->where('nik', $nik);
+            });
+        }
+
+        $lemburs = $query->orderBy('tanggal_lembur', 'desc')->orderBy('id_lembur', 'desc')->get();
 
         return view('lemburs.index', compact(
             'lemburs',
