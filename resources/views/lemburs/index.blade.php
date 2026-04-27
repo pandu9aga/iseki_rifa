@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $isEmployee = !Auth::check() && session('employee_login');
+@endphp
 <main>
 
     <!-- Modal Edit -->
@@ -125,13 +128,15 @@
             <thead>
                 <tr>
                     <th class="sticky-col-left">No</th>
-                    <th class="sticky-col-left">Nama<br><input type="text" class="filter" data-column="1"
-                            placeholder="Cari Nama" @if(!Auth::check() && session('employee_login')) value="{{ session('employee_user')->name }}" readonly style="background-color: #e9ecef; cursor: not-allowed;" @endif></th>
+                    <th class="{{ $isEmployee ? '' : 'sticky-col-left' }}">Nama<br><input type="text" class="filter" data-column="1"
+                            placeholder="Cari Nama" @if($isEmployee) value="{{ session('employee_user')->name }}" readonly style="background-color: #e9ecef; cursor: not-allowed;" @endif></th>
+                    @if(!$isEmployee)
                     <th>Nilai<br><input type="text" class="filter" data-column="2" placeholder="Cari Nilai"></th>
                     <th>Divisi<br><input type="text" class="filter" data-column="3" placeholder="Cari Divisi"></th>
+                    @endif
                     <th>
                         Tanggal<br>
-                        <input id="customDate" name="customDate" type="date" class="filter" data-column="4">
+                        <input id="customDate" name="customDate" type="date" class="filter" data-column="{{ $isEmployee ? 2 : 4 }}">
                         <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
                     </th>
                     @userType('leader')
@@ -187,22 +192,9 @@
                     <th>Makan<br><input type="text" class="filter" data-column="10" placeholder="Makan"></th>
                     @enduserType
 
-                    @if(!Auth::check() && session('employee_login'))
-                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval">
-                    </th>
-                    <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
-                    <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
-                    <th>Pekerjaan<br>
-                        <select class="filter" data-column="8" id="filter-pekerjaan-employee">
-                            <option value="">Semua</option>
-                            <option value="Produksi">Produksi</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="Kaizen">Kaizen</option>
-                            <option value="5S">5S</option>
-                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
-                        </select>
-                    </th>
-                    <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
+                    @if($isEmployee)
+                    <th>Jam<br><input type="text" class="filter" data-column="3" placeholder="Jam"></th>
+                    <th>Durasi<br><input type="text" class="filter" data-column="4" placeholder="Durasi"></th>
                     @endif
                     
                     @if(Auth::check())
@@ -214,10 +206,12 @@
                 @foreach ($lemburs as $row)
                 <tr data-id="{{ $row->id_lembur }}">
                     <td class="sticky-col-left">{{ $loop->iteration }}</td>
-                    <td class="sticky-col-left">{{ $row->employee?->nama ?? '-' }}</td>
+                    <td class="{{ $isEmployee ? '' : 'sticky-col-left' }}">{{ $row->employee?->nama ?? '-' }}</td>
+                    @if(!$isEmployee)
                     <td>{{ $row->employee?->nilaiTahunan?->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}
                     </td>
                     <td>{{ $row->employee?->division?->nama ?? '-' }}</td>
+                    @endif
                     <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
 
                     <!-- Approval (hanya super) -->
@@ -241,15 +235,19 @@
                     </td>
                     @enduserType
 
-                    <!-- Status Persetujuan (semua role) -->
+                    <!-- Status Persetujuan (semua role kecuali employee) -->
+                    @if(!$isEmployee)
                     <td
                         class="status text-center h-full text-sm {{ $row->approval_lembur === null ? 'bg-yellow' : ($row->approval_lembur ? 'bg-success' : 'bg-red') }}">
                         {{ is_null($row->approval_lembur) ? 'Menunggu Persetujuan' : ($row->approval_lembur ? 'Disetujui' : 'Ditolak') }}
                     </td>
+                    @endif
                     <td>{{ $row->waktu_lembur }}</td>
                     <td>{{ $row->durasi_lembur }}</td>
+                    @if(!$isEmployee)
                     <td>{{ $row->keterangan_lembur }}</td>
                     <td>{{ $row->makan_lembur }}</td>
+                    @endif
 
                     <!-- Aksi -->
                     @if(Auth::check())
@@ -289,11 +287,13 @@
 
         const filters = table.querySelectorAll('.filter');
         const dateFilter = document.getElementById('customDate');
+        const tanggalColIndex = {{ $isEmployee ? 2 : 4 }};
+        const isEmployee = {{ $isEmployee ? 'true' : 'false' }};
 
         // Set default tanggal hari ini
         const today = new Date().toISOString().split('T')[0];
         if (dateFilter) {
-            @if(!Auth::check() && session('employee_login'))
+            @if($isEmployee)
             // Kosongkan untuk employee agar muncul semua data by default
             dateFilter.value = '';
             @else
@@ -347,7 +347,7 @@
                         let cellText = cell.textContent.toLowerCase();
 
                         // Normalisasi format tanggal d-m-Y ke Y-m-d untuk pencarian
-                        if (colIndex == "4") {
+                        if (colIndex == tanggalColIndex) {
                             const parts = cellText.split("-");
                             if (parts.length === 3) {
                                 cellText = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -365,7 +365,7 @@
 
                 // Filter fleksibel berdasarkan input tanggal/bulan
                 if (dateFilter && dateFilter.value) {
-                    const [day, month, year] = row.cells[4].textContent.trim().split("-");
+                    const [day, month, year] = row.cells[tanggalColIndex].textContent.trim().split("-");
                     if (dateFilter.type === "date") {
                         const filterDate = new Date(dateFilter.value);
                         const rowDate = new Date(`${year}-${month}-${day}`);
@@ -382,21 +382,23 @@
                     row.style.display = '';
                     row.querySelector('td.sticky-col-left').textContent = counter++;
 
-                    // Ambil kolom durasi (selalu di index length-4)
-                    const durasiCell = row.cells[row.cells.length - 4];
-                    let durasiText = durasiCell ? durasiCell.textContent.trim() : '0';
-                    let durasiNum = parseFloat(durasiText.replace(',', '.')) || 0;
-                    totalDurasi += durasiNum;
+                    if (!isEmployee) {
+                        // Ambil kolom durasi (selalu di index length-4)
+                        const durasiCell = row.cells[row.cells.length - 4];
+                        let durasiText = durasiCell ? durasiCell.textContent.trim() : '0';
+                        let durasiNum = parseFloat(durasiText.replace(',', '.')) || 0;
+                        totalDurasi += durasiNum;
 
-                    // Ambil kolom pekerjaan (selalu di index length-3)
-                    const pekerjaanCell = row.cells[row.cells.length - 3];
-                    const pekerjaanText = pekerjaanCell ? pekerjaanCell.textContent.trim().toLowerCase() : '';
+                        // Ambil kolom pekerjaan (selalu di index length-3)
+                        const pekerjaanCell = row.cells[row.cells.length - 3];
+                        const pekerjaanText = pekerjaanCell ? pekerjaanCell.textContent.trim().toLowerCase() : '';
 
-                    if (pekerjaanText === 'produksi') jamProduksi += durasiNum;
-                    else if (pekerjaanText === 'maintenance') jamMaintenance += durasiNum;
-                    else if (pekerjaanText === 'kaizen') jamKaizen += durasiNum;
-                    else if (pekerjaanText === '5s') jam5S += durasiNum;
-                    else if (pekerjaanText.includes('leader') || pekerjaanText.includes('pic')) jamLeader += durasiNum;
+                        if (pekerjaanText === 'produksi') jamProduksi += durasiNum;
+                        else if (pekerjaanText === 'maintenance') jamMaintenance += durasiNum;
+                        else if (pekerjaanText === 'kaizen') jamKaizen += durasiNum;
+                        else if (pekerjaanText === '5s') jam5S += durasiNum;
+                        else if (pekerjaanText.includes('leader') || pekerjaanText.includes('pic')) jamLeader += durasiNum;
+                    }
 
                 } else {
                     row.style.display = 'none';
