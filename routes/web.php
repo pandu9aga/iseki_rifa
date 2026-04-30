@@ -51,7 +51,6 @@ Route::middleware(CheckEmployeeLogin::class)->group(function () {
     Route::put('/employee/reporting/{id}/approve', [ReportingController::class, 'approve'])->name('employee.reporting.approve');
     Route::get('/employee/reporting/daily-report', [ReportingController::class, 'dailyReport']);
     Route::post('/employee/reporting/nihil', [ReportingController::class, 'storeNihil'])->name('employee.reporting.nihil');
-    Route::get('/employee/reporting/download-pdf', [ReportingController::class, 'pdf'])->name('employee.reporting.pdf');
     Route::get('/employee/reporting/download-excel', [ReportingController::class, 'excel'])->name('employee.reporting.excel');
     Route::get('/employee/lembur', [LemburController::class, 'index'])->name('employee.lemburs.index');
 });
@@ -70,7 +69,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/reporting/{id}/approve', [ReportingController::class, 'approve'])->name('reporting.approve');
     Route::get('/reporting/daily-report', [ReportingController::class, 'dailyReport']);
     Route::post('/reporting/nihil', [ReportingController::class, 'storeNihil'])->name('reporting.nihil');
-    Route::get('/reporting/download-pdf', [ReportingController::class, 'pdf'])->name('reporting.pdf');
     Route::get('/reporting/download-excel', [ReportingController::class, 'excel'])->name('reporting.excel');
 
     // Employees

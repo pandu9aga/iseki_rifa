@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use App\Services\GoogleDriveService;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportingController extends Controller
 {
@@ -91,38 +90,6 @@ class ReportingController extends Controller
         ];
 
         return view('reporting.read', compact('absensis', 'divisions', 'reportToday', 'teamsWithReport', 'allTeams'));
-    }
-
-    public function pdf()
-    {
-        // $date = '2025-07-14';
-        // $absensis = Absensi::with('employee', 'employee.division')
-        //     ->whereDate('tanggal', $date)
-        //     ->orderBy('tanggal', 'desc')
-        //     ->get();
-
-        // $pdf = Pdf::loadView('reporting.pdf', compact('absensis', 'date'));
-
-        // return $pdf->download('rekap_absensi.pdf');
-        $date = '2025-07-14';
-        $absensis = Absensi::with('employee', 'employee.division')
-            ->whereDate('tanggal', $date)
-            ->orderBy('tanggal', 'desc')
-            ->get();
-
-        $pdf = Pdf::loadView('reporting.pdf', compact('absensis', 'date'));
-
-        // Simpan dulu ke storage
-        $fileName = 'rekap_absensi_' . now()->format('Ymd_His') . '.pdf';
-        $filePath = storage_path('app/' . $fileName);
-        file_put_contents($filePath, $pdf->output());
-
-        // Upload ke Google Drive
-        $drive = new GoogleDriveService();
-        $folderId = '1i7ark9PZaKxm7GbdpFBSxz-WUwjHA5OP'; // Folder tujuan
-        $drive->uploadFile($filePath, $folderId, $fileName);
-
-        return "PDF berhasil di-upload ke Google Drive!";
     }
 
     public function excel()
