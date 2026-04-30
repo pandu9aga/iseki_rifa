@@ -569,4 +569,305 @@ class LemburController extends Controller
             $writer->save('php://output');
         }, $fileName);
     }
+
+    /**
+     * Export Bulanan Excel — data diurutkan per tanggal, setiap 24 baris = 1 halaman (sheet) Excel.
+     * Tanggal kosong (tanpa data lembur) di-skip.
+     */
+    public function exportBulananExcel(Request $request)
+    {
+        $tahun = $request->get('tahun', now()->year);
+        $bulan = $request->get('bulan', now()->month);
+
+        if (!is_numeric($bulan) || $bulan < 1 || $bulan > 12) {
+            $bulan = now()->month;
+        }
+        if (!is_numeric($tahun) || $tahun < 2000 || $tahun > now()->year + 1) {
+            $tahun = now()->year;
+        }
+
+        $bulanList = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $bulanNama = $bulanList[(int)$bulan];
+
+        $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+        $endDate   = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
+
+        $lemburs = Lembur::with(['employee', 'employee.division'])
+            ->whereHas('employee')
+            ->whereBetween('tanggal_lembur', [$startDate->toDateString(), $endDate->toDateString()])
+            ->orderBy('tanggal_lembur', 'asc')
+            ->orderBy('id_lembur', 'asc')
+            ->get();
+
+        if ($lemburs->isEmpty()) {
+            return back()->with('error', "Tidak ada data lembur untuk {$bulanNama} {$tahun}.");
+        }
+
+        $grouped = $lemburs->groupBy(function ($item) {
+            return Carbon::parse($item->tanggal_lembur)->format('Y-m-d');
+        });
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $spreadsheet->getDefaultStyle()
+            ->getFont()
+            ->setName('Footlight MT Light')
+            ->setSize(11);
+
+        $sheetIndex = 0;
+
+        foreach ($grouped as $tanggal => $items) {
+            $globalIndex = 1;
+            $chunks = $items->chunk(24);
+
+            foreach ($chunks as $chunk) {
+                if ($sheetIndex > 0) {
+                    $sheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Sheet ' . ($sheetIndex + 1));
+                    $spreadsheet->addSheet($sheet);
+                }
+
+                $sheet->setTitle('Sheet ' . ($sheetIndex + 1));
+
+                $sheet->getDefaultRowDimension()->setRowHeight(15);
+
+                // ========== LOGO ==========
+                $drawing1 = new Drawing();
+                $drawing1->setName('Logo1');
+                $drawing1->setPath(public_path('images/LOGO1.png'));
+                $drawing1->setCoordinates('A1');
+                $drawing1->setHeight(35);
+                $drawing1->setWorksheet($sheet);
+
+                $drawing2 = new Drawing();
+                $drawing2->setName('Logo2');
+                $drawing2->setPath(public_path('images/LOGO5.png'));
+                $drawing2->setCoordinates('K1');
+                $drawing2->setHeight(55);
+                $drawing2->setOffsetX(-85);
+                $drawing2->setWorksheet($sheet);
+
+                $sheet->mergeCells('H1:K1');
+                $sheet->getRowDimension(1)->setRowHeight(20);
+
+                // ========== JUDUL ==========
+                $sheet->mergeCells('A4:K4');
+                $sheet->mergeCells('A5:K5');
+                $sheet->setCellValue('A4', '時間外、祝日出勤申請書');
+                $sheet->setCellValue('A5', 'Surat Permohonan Kerja Lembur, Kerja pada Hari Libur');
+
+                $sheet->getStyle('A4:K5')->getFont()->setSize(14)->setUnderline(true);
+                $sheet->getStyle('A4:K5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A4:K5')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('DDDDDD');
+
+                // ========== BAGIAN DEPT & NOMOR ==========
+                $sheet->setCellValue('B7', '管理部署');
+                $sheet->setCellValue('B8', 'Dept. Pengendali');
+                $sheet->setCellValue('B9', '管理番号');
+                $sheet->setCellValue('B10', 'No. Manajemen');
+
+                $sheet->mergeCells('C7:C10');
+                $sheet->setCellValue('C7', ':');
+                $sheet->getStyle('C7')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getColumnDimension('C')->setWidth(2);
+
+                $sheet->setCellValue('D7', '総務、人事');
+                $sheet->setCellValue('D8', 'GA, HR');
+                $sheet->setCellValue('D9', '');
+                $sheet->setCellValue('D10', '');
+                $sheet->getStyle('D7:D10')->getAlignment()
+                    ->setWrapText(true)
+                    ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                $sheet->getStyle('B7:D10')->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle('C7:C10')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+                // ========== TANGGAL PERMOHONAN ==========
+                $sheet->mergeCells('H7:I7')->setCellValue('H7', '申請日');
+                $sheet->mergeCells('H8:I8')->setCellValue('H8', 'Tgl Permohonan');
+
+                $sheet->mergeCells('J7:J8')->setCellValue('J7', ':');
+                $sheet->getStyle('J7')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                $sheet->getColumnDimension('J')->setWidth(3);
+
+                $tglPermohonan = \Carbon\Carbon::parse($tanggal)->format('d-m-Y');
+                $sheet->setCellValue('K8', $tglPermohonan);
+
+                $sheet->getStyle('H7:K8')->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle('J7:J8')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+                // ========== HEADER TABEL ==========
+                $sheet->mergeCells('A12:A13')->setCellValue('A12', 'No');
+                $sheet->setCellValue('B12', '氏名');
+                $sheet->setCellValue('B13', 'Nama');
+                $sheet->mergeCells('C12:D12')->setCellValue('C12', '部署');
+                $sheet->mergeCells('C13:D13')->setCellValue('C13', 'Dept.');
+                $sheet->setCellValue('E12', '実施日');
+                $sheet->setCellValue('E13', 'Hari Pelaksanaan');
+                $sheet->mergeCells('F12:G12')->setCellValue('F12', '時間帯');
+                $sheet->mergeCells('F13:G13')->setCellValue('F13', 'Dari jam sampai');
+                $sheet->setCellValue('H12', '業務、仕事内容');
+                $sheet->setCellValue('H13', 'Isi Pekerjaan');
+                $sheet->setCellValue('I12', '飯');
+                $sheet->setCellValue('I13', 'Makan');
+                $sheet->mergeCells('J12:K12')->setCellValue('J12', '上司の承認');
+                $sheet->mergeCells('J13:K13')->setCellValue('J13', 'Persetujuan Atasan');
+
+                $sheet->getStyle('A12:K13')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_TOP)
+                    ->setWrapText(true);
+
+                $sheet->getRowDimension(12)->setRowHeight(15);
+                $sheet->getRowDimension(13)->setRowHeight(30);
+
+                $sheet->getColumnDimension('A')->setWidth(4);
+                $sheet->getColumnDimension('B')->setWidth(25);
+                $sheet->getColumnDimension('C')->setWidth(1);
+                $sheet->getColumnDimension('D')->setWidth(11);
+                $sheet->getColumnDimension('E')->setWidth(13);
+                $sheet->getColumnDimension('F')->setWidth(12);
+                $sheet->getColumnDimension('G')->setWidth(5);
+                $sheet->getColumnDimension('H')->setWidth(15);
+                $sheet->getColumnDimension('I')->setWidth(6);
+                $sheet->getColumnDimension('J')->setWidth(1);
+                $sheet->getColumnDimension('K')->setWidth(10);
+
+                $sheet->getStyle('A12:K13')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+                // ========== DATA ==========
+                $startRow = 14;
+                $endRow   = max($startRow + $chunk->count() - 1, 37); // minimal sampai baris 37
+
+                foreach ($chunk->values() as $i => $item) {
+                    $row = $startRow + $i;
+
+                    $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("C{$row}:K{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+                    $sheet->getStyle("E{$row}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("H{$row}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("J{$row}:K{$row}")->getAlignment()->setWrapText(true);
+
+                    $sheet->setCellValue("A{$row}", $globalIndex); // Gunakan indeks global
+                    $sheet->setCellValue("B{$row}", $item->employee->nama ?? '');
+                    $sheet->setCellValue("C{$row}", $item->employee->division->nama ?? '');
+                    $sheet->setCellValue("E{$row}", \Carbon\Carbon::parse($item->tanggal_lembur)->format('d-m-Y'));
+                    $sheet->setCellValue("F{$row}", $item->waktu_lembur ?? '');
+                    $sheet->setCellValueExplicit("G{$row}", (float) $item->durasi_lembur, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                    $sheet->setCellValue("H{$row}", $item->keterangan_lembur ?? '');
+                    $sheet->setCellValue("I{$row}", $item->makan_lembur ?? '');
+                    $sheet->setCellValue("J{$row}", '');
+
+                    $globalIndex++;
+                }
+
+                // ========== ATUR LEBAR ROW DATA (14-37) ==========
+                for ($row = 14; $row <= 37; $row++) {
+                    $sheet->getRowDimension($row)->setRowHeight(27);
+
+                    $sheet->getStyle("B{$row}")
+                        ->getAlignment()
+                        ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT)
+                        ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER)
+                        ->setWrapText(true);
+
+                    $sheet->getStyle("A{$row}:A{$row}")
+                        ->getAlignment()
+                        ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                        ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER)
+                        ->setWrapText(true);
+
+                    $sheet->getStyle("C{$row}:K{$row}")
+                        ->getAlignment()
+                        ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                        ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER)
+                        ->setWrapText(true);
+                }
+
+                // ========== MERGE KOLOM C-D & J-K SAMPAI BARIS 37 ==========
+                for ($row = $startRow; $row <= $endRow; $row++) {
+                    $sheet->mergeCells("C{$row}:D{$row}");
+                    $sheet->mergeCells("J{$row}:K{$row}");
+                }
+
+                // ========== BORDER SAMPAI BARIS 37 ==========
+                $sheet->getStyle("A12:K{$endRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+                // ========== TOTAL JAM ==========
+                $totalJam = $chunk->sum(function ($item) {
+                    return is_numeric($item->durasi_lembur) ? (float) $item->durasi_lembur : 0;
+                });
+
+                $sheet->mergeCells('A38:F38')->setCellValue('A38', 'TOTAL JAM');
+                $sheet->mergeCells('G38:I38')->setCellValue('G38', $totalJam);
+                $sheet->mergeCells('J38:K38')->setCellValue('J38', '');
+
+                $sheet->getStyle('A38:K38')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle('A38:K38')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                // ========== PERHATIAN ==========
+                $sheet->mergeCells('A39:B39')->setCellValue('A39', 'Perhatian');
+                for ($i = 40; $i <= 48; $i++) {
+                    $sheet->mergeCells("B{$i}:K{$i}");
+                }
+                $sheet->setCellValue('A40', '1');
+                $sheet->setCellValue('A41', '2');
+                $sheet->setCellValue('A42', '3');
+                $sheet->setCellValue('A43', '4');
+                $sheet->setCellValue('A47', '5');
+                $sheet->setCellValue('B40', '薄枠は申請者（従業員）が記入する。Yang di dalam kotak tipis adalah diisi oleh pemohon (karyawan).');
+                $sheet->setCellValue('B41', '太枠は上司が記入する。Yang di dalam kotak tebal adalah diisi oleh Atasan.');
+                $sheet->setCellValue('B42', '二重線枠は総務、人事の方で記入する。Yang di dalam kotak dengan 2 garis diisi oleh dept. GA HR.');
+                $sheet->setCellValue('B43', '時間外、祝日出勤3時間以上の場合は会社が飯を用意する義務がある為丸して下さい、3時間');
+                $sheet->setCellValue('B44', '以内はXにして下さい。');
+                $sheet->setCellValue('B45', 'Untuk kerja lembur atau hari libur masuk kerja selama dan atau lebih dari 3 jam, maka perusahaan mempunyai');
+                $sheet->setCellValue('B46', 'kewajiban menyediakan makan, untuk itu beri tanda O, jika kurang dari 3 jam beri tanda X.');
+                $sheet->setCellValue('B47', '本届けを上司に承認を得た後に総務、人事部の方へ提出する事。');
+                $sheet->setCellValue('B48', 'Setelah mendapatkan persetujuan dari atasan, serahkan surat ini ke bagian GA, HRD.');
+                $sheet->getStyle('B40:B48')->getAlignment()->setWrapText(true);
+
+                // ========== PRINT SETUP ==========
+                $sheet->getPageSetup()
+                    ->setPaperSize(PageSetup::PAPERSIZE_A4)
+                    ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
+                    ->setFitToWidth(1)
+                    ->setFitToHeight(1);
+
+                $sheet->getPageMargins()->setTop(0.5);
+                $sheet->getPageMargins()->setBottom(0.5);
+                $sheet->getPageMargins()->setLeft(0.5);
+                $sheet->getPageMargins()->setRight(0.5);
+
+                $sheet->getPageSetup()->setHorizontalCentered(true);
+                $sheet->getPageSetup()->setVerticalCentered(false);
+                $sheet->getPageSetup()->setPrintArea("A1:K48");
+
+                $sheetIndex++;
+            }
+        }
+
+        $spreadsheet->setActiveSheetIndex(0);
+        $writer = new Xlsx($spreadsheet);
+
+        $fileName = "Laporan_Lembur_Bulanan_{$bulanNama}_{$tahun}.xlsx";
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName);
+    }
 }

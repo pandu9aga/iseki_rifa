@@ -101,6 +101,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/lembur/{id}', [LemburController::class, 'update'])->name('lemburs.update');
     Route::delete('/lembur/{id}', [LemburController::class, 'destroy'])->name('lemburs.destroy');
     Route::get('/export-lembur', [LemburController::class, 'exportLembur'])->name('export.lembur');
+    Route::get('/export-lembur-bulanan-excel', [LemburController::class, 'exportBulananExcel'])->name('export.lembur.bulanan.excel');
     Route::put('/lembur/{id}/approve', [LemburController::class, 'approve'])->name('lembur.approve');
 
     // ✅ BUDGET LEMBUR — DIPERBAIKI (HANYA 2 ROUTE)

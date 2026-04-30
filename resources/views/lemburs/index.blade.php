@@ -43,11 +43,17 @@
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
                 <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
             </a>
+            <a href="#" class="btn btn-primary export-bulanan-excel-btn" style="display:none;">
+                <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Bulanan Excel
+            </a>
             @enduserType
 
             @userType('admin')
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
                 <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
+            </a>
+            <a href="#" class="btn btn-primary export-bulanan-excel-btn" style="display:none;">
+                <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Bulanan Excel
             </a>
             <a href="{{ route('laporan.lembur.index') }}" class="btn btn-primary">
                 <i class="fas fa-chart-line mr-2" style="margin-right: 0.5rem;"></i> Laporan Lembur
@@ -60,6 +66,9 @@
             @userType('super')
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
                 <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
+            </a>
+            <a href="#" class="btn btn-primary export-bulanan-excel-btn" style="display:none;">
+                <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Bulanan Excel
             </a>
             <a href="{{ route('laporan.lembur.index') }}" class="btn btn-primary">
                 <i class="fas fa-chart-line mr-2" style="margin-right: 0.5rem;"></i> Laporan Lembur
@@ -304,6 +313,15 @@
 
         // Toggle date/month
         const toggleBtn = document.getElementById('toggleType');
+        const bulananExcelBtns = document.querySelectorAll('.export-bulanan-excel-btn');
+
+        function updateBulananExcelBtnVisibility() {
+            const isMonth = dateFilter && dateFilter.type === 'month' && dateFilter.value;
+            bulananExcelBtns.forEach(btn => {
+                btn.style.display = isMonth ? '' : 'none';
+            });
+        }
+
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function () {
                 if (dateFilter.type === "date") {
@@ -314,6 +332,14 @@
                     this.textContent = "Month";
                 }
                 filterTable();
+                updateBulananExcelBtnVisibility();
+            });
+        }
+
+        // Update visibility juga saat value dateFilter berubah
+        if (dateFilter) {
+            dateFilter.addEventListener('change', function() {
+                updateBulananExcelBtnVisibility();
             });
         }
 
@@ -473,6 +499,21 @@
                 window.location.href = url;
             });
         }
+
+        // Export Bulanan Excel
+        bulananExcelBtns.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (!dateFilter || !dateFilter.value || dateFilter.type !== 'month') {
+                    alert('Pilih bulan terlebih dahulu (klik tombol Month pada filter tanggal).');
+                    return;
+                }
+                const [year, month] = dateFilter.value.split('-');
+                let url = "{{ route('export.lembur.bulanan.excel') }}";
+                url += '?tahun=' + encodeURIComponent(year) + '&bulan=' + encodeURIComponent(parseInt(month));
+                window.location.href = url;
+            });
+        });
 
         // Modal Delete
         let rowToDelete = null;
