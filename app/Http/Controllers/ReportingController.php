@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Absensi;
 use App\Models\Division;
 use App\Models\Employee;
+use App\Models\Replacement;
 use App\Models\Report;
 use App\Models\SpecialDate;
 use App\Models\MiraiEmployee;
@@ -21,6 +22,7 @@ use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Yajra\DataTables\Facades\DataTables;
 use App\Services\GoogleDriveService;
 
 class ReportingController extends Controller
@@ -90,6 +92,271 @@ class ReportingController extends Controller
         ];
 
         return view('reporting.read', compact('absensis', 'divisions', 'reportToday', 'teamsWithReport', 'allTeams'));
+    }
+
+    public function dataTable(Request $request)
+    {
+        $isEmployee = session()->has('employee_login') && session('employee_login');
+        $userType = null;
+        if (Auth::check()) {
+            $userType = Auth::user()->type;
+        }
+
+        $query = Absensi::with('employee', 'employee.division')
+            ->withCount('replacements')
+            ->orderBy('tanggal', 'desc');
+
+        if ($isEmployee) {
+            $nik = session('employee_user')->username;
+            $query->whereHas('employee', function ($q) use ($nik) {
+                $q->where('nik', $nik);
+            });
+        }
+
+        $dataTable = DataTables::of($query)
+            ->addColumn('no', function ($absen) {
+                return '';
+            })
+            ->addColumn('nama', function ($absen) {
+                return $absen->employee?->nama ?? '-';
+            })
+            ->addColumn('jenis_izin', function ($absen) {
+                return $absen->kategori_label;
+            })
+            ->addColumn('tanggal_formatted', function ($absen) {
+                return $absen->tanggal->format('d/m/Y');
+            })
+            ->addColumn('keterangan_html', function ($absen) {
+                $html = '';
+                if ($absen->keterangan) {
+                    $html .= nl2br(e($absen->keterangan)) . '<br>';
+                }
+                if ($absen->jam_masuk) {
+                    $html .= '<span class="badge badge-small badge-submitted">Jam masuk: ' . $absen->jam_masuk . '</span> ';
+                }
+                if ($absen->jam_keluar) {
+                    $html .= '<span class="badge badge-small badge-submitted">Jam keluar: ' . $absen->jam_keluar . '</span> ';
+                }
+                if (!$absen->keterangan && !$absen->jam_masuk && !$absen->jam_keluar) {
+                    $html = '-';
+                }
+                return $html;
+            })
+            ->addColumn('sisa_cuti', function ($absen) {
+                return '<span class="text-gray-500">-</span>';
+            })
+            ->addColumn('approval_buttons', function ($absen) use ($userType) {
+                if ($userType !== 'super') return '';
+                return view('partials.approval-buttons', ['absen' => $absen])->render();
+            })
+            ->addColumn('status_super', function ($absen) {
+                if (is_null($absen->is_approved)) {
+                    return ['label' => 'Menunggu Persetujuan', 'class' => 'bg-yellow'];
+                } elseif ($absen->is_approved === true) {
+                    return ['label' => 'Disetujui', 'class' => 'bg-success'];
+                }
+                return ['label' => 'Ditolak', 'class' => 'bg-red'];
+            })
+            ->addColumn('status_super_label', function ($absen) {
+                if (is_null($absen->is_approved)) return 'Menunggu Persetujuan';
+                return $absen->is_approved ? 'Disetujui' : 'Ditolak';
+            })
+            ->addColumn('status_super_class', function ($absen) {
+                if (is_null($absen->is_approved)) return 'bg-yellow';
+                return $absen->is_approved ? 'bg-success' : 'bg-red';
+            })
+            ->addColumn('member_approval_html', function ($absen) {
+                return view('partials.member-approval-cell', ['absen' => $absen])->render();
+            })
+            ->addColumn('hr_approval_label', function ($absen) {
+                return $absen->hr_approval_label ?? 'Menunggu Persetujuan';
+            })
+            ->addColumn('hr_approval_class', function ($absen) {
+                return $absen->hr_approval_class ?? 'bg-yellow';
+            })
+            ->addColumn('replacement_info', function ($absen) {
+                $count = $absen->replacements_count;
+                return '<span>' . $count . ' ; </span>' .
+                    '<button type="button" class="btn btn-icon btn-view-replacement" data-id="' . $absen->id . '">' .
+                    '<i class="material-symbols-rounded delete-row btn-primary">visibility</i></button>';
+            })
+            ->addColumn('tim', function ($absen) {
+                return $absen->employee?->team ?? '-';
+            })
+            ->addColumn('status_pegawai', function ($absen) {
+                return $absen->employee?->status ?? '-';
+            })
+            ->addColumn('divisi', function ($absen) {
+                return $absen->employee?->division?->nama ?? '-';
+            })
+            ->addColumn('action_buttons', function ($absen) use ($isEmployee) {
+                $disableAction = $isEmployee || !is_null($absen->is_approved);
+                $disabledAttr = $disableAction ? 'disabled' : '';
+                $opacity = $disableAction ? 'opacity: 0.2;' : '';
+                return '<div class="btn-group">' .
+                    '<button type="button" class="btn btn-icon edit-row" ' . $disabledAttr . ' style="' . $opacity . '">' .
+                    '<i class="material-symbols-rounded btn-primary">edit_square</i></button>' .
+                    '<button type="button" class="btn btn-icon danger" ' . $disabledAttr . ' style="' . $opacity . '" ' .
+                    (!$disableAction ? 'onclick="showDeletePopup(this.closest(\'tr\'))"' : '') . ' title="Hapus">' .
+                    '<i class="material-symbols-rounded btn-danger">delete</i></button></div>';
+            })
+            ->filterColumn('nama', function ($query, $keyword) {
+                $query->whereHas('employee', function ($q) use ($keyword) {
+                    $q->where('nama', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('jenis_izin', function ($query, $keyword) {
+                $kategoriCodes = [
+                    'cuti' => 'C',
+                    'cuti setengah hari pagi' => 'CSP',
+                    'cuti setengah hari siang' => 'CSS',
+                    'terlambat' => 'T',
+                    'izin keluar' => 'IK',
+                    'pulang cepat' => 'P',
+                    'absen' => 'A',
+                    'absen setengah hari pagi' => 'ASP',
+                    'absen setengah hari siang' => 'ASS',
+                    'sakit' => 'S',
+                    'cuti khusus' => 'CK',
+                    'serikat' => 'Sk',
+                    'salah fingerprint' => 'SF',
+                ];
+                $code = $kategoriCodes[strtolower($keyword)] ?? null;
+                if ($code) {
+                    $query->where('kategori', $code);
+                } else {
+                    $query->where('kategori', 'like', "%{$keyword}%");
+                }
+            })
+            ->filterColumn('tanggal_formatted', function ($query, $keyword) {
+                if (!empty($keyword)) {
+                    $query->whereDate('tanggal', $keyword);
+                }
+            })
+            ->filterColumn('keterangan_html', function ($query, $keyword) {
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('keterangan', 'like', "%{$keyword}%")
+                        ->orWhere('jam_masuk', 'like', "%{$keyword}%")
+                        ->orWhere('jam_keluar', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('divisi', function ($query, $keyword) {
+                $query->whereHas('employee.division', function ($q) use ($keyword) {
+                    $q->where('nama', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('tim', function ($query, $keyword) {
+                $query->whereHas('employee', function ($q) use ($keyword) {
+                    $q->where('team', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('status_pegawai', function ($query, $keyword) {
+                $query->whereHas('employee', function ($q) use ($keyword) {
+                    $q->where('status', $keyword);
+                });
+            })
+            ->filterColumn('status_super_label', function ($query, $keyword) {
+                if (strtolower($keyword) === 'disetujui') {
+                    $query->where('is_approved', true);
+                } elseif (strtolower($keyword) === 'ditolak') {
+                    $query->where('is_approved', false);
+                } elseif (strtolower($keyword) === 'menunggu persetujuan') {
+                    $query->whereNull('is_approved');
+                }
+            })
+            ->filterColumn('member_approval_html', function ($query, $keyword) {
+                if (strtolower($keyword) === 'disetujui') {
+                    $query->where('member_approved', 1);
+                } elseif (strtolower($keyword) === 'ditolak') {
+                    $query->where('member_approved', 0);
+                } elseif (strtolower($keyword) === 'menunggu persetujuan') {
+                    $query->whereNull('member_approved');
+                }
+            })
+            ->filterColumn('hr_approval_label', function ($query, $keyword) {
+                // HR approval is from MIRA - cannot filter at DB level
+            })
+            ->orderColumn('nama', function ($query, $order) {
+                $query->whereHas('employee', function ($q) use ($order) {
+                    $q->orderBy('nama', $order);
+                });
+            })
+            ->rawColumns([
+                'keterangan_html', 'sisa_cuti', 'approval_buttons',
+                'member_approval_html', 'replacement_info', 'action_buttons'
+            ]);
+
+        $response = $dataTable->toJson();
+        $content = json_decode($response->content(), true);
+
+        // Fetch MIRA data for current page records
+        if (isset($content['data']) && !empty($content['data'])) {
+            $ids = collect($content['data'])->pluck('id')->filter()->values();
+            if ($ids->isNotEmpty()) {
+                try {
+                    $miraiAttendances = DB::connection('mirai')->table('attendances')
+                        ->whereIn('id_rifa', $ids)->get()->keyBy('id_rifa');
+                    $miraiLeaves = DB::connection('mirai')->table('leaves')
+                        ->whereIn('id_rifa', $ids)->get()->keyBy('id_rifa');
+
+                    $miraiLookup = [];
+                    foreach ($miraiAttendances as $id => $att) {
+                        $miraiLookup[$id] = $att->status;
+                    }
+                    foreach ($miraiLeaves as $id => $leave) {
+                        $miraiLookup[$id] = $leave->status;
+                    }
+
+                    foreach ($content['data'] as &$item) {
+                        $status = $miraiLookup[$item['id']] ?? null;
+                        if ($status === 'APPROVE') {
+                            $item['hr_approval_label'] = 'Disetujui';
+                            $item['hr_approval_class'] = 'bg-success';
+                        } elseif (in_array($status, ['REJECTED', 'DECLINED'])) {
+                            $item['hr_approval_label'] = 'Ditolak';
+                            $item['hr_approval_class'] = 'bg-red';
+                        } else {
+                            $item['hr_approval_label'] = 'Menunggu Persetujuan';
+                            $item['hr_approval_class'] = 'bg-yellow';
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // MIRA connection not available - keep default values
+                }
+
+                // Batch fetch saldo_cuti from MIRA (replaces N+1 accessor)
+                $niks = collect($content['data'])->pluck('employee.nik')->filter()->unique()->values();
+                if ($niks->isNotEmpty()) {
+                    try {
+                        $miraiEmployees = DB::connection('mirai')->table('employees')
+                            ->whereIn('employee_number', $niks)
+                            ->pluck('id', 'employee_number');
+                        if ($miraiEmployees->isNotEmpty()) {
+                            $leaveBalances = DB::connection('mirai')->table('leave_balances')
+                                ->whereIn('employee_id', $miraiEmployees->values())
+                                ->where('year', now()->year)
+                                ->where('status', 'FINAL')
+                                ->pluck('remaining_leave', 'employee_id');
+                            foreach ($content['data'] as &$item) {
+                                $nik = isset($item['employee']) ? ($item['employee']['nik'] ?? null) : null;
+                                $saldo = null;
+                                if ($nik && isset($miraiEmployees[$nik])) {
+                                    $empId = $miraiEmployees[$nik];
+                                    $saldo = $leaveBalances[$empId] ?? null;
+                                }
+                                if ($saldo) {
+                                    $item['sisa_cuti'] = '<strong>' . $saldo . '</strong> hari';
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // keep defaults
+                    }
+                }
+            }
+        }
+
+        return response()->json($content);
     }
 
     public function excel()

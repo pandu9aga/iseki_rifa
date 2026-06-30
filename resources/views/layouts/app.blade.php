@@ -14,7 +14,9 @@
     <link rel="stylesheet" href="{{asset('css/icon.css')}}" />
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}" />
+    <link rel="stylesheet" href="{{ asset('assets/datatables/dataTables.dataTables.css') }}" />
     <script src="{{ asset('js/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ asset('assets/datatables/dataTables.js') }}"></script>
     <script src="{{ asset('js/utils.js') }}?v={{ filemtime(public_path('js/utils.js')) }}"></script>
     <script src="{{ asset('js/select2.min.js') }}"></script>
 

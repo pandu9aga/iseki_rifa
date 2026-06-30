@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Budget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
@@ -16,6 +17,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageMargins;
+use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 
 class LemburController extends Controller
@@ -90,7 +92,240 @@ class LemburController extends Controller
         ));
     }
 
-    // ... sisanya tetap sama seperti sebelumnya ...
+    public function dataTable(Request $request)
+    {
+        $isEmployee = !Auth::check() && session('employee_login');
+        $tahun = $request->get('tahun', now()->year);
+        $userType = null;
+        if (Auth::check()) {
+            $userType = Auth::user()->type;
+        }
+
+        $query = Lembur::with([
+            'employee',
+            'employee.division',
+            'employee.nilaiTahunan' => fn($q) => $q->whereYear('tanggal_penilaian', $tahun)
+        ])->whereHas('employee');
+
+        if ($isEmployee) {
+            $nik = session('employee_user')->username;
+            $query->whereHas('employee', function ($q) use ($nik) {
+                $q->where('nik', $nik);
+            });
+        }
+
+        // Handle custom tanggal filter (sent via data function, not column search)
+        $tanggalFilter = $request->get('tanggal');
+        if (!empty($tanggalFilter)) {
+            if (strlen($tanggalFilter) === 7 && str_contains($tanggalFilter, '-')) {
+                [$year, $month] = explode('-', $tanggalFilter);
+                $query->whereYear('tanggal_lembur', $year)
+                      ->whereMonth('tanggal_lembur', $month);
+            } else {
+                $query->whereDate('tanggal_lembur', $tanggalFilter);
+            }
+        }
+
+        return DataTables::of($query)
+            ->addColumn('no', function ($row) {
+                return '';
+            })
+            ->addColumn('nama', function ($row) {
+                return $row->employee?->nama ?? '-';
+            })
+            ->addColumn('nilai', function ($row) use ($tahun) {
+                $nilai = $row->employee?->nilaiTahunan?->firstWhere('tanggal_penilaian', $tahun . '-12-31')?->nilai;
+                return $nilai ?? '-';
+            })
+            ->addColumn('divisi_nama', function ($row) {
+                return $row->employee?->division?->nama ?? '-';
+            })
+            ->addColumn('tanggal', function ($row) {
+                return \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y');
+            })
+            ->addColumn('approval_buttons', function ($row) use ($userType) {
+                if ($userType !== 'super') return '';
+                $isNull = is_null($row->approval_lembur);
+                if ($isNull) {
+                    return '<div class="flex flex-col btn-group">' .
+                        '<button type="button" data-value="1" class="btn bg-success text-sm rounded approve-btn">Setujui</button>' .
+                        '<button type="button" data-value="0" class="btn bg-red text-sm rounded approve-btn">Tolak</button></div>';
+                } else {
+                    return '<button type="button" data-value="null" class="btn bg-yellow text-sm rounded approve-btn">Batalkan</button>';
+                }
+            })
+            ->addColumn('status_label', function ($row) {
+                if (is_null($row->approval_lembur)) return 'Menunggu Persetujuan';
+                return $row->approval_lembur ? 'Disetujui' : 'Ditolak';
+            })
+            ->addColumn('status_class', function ($row) {
+                if (is_null($row->approval_lembur)) return 'bg-yellow';
+                return $row->approval_lembur ? 'bg-success' : 'bg-red';
+            })
+            ->addColumn('waktu', function ($row) {
+                return $row->waktu_lembur;
+            })
+            ->addColumn('durasi', function ($row) {
+                return $row->durasi_lembur;
+            })
+            ->addColumn('pekerjaan', function ($row) {
+                return $row->keterangan_lembur;
+            })
+            ->addColumn('makan', function ($row) {
+                return $row->makan_lembur;
+            })
+            ->addColumn('action_buttons', function ($row) {
+                $isApproved = !is_null($row->approval_lembur);
+                $disabledAttr = $isApproved ? 'disabled' : '';
+                $opacity = $isApproved ? 'opacity: 0.2;' : '';
+                return '<div class="btn-group">' .
+                    '<button type="button" class="btn btn-icon edit-btn" ' . $disabledAttr . ' style="' . $opacity . '"' .
+                    ' data-id="' . $row->id_lembur . '"' .
+                    ' data-employee_name="' . e($row->employee?->nama ?? '-') . '"' .
+                    ' data-employee_id="' . ($row->employee?->id ?? '') . '"' .
+                    ' data-tanggal="' . \Carbon\Carbon::parse($row->tanggal_lembur)->format('Y-m-d') . '"' .
+                    ' data-waktu="' . e($row->waktu_lembur) . '"' .
+                    ' data-durasi="' . e($row->durasi_lembur) . '"' .
+                    ' data-keterangan="' . e($row->keterangan_lembur) . '"' .
+                    ' data-makan="' . e($row->makan_lembur) . '">' .
+                    '<i class="material-symbols-rounded btn-primary">edit_square</i></button>' .
+                    '<button type="button" class="btn btn-icon danger delete-row" ' . $disabledAttr . ' style="' . $opacity . '"' .
+                    ' onclick="showDeletePopup(this.closest(\'tr\'))" title="Hapus">' .
+                    '<i class="material-symbols-rounded btn-danger">delete</i></button></div>';
+            })
+            ->filterColumn('nama', function ($query, $keyword) {
+                $query->whereHas('employee', function ($q) use ($keyword) {
+                    $q->where('nama', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('divisi_nama', function ($query, $keyword) {
+                $query->whereHas('employee.division', function ($q) use ($keyword) {
+                    $q->where('nama', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('tanggal', function ($query, $keyword) {
+                if (!empty($keyword)) {
+                    if (strlen($keyword) === 7 && str_contains($keyword, '-')) {
+                        [$year, $month] = explode('-', $keyword);
+                        $query->whereYear('tanggal_lembur', $year)
+                              ->whereMonth('tanggal_lembur', $month);
+                    } else {
+                        $query->whereDate('tanggal_lembur', $keyword);
+                    }
+                }
+            })
+            ->filterColumn('nilai', function ($query, $keyword) {
+                $query->whereHas('employee.nilaiTahunan', function ($q) use ($keyword) {
+                    $q->where('nilai', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('status_label', function ($query, $keyword) {
+                if (strtolower($keyword) === 'disetujui') {
+                    $query->where('approval_lembur', true);
+                } elseif (strtolower($keyword) === 'ditolak') {
+                    $query->where('approval_lembur', false);
+                } elseif (strtolower($keyword) === 'menunggu persetujuan') {
+                    $query->whereNull('approval_lembur');
+                }
+            })
+            ->filterColumn('waktu', function ($query, $keyword) {
+                $query->where('waktu_lembur', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('durasi', function ($query, $keyword) {
+                $query->where('durasi_lembur', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('makan', function ($query, $keyword) {
+                $query->where('makan_lembur', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('pekerjaan', function ($query, $keyword) {
+                $query->where('keterangan_lembur', 'like', "%{$keyword}%");
+            })
+            ->orderColumn('nama', function ($query, $order) {
+                $query->whereHas('employee', function ($q) use ($order) {
+                    $q->orderBy('nama', $order);
+                });
+            })
+            ->rawColumns(['approval_buttons', 'action_buttons'])
+            ->make(true);
+    }
+
+    public function summary(Request $request)
+    {
+        $tanggal = $request->get('tanggal');
+        $bulan = $request->get('bulan');
+        $tahun = $request->get('tahun', now()->year);
+
+        $query = Lembur::whereHas('employee');
+        if (session()->has('employee_login') && session('employee_login')) {
+            $nik = session('employee_user')->username;
+            $query->whereHas('employee', function ($q) use ($nik) {
+                $q->where('nik', $nik);
+            });
+        }
+
+        if ($tanggal) {
+            $query->whereDate('tanggal_lembur', $tanggal);
+            $bulanReferensi = date('Y-m', strtotime($tanggal));
+        } elseif ($bulan && $tahun) {
+            $startOfMonth = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+            $endOfMonth = Carbon::create($tahun, $bulan, 1)->endOfMonth();
+            $query->whereBetween('tanggal_lembur', [$startOfMonth, $endOfMonth]);
+            $bulanReferensi = sprintf('%04d-%02d', $tahun, $bulan);
+        } else {
+            $bulanReferensi = now()->format('Y-m');
+            $startOfMonth = Carbon::parse($bulanReferensi)->startOfMonth();
+            $endOfMonth = Carbon::parse($bulanReferensi)->endOfMonth();
+            $query->whereBetween('tanggal_lembur', [$startOfMonth, $endOfMonth]);
+        }
+
+        $totalDurasi = (float) $query->sum('durasi_lembur');
+
+        $budgetRecord = Budget::where('Tanggal_Budget', $bulanReferensi)->first();
+        $budgetValue = (float) ($budgetRecord?->Jumlah_Budget ?? 0);
+        $selisih = $budgetValue - $totalDurasi;
+
+        // Hitung per kategori
+        $kategoriData = (clone $query)->get()->groupBy('keterangan_lembur');
+        $jamProduksi = 0;
+        $jamMaintenance = 0;
+        $jamKaizen = 0;
+        $jam5s = 0;
+        $jamLeader = 0;
+
+        foreach ($kategoriData as $kategori => $items) {
+            $total = (float) $items->sum('durasi_lembur');
+            switch (strtolower($kategori)) {
+                case 'produksi': $jamProduksi = $total; break;
+                case 'maintenance': $jamMaintenance = $total; break;
+                case 'kaizen': $jamKaizen = $total; break;
+                case '5s': $jam5s = $total; break;
+                default:
+                    if (str_contains(strtolower($kategori ?? ''), 'leader') || str_contains(strtolower($kategori ?? ''), 'pic')) {
+                        $jamLeader = $total;
+                    }
+                    break;
+            }
+        }
+
+        $budgetData = [];
+        $allBudgets = Budget::all();
+        foreach ($allBudgets as $budget) {
+            $budgetData[$budget->Tanggal_Budget] = (float) $budget->Jumlah_Budget;
+        }
+
+        return response()->json([
+            'totalDurasi' => $totalDurasi,
+            'budgetValue' => $budgetValue,
+            'selisih' => $selisih,
+            'jamProduksi' => $jamProduksi,
+            'jamMaintenance' => $jamMaintenance,
+            'jamKaizen' => $jamKaizen,
+            'jam5s' => $jam5s,
+            'jamLeader' => $jamLeader,
+            'bulanReferensi' => $bulanReferensi,
+            'budgetData' => $budgetData,
+        ]);
+    }
 
     public function create()
     {

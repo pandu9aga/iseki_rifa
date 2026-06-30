@@ -53,6 +53,9 @@ Route::middleware(CheckEmployeeLogin::class)->group(function () {
     Route::post('/employee/reporting/nihil', [ReportingController::class, 'storeNihil'])->name('employee.reporting.nihil');
     Route::get('/employee/reporting/download-excel', [ReportingController::class, 'excel'])->name('employee.reporting.excel');
     Route::get('/employee/lembur', [LemburController::class, 'index'])->name('employee.lemburs.index');
+    Route::get('/employee/lembur/data', [LemburController::class, 'dataTable'])->name('employee.lemburs.data');
+    Route::get('/employee/lembur/summary', [LemburController::class, 'summary'])->name('employee.lemburs.summary');
+    Route::get('/employee/reporting/data', [ReportingController::class, 'dataTable'])->name('employee.reporting.data');
 });
 
 // Authenticated routes (user biasa)
@@ -60,6 +63,7 @@ Route::middleware('auth')->group(function () {
 
     // Reporting
     Route::get('/reporting', [ReportingController::class, 'read'])->name('reporting');
+    Route::get('/reporting/data', [ReportingController::class, 'dataTable'])->name('reporting.data');
     Route::get('/reporting/create', [ReportingController::class, 'create']);
     Route::post('/reporting', [ReportingController::class, 'store'])->name('reporting.store');
     Route::get('/employee/details', [ReportingController::class, 'getEmployeeDetails'])->name('employee.details');
@@ -94,6 +98,8 @@ Route::middleware('auth')->group(function () {
 
     // Lembur
     Route::get('/lembur', [LemburController::class, 'index'])->name('lemburs.index');
+    Route::get('/lembur/data', [LemburController::class, 'dataTable'])->name('lemburs.data');
+    Route::get('/lembur/summary', [LemburController::class, 'summary'])->name('lemburs.summary');
     Route::get('/lembur/create', [LemburController::class, 'create'])->name('lemburs.create');
     Route::post('/lembur', [LemburController::class, 'store'])->name('lemburs.store');
     Route::put('/lembur/{id}', [LemburController::class, 'update'])->name('lemburs.update');

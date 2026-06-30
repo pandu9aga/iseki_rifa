@@ -19,7 +19,6 @@
     </div>
 
     @if(Auth::check())
-    {{-- Filter Tahun Penilaian --}}
     <form method="GET" class="mb-4 flex gap-3 flex-wrap bg-gray-50 p-3 rounded">
         <div>
             <label class="block text-sm font-medium text-gray-700">Tahun Penilaian</label>
@@ -31,7 +30,6 @@
         </div>
     </form>
 
-    {{-- Tombol sesuai role --}}
     <section class="btn-group flex flex-wrap gap-8 mb-10 items-center justify-between"
         style="gap: 2rem; margin-bottom: 0.2rem;">
         <div class="flex gap-4" style="gap: 1rem;">
@@ -79,10 +77,7 @@
             @enduserType
         </div>
 
-        <!-- Kotak Informasi Budget & Durasi -->
         <div class="flex gap-8" style="gap: 2rem;">
-
-            <!-- Budget Bulanan -->
             <div class="bg-green-100 border border-green-300 px-6 py-3 rounded shadow text-sm">
                 <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Budget (<span
                         id="bulan-budget-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
@@ -90,7 +85,6 @@
                     <span id="budget-display">{{ number_format($budgetValue, 1) }}</span> jam
                 </div>
             </div>
-            <!-- Total Durasi -->
             <div class="bg-blue-100 border border-blue-300 px-6 py-3 rounded shadow text-sm">
                 <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Total Durasi (<span
                         id="bulan-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
@@ -99,7 +93,6 @@
                 </div>
             </div>
 
-            <!-- Selisih -->
             <div id="selisih-box" class="border px-6 py-3 rounded shadow text-sm 
                 {{ $selisih >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300' }}">
                 <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Selisih</div>
@@ -111,7 +104,6 @@
         </div>
     </section>
 
-    <!-- Ringkasan Jam per Kategori Pekerjaan -->
     <section class="flex flex-wrap gap-6 mb-10 items-center" style="gap: 1.5rem; margin-bottom: 0.2rem;">
         <div class="text-sm font-semibold text-gray-600 mr-2">Jam per Kategori:</div>
         <div class="bg-purple-100 border border-purple-300 px-4 py-2 rounded shadow text-sm">
@@ -131,194 +123,287 @@
             </div>
         </section>
     @endif
-    <!-- Tabel -->
+
     <section class="container-table table-scroll-wrapper">
         <table class="table-auto w-full border border-gray-300 mt-4" id="lembur-table">
             <thead>
                 <tr>
                     <th class="sticky-col-left">No</th>
-                    <th class="{{ $isEmployee ? '' : 'sticky-col-left' }}">Nama<br><input type="text" class="filter" data-column="1"
-                            placeholder="Cari Nama" @if($isEmployee) value="{{ session('employee_user')->name }}" readonly style="background-color: #e9ecef; cursor: not-allowed;" @endif></th>
+                    <th class="{{ $isEmployee ? '' : 'sticky-col-left' }}">Nama</th>
                     @if(!$isEmployee)
-                    <th>Nilai<br><input type="text" class="filter" data-column="2" placeholder="Cari Nilai"></th>
-                    <th>Divisi<br><input type="text" class="filter" data-column="3" placeholder="Cari Divisi"></th>
+                    <th>Nilai</th>
+                    <th>Divisi</th>
                     @endif
-                    <th>
-                        Tanggal<br>
-                        <input id="customDate" name="customDate" type="date" class="filter" data-column="{{ $isEmployee ? 2 : 4 }}">
-                        <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
-                    </th>
+                    <th>Tanggal</th>
                     @userType('leader')
-                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval">
-                    </th>
-                    <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
-                    <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
-                    <th>Pekerjaan<br>
-                        <select class="filter" data-column="8" id="filter-pekerjaan-leader">
-                            <option value="">Semua</option>
-                            <option value="Produksi">Produksi</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="Kaizen">Kaizen</option>
-                            <option value="5S">5S</option>
-                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
-                        </select>
-                    </th>
-                    <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
+                    <th>Status Persetujuan</th>
+                    <th>Jam</th>
+                    <th>Durasi</th>
+                    <th>Pekerjaan</th>
+                    <th>Makan</th>
                     @enduserType
                     @userType('admin')
-                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="5" placeholder="Approval">
-                    </th>
-                    <th>Jam<br><input type="text" class="filter" data-column="6" placeholder="Jam"></th>
-                    <th>Durasi<br><input type="text" class="filter" data-column="7" placeholder="Durasi"></th>
-                    <th>Pekerjaan<br>
-                        <select class="filter" data-column="8" id="filter-pekerjaan-admin">
-                            <option value="">Semua</option>
-                            <option value="Produksi">Produksi</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="Kaizen">Kaizen</option>
-                            <option value="5S">5S</option>
-                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
-                        </select>
-                    </th>
-                    <th>Makan<br><input type="text" class="filter" data-column="9" placeholder="Makan"></th>
+                    <th>Status Persetujuan</th>
+                    <th>Jam</th>
+                    <th>Durasi</th>
+                    <th>Pekerjaan</th>
+                    <th>Makan</th>
                     @enduserType
                     @userType('super')
                     <th>Approval</th>
-                    <th>Status Persetujuan<br><input type="text" class="filter" data-column="6" placeholder="Approval">
-                    </th>
-                    <th>Jam<br><input type="text" class="filter" data-column="7" placeholder="Jam"></th>
-                    <th>Durasi<br><input type="text" class="filter" data-column="8" placeholder="Durasi"></th>
-                    <th>Pekerjaan<br>
-                        <select class="filter" data-column="9" id="filter-pekerjaan-super">
-                            <option value="">Semua</option>
-                            <option value="Produksi">Produksi</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="Kaizen">Kaizen</option>
-                            <option value="5S">5S</option>
-                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
-                        </select>
-                    </th>
-                    <th>Makan<br><input type="text" class="filter" data-column="10" placeholder="Makan"></th>
+                    <th>Status Persetujuan</th>
+                    <th>Jam</th>
+                    <th>Durasi</th>
+                    <th>Pekerjaan</th>
+                    <th>Makan</th>
                     @enduserType
 
                     @if($isEmployee)
-                    <th>Jam<br><input type="text" class="filter" data-column="3" placeholder="Jam"></th>
-                    <th>Durasi<br><input type="text" class="filter" data-column="4" placeholder="Durasi"></th>
+                    <th>Jam</th>
+                    <th>Durasi</th>
                     @endif
                     
                     @if(Auth::check())
                     <th class="sticky-col-right">Aksi</th>
                     @endif
                 </tr>
-            </thead>
-            <tbody>
-                @foreach ($lemburs as $row)
-                <tr data-id="{{ $row->id_lembur }}">
-                    <td class="sticky-col-left">{{ $loop->iteration }}</td>
-                    <td class="{{ $isEmployee ? '' : 'sticky-col-left' }}">{{ $row->employee?->nama ?? '-' }}</td>
+                <tr class="dt-filter-row">
+                    <th></th>
+                    <th class="{{ $isEmployee ? '' : 'sticky-col-left' }}">
+                        <input type="text" class="filter dt-filter" data-col="nama" placeholder="Cari Nama"
+                            @if($isEmployee) value="{{ session('employee_user')->name }}" readonly style="background-color: #e9ecef; cursor: not-allowed;" @endif>
+                    </th>
                     @if(!$isEmployee)
-                    <td>{{ $row->employee?->nilaiTahunan?->firstWhere('tanggal_penilaian', 'like', $tahun . '-12-31')?->nilai ?? '-' }}
-                    </td>
-                    <td>{{ $row->employee?->division?->nama ?? '-' }}</td>
+                    <th><input type="text" class="filter dt-filter" data-col="nilai" placeholder="Cari Nilai"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="divisi" placeholder="Cari Divisi"></th>
                     @endif
-                    <td>{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y') }}</td>
-
-                    <!-- Approval (hanya super) -->
-                    @userType('super')
-                    <td>
-                        <form class="approval-form" data-id="{{ $row->id_lembur }}">
-                            @csrf
-                            @method('PUT')
-                            @if (is_null($row->approval_lembur))
-                                <div class="flex flex-col btn-group">
-                                    <button type="button" data-value="1"
-                                        class="btn bg-success text-sm rounded approve-btn">Setujui</button>
-                                    <button type="button" data-value="0"
-                                        class="btn bg-red text-sm rounded approve-btn">Tolak</button>
-                                </div>
-                            @else
-                                <button type="button" data-value="null"
-                                    class="btn bg-yellow text-sm rounded approve-btn">Batalkan</button>
-                            @endif
-                        </form>
-                    </td>
+                    <th>
+                        <input id="customDate" name="customDate" type="date" class="filter dt-filter" data-col="tanggal">
+                        <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
+                    </th>
+                    @userType('leader')
+                    <th><input type="text" class="filter dt-filter" data-col="status" placeholder="Approval"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
+                    <th>
+                        <select class="filter dt-filter" data-col="pekerjaan" id="filter-pekerjaan-leader">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
+                    <th><input type="text" class="filter dt-filter" data-col="makan" placeholder="Makan"></th>
                     @enduserType
-
-                    <!-- Status Persetujuan (semua role kecuali employee) -->
-                    @if(!$isEmployee)
-                    <td
-                        class="status text-center h-full text-sm {{ $row->approval_lembur === null ? 'bg-yellow' : ($row->approval_lembur ? 'bg-success' : 'bg-red') }}">
-                        {{ is_null($row->approval_lembur) ? 'Menunggu Persetujuan' : ($row->approval_lembur ? 'Disetujui' : 'Ditolak') }}
-                    </td>
+                    @userType('admin')
+                    <th><input type="text" class="filter dt-filter" data-col="status" placeholder="Approval"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
+                    <th>
+                        <select class="filter dt-filter" data-col="pekerjaan" id="filter-pekerjaan-admin">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
+                    <th><input type="text" class="filter dt-filter" data-col="makan" placeholder="Makan"></th>
+                    @enduserType
+                    @userType('super')
+                    <th></th>
+                    <th><input type="text" class="filter dt-filter" data-col="status" placeholder="Approval"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
+                    <th>
+                        <select class="filter dt-filter" data-col="pekerjaan" id="filter-pekerjaan-super">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
+                    <th><input type="text" class="filter dt-filter" data-col="makan" placeholder="Makan"></th>
+                    @enduserType
+                    @if($isEmployee)
+                    <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
                     @endif
-                    <td>{{ $row->waktu_lembur }}</td>
-                    <td>{{ $row->durasi_lembur }}</td>
-                    @if(!$isEmployee)
-                    <td>{{ $row->keterangan_lembur }}</td>
-                    <td>{{ $row->makan_lembur }}</td>
-                    @endif
-
-                    <!-- Aksi -->
                     @if(Auth::check())
-                    <td class="sticky-col-right">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-icon edit-btn" data-id="{{ $row->id_lembur }}"
-                                data-employee_name="{{ $row->employee?->nama ?? '-' }}"
-                                data-employee_id="{{ $row->employee?->id }}"
-                                data-tanggal="{{ \Carbon\Carbon::parse($row->tanggal_lembur)->format('Y-m-d') }}"
-                                data-waktu="{{ $row->waktu_lembur }}" data-durasi="{{ $row->durasi_lembur }}"
-                                data-keterangan="{{ $row->keterangan_lembur }}" data-makan="{{ $row->makan_lembur }}">
-                                <i class="material-symbols-rounded btn-primary">edit_square</i>
-                            </button>
-
-                            <button type="button" class="btn btn-icon danger delete-row"
-                                onclick="showDeletePopup(this.closest('tr'))" title="Hapus">
-                                <i class="material-symbols-rounded delete-row btn-danger">delete</i>
-                            </button>
-                        </div>
-                    </td>
+                    <th></th>
                     @endif
                 </tr>
-                @endforeach
-            </tbody>
+            </thead>
         </table>
     </section>
     <br><br>
 </main>
 
 <script>
-    // Data budget dari server
     const budgetData = @json($budgetData ?? []);
+    const isEmployee = @json($isEmployee);
+    const userType = @json(Auth::check() ? Auth::user()->type : null);
+    let table;
+    let tableColumns = [];
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const table = document.getElementById('lembur-table');
-        if (!table) return;
-
-        const filters = table.querySelectorAll('.filter');
-        const dateFilter = document.getElementById('customDate');
-        const tanggalColIndex = {{ $isEmployee ? 2 : 4 }};
-        const isEmployee = {{ $isEmployee ? 'true' : 'false' }};
-
-        // Set default tanggal hari ini
-        const today = new Date().toISOString().split('T')[0];
-        if (dateFilter) {
-            @if($isEmployee)
-            // Kosongkan untuk employee agar muncul semua data by default
-            dateFilter.value = '';
-            @else
-            dateFilter.value = today;
-            @endif
-            filterTable();
+    function buildColumns() {
+        const cols = [
+            { data: 'no', orderable: false, searchable: false },
+            { data: 'nama' },
+        ];
+        if (!isEmployee) {
+            cols.push({ data: 'nilai' });
+            cols.push({ data: 'divisi_nama' });
         }
+        cols.push({ data: 'tanggal' });
+
+        if (userType === 'leader' || userType === 'admin') {
+            cols.push({ data: 'status_label' });
+            cols.push({ data: 'waktu' });
+            cols.push({ data: 'durasi' });
+            cols.push({ data: 'pekerjaan' });
+            cols.push({ data: 'makan' });
+        } else if (userType === 'super') {
+            cols.push({ data: 'approval_buttons', orderable: false, searchable: false });
+            cols.push({ data: 'status_label' });
+            cols.push({ data: 'waktu' });
+            cols.push({ data: 'durasi' });
+            cols.push({ data: 'pekerjaan' });
+            cols.push({ data: 'makan' });
+        }
+
+        if (isEmployee) {
+            cols.push({ data: 'waktu' });
+            cols.push({ data: 'durasi' });
+        }
+
+        if (userType) {
+            cols.push({ data: 'action_buttons', orderable: false, searchable: false });
+        }
+
+        return cols;
+    }
+
+    function getColIndex(dataKey) {
+        for (let i = 0; i < tableColumns.length; i++) {
+            if (tableColumns[i].data === dataKey) return i;
+        }
+        return -1;
+    }
+
+    function getFilterColIndex(el) {
+        const key = el.dataset.col;
+        return getColIndex(key);
+    }
+
+    $(document).ready(function () {
+        tableColumns = buildColumns();
+        const dateFilter = document.getElementById('customDate');
+        @if(!$isEmployee)
+        if (dateFilter && !dateFilter.value) {
+            dateFilter.value = new Date().toISOString().split('T')[0];
+        }
+        @endif
+
+        table = $('#lembur-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: isEmployee ? '/iseki_rifa/public/employee/lembur/data' : '/iseki_rifa/public/lembur/data',
+                type: 'GET',
+                data: function (d) {
+                    const tahunSelect = document.querySelector('select[name="tahun"]');
+                    if (tahunSelect) d.tahun = tahunSelect.value;
+                    const dateFilter = document.getElementById('customDate');
+                    if (dateFilter && dateFilter.value) {
+                        d.tanggal = dateFilter.value;
+                    }
+                }
+            },
+            columns: tableColumns,
+            order: [],
+            orderCellsTop: true,
+            paging: false,
+            layout: {
+                topStart: null,
+                topEnd: null,
+                bottomStart: 'info',
+                bottomEnd: null
+            },
+            language: {
+                search: 'Cari:',
+                lengthMenu: 'Tampilkan _MENU_ data',
+                info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                infoEmpty: 'Tidak ada data',
+                infoFiltered: '(difilter dari _MAX_ total data)',
+                zeroRecords: 'Data tidak ditemukan',
+                processing: 'Memuat...',
+                paginate: {
+                    first: 'Pertama',
+                    last: 'Terakhir',
+                    next: '→',
+                    previous: '←'
+                }
+            },
+            drawCallback: function () {
+                attachApprovalListeners(document);
+                updateBudgetFromServer();
+                initEditButtons();
+            },
+            createdRow: function (row, data, dataIndex) {
+                $(row).attr('data-id', data.id_lembur);
+                const noIdx = getColIndex('no');
+                if (noIdx >= 0) $(row).find('td').eq(noIdx).text(dataIndex + 1).addClass('sticky-col-left');
+                const namaIdx = getColIndex('nama');
+                if (namaIdx >= 0 && !isEmployee) {
+                    $(row).find('td').eq(namaIdx).addClass('sticky-col-left');
+                }
+                const statusIdx = getColIndex('status_label');
+                if (statusIdx >= 0) {
+                    $(row).find('td').eq(statusIdx).addClass('status text-center h-full text-sm ' + (data.status_class || ''));
+                }
+                const aksiIdx = getColIndex('action_buttons');
+                if (aksiIdx >= 0) {
+                    $(row).find('td').eq(aksiIdx).addClass('sticky-col-right');
+                }
+            }
+        });
+
+        function clearDateFilter() {
+            if (!dateFilter || !dateFilter.value) return;
+            dateFilter.value = '';
+        }
+
+        // Connect filters
+        function connectFilters() {
+            document.querySelectorAll('.dt-filter').forEach(el => {
+                const colIdx = getFilterColIndex(el);
+                if (colIdx < 0) return;
+                if (el.dataset.col === 'tanggal') return;
+                const eventType = el.tagName === 'SELECT' ? 'change' : 'input';
+                el.addEventListener(eventType, function () {
+                    clearDateFilter();
+                    table.column(colIdx).search(this.value).draw();
+                });
+            });
+        }
+        connectFilters();
 
         // Toggle date/month
         const toggleBtn = document.getElementById('toggleType');
-        const bulananExcelBtns = document.querySelectorAll('.export-bulanan-excel-btn');
+
+        @if($isEmployee)
+        if (dateFilter) dateFilter.value = '';
+        @endif
 
         function updateBulananExcelBtnVisibility() {
-            const isMonth = dateFilter && dateFilter.type === 'month' && dateFilter.value;
-            bulananExcelBtns.forEach(btn => {
-                btn.style.display = isMonth ? '' : 'none';
+            document.querySelectorAll('.export-bulanan-excel-btn').forEach(btn => {
+                btn.style.display = (dateFilter && dateFilter.type === 'month' && dateFilter.value) ? '' : 'none';
             });
         }
 
@@ -331,177 +416,28 @@
                     dateFilter.type = "date";
                     this.textContent = "Month";
                 }
-                filterTable();
+                if (table) table.ajax.reload();
                 updateBulananExcelBtnVisibility();
             });
         }
 
-        // Update visibility juga saat value dateFilter berubah
         if (dateFilter) {
-            dateFilter.addEventListener('change', function() {
+            dateFilter.addEventListener('change', function () {
+                if (table) table.ajax.reload();
                 updateBulananExcelBtnVisibility();
             });
         }
 
-        // Filter per kolom
-        filters.forEach(input => {
-            input.addEventListener('input', filterTable);
-            input.addEventListener('change', filterTable);
+        // Export
+        document.getElementById('export-lembur-btn')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const tanggal = dateFilter ? dateFilter.value : '';
+            let url = "{{ route('export.lembur') }}";
+            if (tanggal) url += '?tanggal=' + encodeURIComponent(tanggal);
+            window.location.href = url;
         });
 
-        function filterTable() {
-            const rows = table.tBodies[0].rows;
-            let counter = 1;
-            let totalDurasi = 0;
-            let currentBulan = null;
-
-            // Inisialisasi total jam per kategori
-            let jamProduksi = 0;
-            let jamMaintenance = 0;
-            let jamKaizen = 0;
-            let jam5S = 0;
-            let jamLeader = 0;
-
-            for (let row of rows) {
-                let show = true;
-                filters.forEach(filter => {
-                    const colIndex = filter.dataset.column;
-                    const filterValue = filter.value.toLowerCase();
-                    const cell = row.cells[colIndex];
-
-                    if (filterValue && cell) {
-                        let cellText = cell.textContent.toLowerCase();
-
-                        // Normalisasi format tanggal d-m-Y ke Y-m-d untuk pencarian
-                        if (colIndex == tanggalColIndex) {
-                            const parts = cellText.split("-");
-                            if (parts.length === 3) {
-                                cellText = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                            }
-                        }
-
-                        // Exact match untuk dropdown pekerjaan
-                        if (filter.tagName === 'SELECT' && colIndex >= 8) { // Asumsi kolom pekerjaan ada di index 8 atau 9
-                            if (cellText.trim() !== filterValue) show = false;
-                        } else {
-                            if (!cellText.includes(filterValue)) show = false;
-                        }
-                    }
-                });
-
-                // Filter fleksibel berdasarkan input tanggal/bulan
-                if (dateFilter && dateFilter.value) {
-                    const [day, month, year] = row.cells[tanggalColIndex].textContent.trim().split("-");
-                    if (dateFilter.type === "date") {
-                        const filterDate = new Date(dateFilter.value);
-                        const rowDate = new Date(`${year}-${month}-${day}`);
-                        if (rowDate.toDateString() !== filterDate.toDateString()) show = false;
-                        else currentBulan = `${year}-${month}`;
-                    } else if (dateFilter.type === "month") {
-                        const [fYear, fMonth] = dateFilter.value.split("-");
-                        if (month !== fMonth || year !== fYear) show = false;
-                        else currentBulan = `${fYear}-${fMonth}`;
-                    }
-                }
-
-                if (show) {
-                    row.style.display = '';
-                    row.querySelector('td.sticky-col-left').textContent = counter++;
-
-                    if (!isEmployee) {
-                        // Ambil kolom durasi (selalu di index length-4)
-                        const durasiCell = row.cells[row.cells.length - 4];
-                        let durasiText = durasiCell ? durasiCell.textContent.trim() : '0';
-                        let durasiNum = parseFloat(durasiText.replace(',', '.')) || 0;
-                        totalDurasi += durasiNum;
-
-                        // Ambil kolom pekerjaan (selalu di index length-3)
-                        const pekerjaanCell = row.cells[row.cells.length - 3];
-                        const pekerjaanText = pekerjaanCell ? pekerjaanCell.textContent.trim().toLowerCase() : '';
-
-                        if (pekerjaanText === 'produksi') jamProduksi += durasiNum;
-                        else if (pekerjaanText === 'maintenance') jamMaintenance += durasiNum;
-                        else if (pekerjaanText === 'kaizen') jamKaizen += durasiNum;
-                        else if (pekerjaanText === '5s') jam5S += durasiNum;
-                        else if (pekerjaanText.includes('leader') || pekerjaanText.includes('pic')) jamLeader += durasiNum;
-                    }
-
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-
-            // Update display total durasi
-            updateBudgetInfo(totalDurasi, currentBulan);
-
-            // Update display ringkasan kategori
-            if (document.getElementById('jam-produksi')) {
-                document.getElementById('jam-produksi').textContent = jamProduksi.toFixed(1);
-                document.getElementById('jam-maintenance').textContent = jamMaintenance.toFixed(1);
-                document.getElementById('jam-kaizen').textContent = jamKaizen.toFixed(1);
-                document.getElementById('jam-5s').textContent = jam5S.toFixed(1);
-                document.getElementById('jam-leader').textContent = jamLeader.toFixed(1);
-            }
-        }
-
-        function updateBudgetInfo(totalDurasi, bulan) {
-            // Jika elemen tidak ada di DOM (contoh: untuk user employee), skip proses ini
-            if (!document.getElementById('total-durasi-display')) return;
-
-            // Update total durasi
-            document.getElementById('total-durasi-display').textContent = totalDurasi.toFixed(1);
-
-            // Cari budget berdasarkan bulan
-            let budget = 0;
-            if (bulan && budgetData[bulan]) {
-                budget = parseFloat(budgetData[bulan]);
-            }
-
-            // Update budget display
-            document.getElementById('budget-display').textContent = budget.toFixed(1);
-
-            // Hitung selisih
-            const selisih = budget - totalDurasi;
-            document.getElementById('selisih-display').textContent = Math.abs(selisih).toFixed(1);
-
-            // Update warna dan tanda selisih
-            const selisihBox = document.getElementById('selisih-box');
-            const selisihText = document.getElementById('selisih-text');
-
-            if (selisih >= 0) {
-                selisihBox.className = 'border px-4 py-2 rounded shadow text-sm bg-green-50 border-green-300';
-                selisihText.className = 'text-base font-semibold text-green-700';
-                selisihText.innerHTML = '+<span id="selisih-display">' + selisih.toFixed(1) + '</span> jam';
-            } else {
-                selisihBox.className = 'border px-4 py-2 rounded shadow text-sm bg-red-50 border-red-300';
-                selisihText.className = 'text-base font-semibold text-red-700';
-                selisihText.innerHTML = '-<span id="selisih-display">' + Math.abs(selisih).toFixed(1) + '</span> jam';
-            }
-
-            // Update bulan info
-            if (bulan) {
-                const [year, month] = bulan.split('-');
-                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-                const monthName = monthNames[parseInt(month) - 1];
-                document.getElementById('bulan-info').textContent = `${monthName} ${year}`;
-                document.getElementById('bulan-budget-info').textContent = `${monthName} ${year}`;
-            }
-        }
-
-        // Export Lembur
-        const exportBtn = document.getElementById('export-lembur-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                const tanggal = dateFilter ? dateFilter.value : '';
-                let url = "{{ route('export.lembur') }}";
-                if (tanggal) url += '?tanggal=' + encodeURIComponent(tanggal);
-                window.location.href = url;
-            });
-        }
-
-        // Export Bulanan Excel
-        bulananExcelBtns.forEach(btn => {
+        document.querySelectorAll('.export-bulanan-excel-btn').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 if (!dateFilter || !dateFilter.value || dateFilter.type !== 'month') {
@@ -515,68 +451,101 @@
             });
         });
 
-        // Modal Delete
-        let rowToDelete = null;
-        window.showDeletePopup = function (row) {
-            rowToDelete = row;
-            document.getElementById('popupDelete').classList.replace('hidden', 'flex');
-        };
-        window.hideDeletePopup = function () {
-            rowToDelete = null;
-            document.getElementById('popupDelete').classList.replace('flex', 'hidden');
-        };
-        document.getElementById('cancelDelete')?.addEventListener('click', hideDeletePopup);
-        document.getElementById('confirmDelete')?.addEventListener('click', () => {
-            if (rowToDelete) {
-                const id = rowToDelete.dataset.id;
-                fetch(`/iseki_rifa/public/lembur/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
-                    },
-                }).then(res => {
-                    if (res.ok) {
-                        rowToDelete.remove();
-                        hideDeletePopup();
-                        updateRowNumbers();
-                        filterTable(); // Re-calculate budget after delete
-                    } else alert('Gagal menghapus data');
-                });
-            }
-        });
+        updateBulananExcelBtnVisibility();
+    });
 
-        function updateRowNumbers() {
-            const tbody = table.tBodies[0];
-            const rows = tbody.rows;
-            let visibleCounter = 1;
-            for (let i = 0; i < rows.length; i++) {
-                const currentRow = rows[i];
-                if (currentRow.style.display !== 'none') {
-                    const firstCell = currentRow.cells[0];
-                    if (firstCell) {
-                        firstCell.textContent = visibleCounter++;
+    function updateBudgetFromServer() {
+        const dateFilter = document.getElementById('customDate');
+        const tahunSelect = document.querySelector('select[name="tahun"]');
+        let params = new URLSearchParams();
+        if (dateFilter && dateFilter.value) {
+            if (dateFilter.type === 'month') {
+                const [year, month] = dateFilter.value.split('-');
+                params.set('bulan', parseInt(month));
+                params.set('tahun', year);
+            } else {
+                params.set('tanggal', dateFilter.value);
+            }
+        } else if (tahunSelect) {
+            params.set('tahun', tahunSelect.value);
+        }
+        const url = (isEmployee ? '/iseki_rifa/public/employee/lembur/summary' : '/iseki_rifa/public/lembur/summary') + '?' + params.toString();
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.totalDurasi !== undefined) {
+                    document.getElementById('total-durasi-display').textContent = data.totalDurasi.toFixed(1);
+                }
+                if (data.budgetValue !== undefined) {
+                    document.getElementById('budget-display').textContent = data.budgetValue.toFixed(1);
+                }
+                if (data.selisih !== undefined) {
+                    const selisih = data.selisih;
+                    const selisihBox = document.getElementById('selisih-box');
+                    const selisihText = document.getElementById('selisih-text');
+                    document.getElementById('selisih-display').textContent = Math.abs(selisih).toFixed(1);
+                    if (selisih >= 0) {
+                        selisihBox.className = 'border px-4 py-2 rounded shadow text-sm bg-green-50 border-green-300';
+                        selisihText.className = 'text-base font-semibold text-green-700';
+                        selisihText.innerHTML = '+<span id="selisih-display">' + selisih.toFixed(1) + '</span> jam';
+                    } else {
+                        selisihBox.className = 'border px-4 py-2 rounded shadow text-sm bg-red-50 border-red-300';
+                        selisihText.className = 'text-base font-semibold text-red-700';
+                        selisihText.innerHTML = '-<span id="selisih-display">' + Math.abs(selisih).toFixed(1) + '</span> jam';
                     }
                 }
-            }
-        }
+                if (data.jamProduksi !== undefined) {
+                    document.getElementById('jam-produksi').textContent = data.jamProduksi.toFixed(1);
+                    document.getElementById('jam-maintenance').textContent = data.jamMaintenance.toFixed(1);
+                    document.getElementById('jam-kaizen').textContent = data.jamKaizen.toFixed(1);
+                    document.getElementById('jam-5s').textContent = data.jam5s.toFixed(1);
+                    document.getElementById('jam-leader').textContent = data.jamLeader.toFixed(1);
+                }
+                if (data.bulanReferensi) {
+                    const [year, month] = data.bulanReferensi.split('-');
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                    const monthName = monthNames[parseInt(month) - 1];
+                    const bulanInfo = document.getElementById('bulan-info');
+                    const bulanBudgetInfo = document.getElementById('bulan-budget-info');
+                    if (bulanInfo) bulanInfo.textContent = monthName + ' ' + year;
+                    if (bulanBudgetInfo) bulanBudgetInfo.textContent = monthName + ' ' + year;
+                }
+            })
+            .catch(err => console.error('Failed to load summary', err));
+    }
 
-        // Modal Edit
-        function openEditModal(data) {
-            document.getElementById('edit-lembur-id').value = data.id;
-            document.getElementById('edit-employee_name').value = data.employee_name;
-            document.getElementById('edit-employee_id').value = data.employee_id;
-            document.getElementById('edit-tanggal_lembur').value = data.tanggal_lembur || '';
-            const [jamMulai, jamSelesai] = (data.waktu || ' - ').split(' - ');
-            document.getElementById('edit-jam_mulai').value = jamMulai || '';
-            document.getElementById('edit-jam_selesai').value = jamSelesai || '';
-            document.getElementById('edit-durasi_lembur').value = data.durasi_lembur || '';
-            document.getElementById('edit-keterangan_lembur').value = data.keterangan_lembur || '';
-            let makan = (data.makan_lembur || '').toString().toLowerCase().trim();
-            document.getElementById('edit-makan_lembur').value = (makan === 'ya') ? 'ya' : 'tidak';
-            document.getElementById('editLemburModal').classList.replace('hidden', 'flex');
+    // Modal Delete
+    let rowToDelete = null;
+    window.showDeletePopup = function (row) {
+        rowToDelete = row;
+        document.getElementById('popupDelete').classList.replace('hidden', 'flex');
+    };
+    window.hideDeletePopup = function () {
+        rowToDelete = null;
+        document.getElementById('popupDelete').classList.replace('flex', 'hidden');
+    };
+    document.getElementById('cancelDelete')?.addEventListener('click', hideDeletePopup);
+    document.getElementById('confirmDelete')?.addEventListener('click', () => {
+        if (rowToDelete) {
+            const id = rowToDelete.dataset.id;
+            fetch(`/iseki_rifa/public/lembur/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+            }).then(res => {
+                if (res.ok) {
+                    if (table) table.ajax.reload(null, false);
+                    hideDeletePopup();
+                } else alert('Gagal menghapus data');
+            });
         }
+    });
 
+    // Edit modal
+    function initEditButtons() {
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const data = {
@@ -592,38 +561,54 @@
                 openEditModal(data);
             });
         });
+    }
 
-        // Submit Edit
-        const editForm = document.getElementById('editLemburForm');
-        if (editForm) {
-            editForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const id = document.getElementById('edit-lembur-id').value;
-                const data = {
-                    employee_name: document.getElementById('edit-employee_name').value,
-                    employee_id: document.getElementById('edit-employee_id').value,
-                    tanggal_lembur: document.getElementById('edit-tanggal_lembur').value,
-                    jam_mulai: document.getElementById('edit-jam_mulai').value,
-                    jam_selesai: document.getElementById('edit-jam_selesai').value,
-                    durasi_lembur: document.getElementById('edit-durasi_lembur').value,
-                    keterangan_lembur: document.getElementById('edit-keterangan_lembur').value,
-                    makan_lembur: document.getElementById('edit-makan_lembur').value,
-                };
+    function openEditModal(data) {
+        document.getElementById('edit-lembur-id').value = data.id;
+        document.getElementById('edit-employee_name').value = data.employee_name;
+        document.getElementById('edit-employee_id').value = data.employee_id;
+        document.getElementById('edit-tanggal_lembur').value = data.tanggal_lembur || '';
+        const [jamMulai, jamSelesai] = (data.waktu || ' - ').split(' - ');
+        document.getElementById('edit-jam_mulai').value = jamMulai || '';
+        document.getElementById('edit-jam_selesai').value = jamSelesai || '';
+        document.getElementById('edit-durasi_lembur').value = data.durasi_lembur || '';
+        document.getElementById('edit-keterangan_lembur').value = data.keterangan_lembur || '';
+        let makan = (data.makan_lembur || '').toString().toLowerCase().trim();
+        document.getElementById('edit-makan_lembur').value = (makan === 'ya') ? 'ya' : 'tidak';
+        document.getElementById('editLemburModal').classList.replace('hidden', 'flex');
+    }
 
-                fetch(`/iseki_rifa/public/lembur/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                }).then(res => {
-                    if (res.ok) location.reload();
-                    else alert('Gagal menyimpan perubahan');
-                });
+    const editForm = document.getElementById('editLemburForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-lembur-id').value;
+            const data = {
+                employee_name: document.getElementById('edit-employee_name').value,
+                employee_id: document.getElementById('edit-employee_id').value,
+                tanggal_lembur: document.getElementById('edit-tanggal_lembur').value,
+                jam_mulai: document.getElementById('edit-jam_mulai').value,
+                jam_selesai: document.getElementById('edit-jam_selesai').value,
+                durasi_lembur: document.getElementById('edit-durasi_lembur').value,
+                keterangan_lembur: document.getElementById('edit-keterangan_lembur').value,
+                makan_lembur: document.getElementById('edit-makan_lembur').value,
+            };
+
+            fetch(`/iseki_rifa/public/lembur/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then(res => {
+                if (res.ok) {
+                    if (table) table.ajax.reload(null, false);
+                    closeEditModal();
+                } else alert('Gagal menyimpan perubahan');
             });
-        }
-    });
+        });
+    }
 
     function closeEditModal() {
         const modal = document.getElementById('editLemburModal');
@@ -632,7 +617,7 @@
 </script>
 
 <script>
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const csrfTokenLembur = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
     function attachApprovalListeners(context = document) {
         context.querySelectorAll('.approve-btn').forEach(button => {
@@ -644,31 +629,20 @@
                 fetch(`/iseki_rifa/public/lembur/${id}/approve`, {
                     method: 'PUT',
                     headers: {
-                        'X-CSRF-TOKEN': csrfToken,
+                        'X-CSRF-TOKEN': csrfTokenLembur,
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        approval: approval
-                    })
+                    body: JSON.stringify({ approval: approval })
                 })
                     .then(response => response.json())
                     .then(data => {
-                        const row = document.querySelector(`tr[data-id="${id}"]`);
-                        const statusCell = row.querySelector('.status');
-
-                        statusCell.textContent = data.status_label;
-                        statusCell.className = 'status text-center h-full text-sm ' + data.status_class;
-
-                        form.innerHTML = data.button_html;
-                        attachApprovalListeners(form);
+                        if (table) table.ajax.reload(null, false);
                     })
                     .catch(() => alert('Gagal memperbarui status'));
             });
         });
     }
-
-    document.addEventListener('DOMContentLoaded', () => attachApprovalListeners());
 </script>
 
 @endsection

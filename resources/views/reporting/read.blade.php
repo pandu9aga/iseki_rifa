@@ -38,17 +38,14 @@
 
     .notif-success {
         background-color: #16a34a;
-        /* green */
     }
 
     .notif-error {
         background-color: #dc2626;
-        /* red */
     }
 
     .notif-warning {
         background-color: #f59e0b;
-        /* yellow */
         color: #000;
     }
 
@@ -58,7 +55,6 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* 📱 HP (<= 640px) */
     @media (max-width: 640px) {
         .table-scroll-wrapper {
             width: max-content;
@@ -67,10 +63,14 @@
 
     #cuti-table {
         width: max-content;
-        /* ⬅️ jangan dipaksa 100% */
         min-width: 100%;
-        /* ⬅️ desktop tetap full */
         border-collapse: collapse;
+    }
+    div#cuti-table_wrapper .dt-layout-row {
+        align-items: center;
+    }
+    div#cuti-table_wrapper .dt-info {
+        padding-top: 6px;
     }
 </style>
 <main>
@@ -322,13 +322,12 @@
     </section>
 
     @userType('leader', 'admin', 'super')
-    {{-- <a href="{{ route('reporting.pdf') }}" class="btn btn-primary">Download PDF</a> --}}
     <a href="{{ route('reporting.excel') }}" class="btn btn-primary">Data Perizinan <i
             class="material-symbols-rounded">download</i></a>
     @enduserType
 
     <p id="jumlah-data" class="flex justify-end mb-2 text-sm">
-        Jumlah Data: {{ count($absensis) }}
+        Jumlah Data: 0
     </p>
 
     <div id="approvalNotif"
@@ -349,6 +348,9 @@
     </div>
 
     @csrf
+    @php
+        $isEmployeeReporting = session()->has('employee_login') && session('employee_login');
+    @endphp
     <section class="container-table table-scroll-wrapper">
         <table id="cuti-table">
             <thead>
@@ -365,8 +367,7 @@
                     <th>Status Persetujuan</th>
                     <th>Persetujuan Member</th>
                     <th>Persetujuan HR</th>
-                    {{-- Kolom Pengganti hanya untuk non-employee --}}
-                    @if(!(session()->has('employee_login') && session('employee_login')))
+                    @if(!$isEmployeeReporting)
                     <th rowspan="2">Pengganti</th>
                     @endif
                     <th>Tim</th>
@@ -376,18 +377,12 @@
                 </tr>
                 <tr>
                     <th class="sticky-col-left">
-                        <input
-                            class="filter"
-                            id="filter-nama"
-                            type="text"
-                            placeholder="Cari Nama"
-                            value="{{ session()->has('employee_login') && session('employee_login') 
-                                    ? session('employee_user')->name 
-                                    : '' }}"
-                            {{ session()->has('employee_login') && session('employee_login') ? 'readonly' : '' }} />
+                        <input class="filter dt-filter" id="filter-nama" type="text" placeholder="Cari Nama"
+                            value="{{ $isEmployeeReporting ? session('employee_user')->name : '' }}"
+                            {{ $isEmployeeReporting ? 'readonly' : '' }} />
                     </th>
                     <th>
-                        <select name="jenis_cuti" class="select2 filter" data-placeholder="Pilih jenis izin"
+                        <select name="jenis_cuti" class="select2 dt-filter" data-placeholder="Pilih jenis izin"
                             data-allow-clear="true" style="width: 100%;" id="filter-jenis">
                             <option></option>
                             <option value="Cuti">Cuti</option>
@@ -406,21 +401,13 @@
                             <option value="Salah Fingerprint">Salah Fingerprint</option>
                         </select>
                     </th>
-                    {{-- <th><input class="filter" id="filter-tanggal" type="month" value="{{ request('bulan', now()->format('Y-m')) }}" /></th> --}}
                     <th>
-                        <input
-                            class="filter"
-                            id="filter-tanggal"
-                            type="date"
-                            value="{{ (session()->has('employee_login') && session('employee_login'))
-                                    ? ''
-                                    : request('tanggal', now()->format('Y-m-d')) }}" />
+                        <input class="filter dt-filter" id="filter-tanggal" type="date"
+                            value="{{ $isEmployeeReporting ? '' : date('Y-m-d') }}" />
                     </th>
-                    <th><input type="text" class="filter" id="filter-keterangan" placeholder="Cari Keterangan" />
-                    </th>
-                    {{-- <th><input type="text" class="filter" id="filter-pengganti" placeholder="Cari Pengganti" /></th> --}}
+                    <th><input type="text" class="filter dt-filter" id="filter-keterangan" placeholder="Cari Keterangan" /></th>
                     <th>
-                        <select name="approval_status" class="select2 filter"
+                        <select name="approval_status" class="select2 dt-filter"
                             data-placeholder="Pilih status persetujuan" data-allow-clear="true" style="width: 100%"
                             id="filter-approval-status">
                             <option></option>
@@ -430,13 +417,9 @@
                         </select>
                     </th>
                     <th>
-                        <select name="approval_member_status" class="select2 filter"
+                        <select name="approval_member_status" class="select2 dt-filter"
                             data-placeholder="Pilih status persetujuan" data-allow-clear="true" style="width: 100%"
-                            id="filter-approval-member-status"
-                            @if((session()->has('employee_login') && session('employee_login')))
-                            disabled
-                            @endif
-                            >
+                            id="filter-approval-member-status" {{ $isEmployeeReporting ? 'disabled' : '' }}>
                             <option></option>
                             <option value="Disetujui">Disetujui</option>
                             <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
@@ -444,7 +427,7 @@
                         </select>
                     </th>
                     <th>
-                        <select name="approval_hr_status" class="select2 filter"
+                        <select name="approval_hr_status" class="select2 dt-filter"
                             data-placeholder="Pilih status persetujuan" data-allow-clear="true" style="width: 100%"
                             id="filter-approval-hr-status">
                             <option></option>
@@ -453,9 +436,9 @@
                             <option value="Ditolak">Ditolak</option>
                         </select>
                     </th>
-                    <th><input class="filter" id="filter-team" type="text" placeholder="Cari Tim" /></th>
+                    <th><input class="filter dt-filter" id="filter-team" type="text" placeholder="Cari Tim" /></th>
                     <th>
-                        <select name="status" class="select2 filter" data-placeholder="Pilih status"
+                        <select name="status" class="select2 dt-filter" data-placeholder="Pilih status"
                             data-allow-clear="true" style="width: 100%" id="filter-status">
                             <option></option>
                             <option value="Direct">Direct</option>
@@ -463,7 +446,7 @@
                         </select>
                     </th>
                     <th>
-                        <select name="divisi" class="select2 filter" data-placeholder="Pilih divisi"
+                        <select name="divisi" class="select2 dt-filter" data-placeholder="Pilih divisi"
                             data-allow-clear="true" style="width: 100%" id="filter-divisi">
                             <option></option>
                             @foreach ($divisions as $division)
@@ -473,191 +456,6 @@
                     </th>
                 </tr>
             </thead>
-
-            <tbody>
-                @foreach ($absensis as $index => $absen)
-                <tr data-id="{{ $absen->id }}"
-                    data-keterangan="{{ $absen->keterangan }}"
-                    data-jam-masuk="{{ $absen->jam_masuk }}"
-                    data-jam-keluar="{{ $absen->jam_keluar }}">
-                    {{-- <td class="sticky-col-left number">{{ $index + 1 }}</td> --}}
-                    <td class="sticky-col-left number">{{ $loop->iteration }}</td>
-                    <td class="sticky-col-left col-nama">{{ $absen->employee?->nama ?? '-' }}</td>
-                    <td class="col-jenis">{{ $absen->kategori_label }}</td>
-                    <td class="col-tanggal">{{ $absen->tanggal->format('d/m/Y') }}</td>
-                    <td class="col-keterangan">
-                        @if ($absen->keterangan)
-                        {!! nl2br(e($absen->keterangan)) !!}<br>
-                        @endif
-
-                        @if ($absen->jam_masuk)
-                        <span class="badge badge-small badge-submitted">
-                            Jam masuk: {{ $absen->jam_masuk }}
-                        </span>
-                        @endif
-
-                        @if ($absen->jam_keluar)
-                        <span class="badge badge-small badge-submitted">
-                            Jam keluar: {{ $absen->jam_keluar }}
-                        </span>
-                        @endif
-
-                        @if (!$absen->keterangan && !$absen->jam_masuk && !$absen->jam_keluar)
-                        -
-                        @endif
-                    </td>
-                    <td class="col-sisa-cuti">
-                        @if($absen->employee?->saldo_cuti)
-                        <strong>{{ $absen->employee->saldo_cuti }}</strong> hari
-                        @else
-                        <span class="text-gray-500">-</span>
-                        @endif
-                    </td>
-                    @php
-                    if (is_null($absen->is_approved)) {
-                    $status = 'Menunggu Persetujuan';
-                    $stylingClass = 'bg-yellow';
-                    } elseif ($absen->is_approved === true) {
-                    $status = 'Disetujui';
-                    $stylingClass = 'bg-success';
-                    } else {
-                    $status = 'Ditolak';
-                    $stylingClass = 'bg-red';
-                    }
-                    @endphp
-
-                    @userType('super')
-                    <td>
-                        <form class="approval-form" data-id="{{ $absen->id }}">
-                            @csrf
-                            @method('PUT')
-                            @if (is_null($absen->is_approved))
-                            <div class="flex flex-col btn-group">
-                                <button type="button" data-value="1"
-                                    class="btn bg-success text-sm rounded approve-btn">Setujui</button>
-                                <button type="button" data-value="0"
-                                    class="btn bg-red text-sm rounded approve-btn">Tolak</button>
-                            </div>
-                            @else
-                            <button type="button" data-value="null"
-                                class="btn bg-red text-sm rounded approve-btn">Batalkan</button>
-                            @endif
-                        </form>
-
-                    </td>
-                    @enduserType
-
-                    <td class="status-super text-center h-full text-sm {{ $stylingClass }}">
-                        <span>
-                            {{ $status }}
-                        </span>
-                    </td>
-                    @php
-                    if (is_null($absen->member_approved)) {
-                    $statusMember = 'Menunggu Persetujuan';
-                    $stylingClassMember = 'bg-yellow';
-                    } elseif ($absen->member_approved === 1) {
-                    $statusMember = 'Disetujui';
-                    $stylingClassMember = 'bg-success';
-                    } else {
-                    $statusMember = 'Ditolak';
-                    $stylingClassMember = 'bg-red';
-                    }
-                    @endphp
-                    <td class="status-member text-center h-full text-sm {{ $stylingClassMember }}">
-                        @if(session()->has('employee_login') && session('employee_login'))
-                        <form class="member-approval-form" data-id="{{ $absen->id }}">
-                            @csrf
-                            @method('PUT')
-
-                            @if (is_null($absen->member_approved))
-                            <div class="flex flex-col btn-group">
-                                <button type="button" data-value="1"
-                                    class="btn bg-success text-sm rounded member-approve-btn">
-                                    Setujui
-                                </button>
-                                <button type="button" data-value="0"
-                                    class="btn bg-red text-sm rounded member-approve-btn">
-                                    Tolak
-                                </button>
-                            </div>
-                            @else
-                            <button type="button" data-value="null"
-                                class="btn {{ $stylingClassMember }} text-sm rounded member-approve-btn">
-                                Batalkan
-                            </button>
-                            @endif
-                        </form>
-                        @else
-                        <span>{{ $statusMember }}</span>
-                        @endif
-                    </td>
-                    <td class="status-hr text-center h-full text-sm {{ $absen->hr_approval_class }}">
-                        <span>{{ $absen->hr_approval_label }}</span>
-                    </td>
-                    @if(!(session()->has('employee_login') && session('employee_login')))
-                    <td class="col-pengganti">
-                        <div style="display: inline-flex; align-items: center; gap: 5px;">
-                            <span>{{ \App\Models\Replacement::where('absensi_id', $absen->id)->count() }} ; </span>
-                            <button type="button" class="btn btn-icon btn-view-replacement"
-                                data-id="{{ $absen->id }}">
-                                <i class="material-symbols-rounded delete-row btn-primary">
-                                    visibility
-                                </i>
-                            </button>
-                        </div>
-                    </td>
-                    @endif
-                    <td class="col-tim">{{ $absen->employee?->team ?? '-' }}</td>
-                    <td class="col-status">{{ $absen->employee?->status ?? '-' }}</td>
-                    <td class="col-divisi">{{ $absen->employee?->division?->nama ?? '-' }}</td>
-                    <td class="sticky-col-right">
-                        @php
-                        $isEmployee = session()->has('employee_login') && session('employee_login');
-                        $disableAction = $isEmployee || !is_null($absen->is_approved);
-                        @endphp
-
-                        <div class="btn-group">
-                            <button
-                                type="button"
-                                class="btn btn-icon edit-row"
-                                {{ $disableAction ? 'disabled' : '' }}
-                                style="{{ $disableAction ? 'opacity: 0.2;' : '' }}">
-                                <i class="material-symbols-rounded btn-primary">
-                                    edit_square
-                                </i>
-                            </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-icon danger"
-                                {{ $disableAction ? 'disabled' : '' }}
-                                style="{{ $disableAction ? 'opacity: 0.2;' : '' }}"
-                                @unless($disableAction)
-                                onclick="showDeletePopup(this.closest('tr'))"
-                                @endunless
-                                title="Hapus">
-                                <i class="material-symbols-rounded btn-danger">
-                                    delete
-                                </i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-
-                <tr id="no-data-row" class="hidden text-center">
-                    @userType('leader')
-                    <td colspan="10" class="text-gray-500 py-4">Data tidak ditemukan</td>
-                    @enduserType
-                    @userType('admin')
-                    <td colspan="10" class="text-gray-500 py-4">Data tidak ditemukan</td>
-                    @enduserType
-                    @userType('super')
-                    <td colspan="12" class="text-gray-500 py-4">Data tidak ditemukan</td>
-                    @enduserType
-                </tr>
-            </tbody>
         </table>
     </section>
     @include('components.popupDelete')
@@ -666,14 +464,206 @@
 @include('components.popupReplacement')
 
 <script>
-    // Update jumlah data (setelah filter, oninput, setelah delete)
-    document.addEventListener('DOMContentLoaded', () => {
-        updateJumlahData('cuti-table', 'jumlah-data');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const isEmployee = @json($isEmployeeReporting);
+    const userType = @json(Auth::check() ? Auth::user()->type : null);
+
+    const columns = [
+        { data: 'no', orderable: false, searchable: false },
+        { data: 'nama' },
+        { data: 'jenis_izin' },
+        { data: 'tanggal_formatted' },
+        { data: 'keterangan_html' },
+        { data: 'sisa_cuti' },
+    ];
+    if (userType === 'super') {
+        columns.push({ data: 'approval_buttons', orderable: false, searchable: false });
+    }
+    columns.push(
+        { data: 'status_super_label' },
+        { data: 'member_approval_html' },
+        { data: 'hr_approval_label' },
+    );
+    if (!isEmployee) {
+        columns.push({ data: 'replacement_info', orderable: false, searchable: false });
+    }
+    columns.push(
+        { data: 'tim' },
+        { data: 'status_pegawai' },
+        { data: 'divisi' },
+        { data: 'action_buttons', orderable: false, searchable: false },
+    );
+
+    const columnMap = {};
+    columns.forEach((col, idx) => {
+        columnMap[col.data] = idx;
     });
 
-    document.getElementById('confirmDelete').addEventListener('click', function() {
-        setTimeout(() => updateJumlahData('cuti-table', 'jumlah-data'), 300);
+    let table;
+
+    $(document).ready(function () {
+            table = $('#cuti-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: isEmployee ? '/iseki_rifa/public/employee/reporting/data' : '/iseki_rifa/public/reporting/data',
+                type: 'GET',
+            },
+            columns: columns,
+            order: [],
+            orderCellsTop: true,
+            paging: false,
+            layout: {
+                topStart: null,
+                topEnd: null,
+                bottomStart: 'info',
+                bottomEnd: null
+            },
+            language: {
+                search: 'Cari:',
+                lengthMenu: 'Tampilkan _MENU_ data',
+                info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                infoEmpty: 'Tidak ada data',
+                infoFiltered: '(difilter dari _MAX_ total data)',
+                zeroRecords: 'Data tidak ditemukan',
+                processing: 'Memuat...',
+                paginate: {
+                    first: 'Pertama',
+                    last: 'Terakhir',
+                    next: '→',
+                    previous: '←'
+                }
+            },
+            drawCallback: function () {
+                updateJumlahData();
+                attachApprovalListeners(document);
+                attachMemberApprovalListeners(document);
+                initEditButtons();
+            },
+            createdRow: function (row, data, dataIndex) {
+                $(row).attr('data-id', data.id);
+                const statusSuper = data.status_super;
+                if (statusSuper) {
+                    const statusCell = $(row).find('td').eq(columnMap['status_super_label']);
+                    statusCell.addClass('status-super text-center h-full text-sm ' + statusSuper.class);
+
+                    const memberIdx = columnMap['member_approval_html'];
+                    if (memberIdx !== undefined) {
+                        $(row).find('td').eq(memberIdx).addClass('status-member');
+                    }
+
+                    const hrIdx = columnMap['hr_approval_label'];
+                    if (hrIdx !== undefined) {
+                        $(row).find('td').eq(hrIdx).addClass('status-hr text-center h-full text-sm ' + (data.hr_approval_class || 'bg-yellow'));
+                    }
+                }
+                const noIdx = columnMap['no'];
+                if (noIdx !== undefined) {
+                    $(row).find('td').eq(noIdx).text(dataIndex + 1).addClass('sticky-col-left number');
+                }
+                const namaIdx = columnMap['nama'];
+                if (namaIdx !== undefined) {
+                    $(row).find('td').eq(namaIdx).addClass('sticky-col-left col-nama');
+                }
+                const jenisIdx = columnMap['jenis_izin'];
+                if (jenisIdx !== undefined) {
+                    $(row).find('td').eq(jenisIdx).addClass('col-jenis');
+                }
+                const tglIdx = columnMap['tanggal_formatted'];
+                if (tglIdx !== undefined) {
+                    $(row).find('td').eq(tglIdx).addClass('col-tanggal');
+                }
+                const ketIdx = columnMap['keterangan_html'];
+                if (ketIdx !== undefined) {
+                    $(row).find('td').eq(ketIdx).addClass('col-keterangan');
+                }
+                const timIdx = columnMap['tim'];
+                if (timIdx !== undefined) {
+                    $(row).find('td').eq(timIdx).addClass('col-tim');
+                }
+                const statusPegIdx = columnMap['status_pegawai'];
+                if (statusPegIdx !== undefined) {
+                    $(row).find('td').eq(statusPegIdx).addClass('col-status');
+                }
+                const divIdx = columnMap['divisi'];
+                if (divIdx !== undefined) {
+                    $(row).find('td').eq(divIdx).addClass('col-divisi');
+                }
+                const aksiIdx = columnMap['action_buttons'];
+                if (aksiIdx !== undefined) {
+                    $(row).find('td').eq(aksiIdx).addClass('sticky-col-right');
+                }
+            }
+        });
+
+        function clearDateFilter() {
+            const dateInput = document.getElementById('filter-tanggal');
+            if (!dateInput || !dateInput.value) return;
+            const dateColIdx = columnMap['tanggal_formatted'];
+            if (dateColIdx === undefined) return;
+            dateInput.value = '';
+            if (table && table.column(dateColIdx)) {
+                table.column(dateColIdx).search('');
+            }
+        }
+
+        function connectFilter(filterId, colIndex) {
+            const el = document.getElementById(filterId);
+            if (!el) return;
+            // Skip Select2 elements (handled separately to avoid double-draw)
+            if (el.classList.contains('select2')) return;
+            const eventType = el.tagName === 'SELECT' ? 'change' : 'input';
+            el.addEventListener(eventType, function () {
+                if (filterId !== 'filter-tanggal') clearDateFilter();
+                if (table && table.column(colIndex)) {
+                    table.column(colIndex).search(this.value).draw();
+                }
+            });
+            if (el.value) {
+                setTimeout(() => {
+                    if (table && table.column(colIndex)) {
+                        table.column(colIndex).search(el.value).draw();
+                    }
+                }, 100);
+            }
+        }
+
+        // Map column indices to filter IDs
+        const filterMap = {};
+        filterMap[columnMap['nama']] = 'filter-nama';
+        filterMap[columnMap['jenis_izin']] = 'filter-jenis';
+        filterMap[columnMap['tanggal_formatted']] = 'filter-tanggal';
+        filterMap[columnMap['keterangan_html']] = 'filter-keterangan';
+        filterMap[columnMap['status_super_label']] = 'filter-approval-status';
+        filterMap[columnMap['member_approval_html']] = 'filter-approval-member-status';
+        filterMap[columnMap['hr_approval_label']] = 'filter-approval-hr-status';
+        filterMap[columnMap['tim']] = 'filter-team';
+        filterMap[columnMap['status_pegawai']] = 'filter-status';
+        filterMap[columnMap['divisi']] = 'filter-divisi';
+
+        Object.keys(filterMap).forEach(colIdx => {
+            connectFilter(filterMap[colIdx], parseInt(colIdx));
+        });
+
+        // Select2 change -> trigger filter
+        $('.select2.dt-filter').on('change', function () {
+            const id = this.id;
+            if (id !== 'filter-tanggal') clearDateFilter();
+            let colIdx = null;
+            Object.keys(filterMap).forEach(idx => {
+                if (filterMap[idx] === id) colIdx = parseInt(idx);
+            });
+            if (colIdx !== null && table) {
+                table.column(colIdx).search(this.value).draw();
+            }
+        });
     });
+
+    function updateJumlahData() {
+        if (!table) return;
+        const info = table.page.info();
+        document.getElementById('jumlah-data').textContent = 'Jumlah Data: ' + info.recordsDisplay;
+    }
 
     const toggleButton = document.getElementById("toggle-dropdown");
     const dropdownForm = document.getElementById("dropdown-form");
@@ -685,20 +675,18 @@
         });
     }
 
-    // Tutup dropdown kalau klik di luar
-    document.addEventListener("click", function(e) {
+    document.addEventListener("click", function (e) {
         if (!toggleButton.contains(e.target) && !dropdownForm.contains(e.target)) {
             dropdownForm.classList.add("hidden");
         }
     });
 
-    // Function untuk delete
     let rowToDelete = null;
 
-    function showDeletePopup(row) {
+    window.showDeletePopup = function (row) {
         rowToDelete = row;
         document.getElementById('popupDelete').classList.replace('hidden', 'flex');
-    }
+    };
 
     function hideDeletePopup() {
         rowToDelete = null;
@@ -707,16 +695,12 @@
 
     document.getElementById('cancelDelete').addEventListener('click', hideDeletePopup);
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    document.getElementById('dailyReportBtn')?.addEventListener('click', function() {
+    document.getElementById('dailyReportBtn')?.addEventListener('click', function () {
         const selectedDate = document.getElementById('dailyReportInput')?.value;
-
         if (!selectedDate) {
             alert('Silakan pilih tanggal terlebih dahulu');
             return;
         }
-
         fetch(`/iseki_rifa/public/reporting/daily-report?tanggal=${selectedDate}`)
             .then(response => response.json())
             .then(data => {
@@ -730,7 +714,7 @@
             });
     });
 
-    document.getElementById('confirmDelete').addEventListener('click', function() {
+    document.getElementById('confirmDelete').addEventListener('click', function () {
         if (rowToDelete) {
             const id = rowToDelete.getAttribute('data-id');
             fetch(`/iseki_rifa/public/reporting/${id}`, {
@@ -743,8 +727,7 @@
                 })
                 .then(response => {
                     if (response.ok) {
-                        rowToDelete.remove();
-                        updateRowNumbers();
+                        if (table) table.ajax.reload(null, false);
                         hideDeletePopup();
                     } else {
                         alert('Gagal menghapus data');
@@ -754,7 +737,7 @@
         }
     });
 
-    // Function untuk edit
+    // Edit modal
     const editModal = document.getElementById('editModal');
     const editForm = document.getElementById('editForm');
     const editTanggal = document.getElementById('edit-tanggal');
@@ -764,38 +747,37 @@
     const editJamKeluar = document.getElementById('edit-jam-keluar');
     const editId = document.getElementById('edit-id');
 
-    // Show Edit Modal
-    document.querySelectorAll('.edit-row').forEach(button => {
-        button.addEventListener('click', () => {
-            const row = button.closest('tr');
-            const id = row.dataset.id;
-            const tanggal = row.children[3].textContent.split('/').reverse().join('-');
-            const jenis = row.children[2].textContent.trim();
+    function initEditButtons() {
+        document.querySelectorAll('.edit-row').forEach(button => {
+            button.addEventListener('click', () => {
+                const row = button.closest('tr');
+                const id = row.dataset.id;
+                const cells = row.querySelectorAll('td');
+                const tanggalStr = cells[columnMap['tanggal_formatted']]?.textContent.trim();
+                const tanggal = tanggalStr ? tanggalStr.split('/').reverse().join('-') : '';
+                const jenis = cells[columnMap['jenis_izin']]?.textContent.trim() || '';
+                const keteranganEl = cells[columnMap['keterangan_html']];
+                const keterangan = keteranganEl?.dataset?.keterangan || keteranganEl?.textContent?.trim() || '';
 
-            editId.value = id;
-            editTanggal.value = tanggal;
-            editJenis.value = jenis;
-            editKeterangan.value = row.dataset.keterangan || '';
-            editJamMasuk.value = row.dataset.jamMasuk || '';
-            editJamKeluar.value = row.dataset.jamKeluar || '';
+                editId.value = id;
+                editTanggal.value = tanggal;
+                editJenis.value = jenis;
+                editKeterangan.value = keterangan;
+                editJamMasuk.value = '';
+                editJamKeluar.value = '';
 
-            showModal(editModal);
-            $('#edit-jenis').val(jenis).trigger('change');
+                showModal(editModal);
+                $('#edit-jenis').val(jenis).trigger('change');
+            });
         });
-    });
-
-    // Function untuk approve perizinan
-    attachApprovalListeners();
+    }
 
     function showApprovalNotif(message, type = 'success', duration = 2500) {
         const notif = document.getElementById('approvalNotif');
         const text = document.getElementById('approvalNotifText');
-
         notif.classList.remove('hidden', 'notif-success', 'notif-error', 'notif-warning');
         notif.classList.add(`notif-${type}`);
-
         text.textContent = message;
-
         setTimeout(() => {
             notif.classList.add('hidden');
         }, duration);
@@ -803,7 +785,7 @@
 
     function attachApprovalListeners(context = document) {
         context.querySelectorAll('.approve-btn').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const approval = this.dataset.value;
                 const form = this.closest('.approval-form');
                 const id = form.dataset.id;
@@ -815,40 +797,15 @@
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            approval: approval
-                        })
+                        body: JSON.stringify({ approval: approval })
                     })
                     .then(async response => {
                         const data = await response.json();
-
-                        if (!response.ok) {
-                            throw data;
-                        }
-
+                        if (!response.ok) throw data;
                         return data;
                     })
                     .then(data => {
-                        const row = document.querySelector(`tr[data-id="${id}"]`);
-                        const statusCell = row.querySelector('.status-super')
-
-                        // Update status label & warna
-                        statusCell.textContent = data.status_label;
-                        statusCell.className =
-                            `status-super text-center h-full text-sm ${data.status_class}`;
-
-                        // Update tombol approve
-                        form.innerHTML = data.button_html;
-                        attachApprovalListeners(form);
-
-                        // 🔥 UPDATE TOMBOL ACTION
-                        let isApproved = null;
-                        if (data.status_label === 'Disetujui') isApproved = true;
-                        else if (data.status_label === 'Ditolak') isApproved = false;
-
-                        updateActionButtons(row, isApproved);
-
-                        // 🔔 NOTIF
+                        if (table) table.ajax.reload(null, false);
                         if (data.status_label === 'Disetujui') {
                             showApprovalNotif('Perizinan berhasil disetujui', 'success');
                         } else if (data.status_label === 'Ditolak') {
@@ -858,36 +815,16 @@
                         }
                     })
                     .catch(err => {
-                        showApprovalNotif(
-                            err.message || 'Gagal sinkron ke sistem MIRAI',
-                            'error'
-                        );
+                        showApprovalNotif(err.message || 'Gagal sinkron ke sistem MIRAI', 'error');
                     });
             });
         });
     }
 
-    // // Show modal
-    // function showModal(modal) {
-    //     modal.classList.replace('hidden', 'flex');
-    // }
-
-    // // Close modal
-    // function closeModal(modalId) {
-    //     const modal = document.getElementById(modalId);
-    //     modal.classList.replace('flex', 'hidden');
-    // }
-
-    // Handle form submit
-    editForm.addEventListener('submit', function(e) {
+    editForm.addEventListener('submit', function (e) {
         e.preventDefault();
-
         const id = editId.value;
-
-        if (!id) {
-            alert('ID data tidak ditemukan');
-            return;
-        }
+        if (!id) { alert('ID data tidak ditemukan'); return; }
 
         const data = {
             tanggal: editTanggal.value,
@@ -908,7 +845,8 @@
             })
             .then(res => {
                 if (!res.ok) throw new Error('Update gagal');
-                location.reload();
+                if (table) table.ajax.reload(null, false);
+                closeModal('editModal');
             })
             .catch(err => {
                 console.error(err);
@@ -916,39 +854,9 @@
             });
     });
 
-    function updateActionButtons(row, isApproved) {
-        const editBtn = row.querySelector('.edit-row');
-        const deleteBtn = row.querySelector('.btn-icon.danger');
-
-        if (!editBtn || !deleteBtn) return;
-
-        if (isApproved === null) {
-            // Aktif
-            editBtn.disabled = false;
-            deleteBtn.disabled = false;
-            editBtn.style.opacity = '1';
-            deleteBtn.style.opacity = '1';
-        } else {
-            // Non-aktif
-            editBtn.disabled = true;
-            deleteBtn.disabled = true;
-            editBtn.style.opacity = '0.2';
-            deleteBtn.style.opacity = '0.2';
-        }
-    }
-
-    // Update nomor urut di kolom No setelah hapus baris
-    function updateRowNumbers() {
-        const numbers = document.querySelectorAll('#cuti-table tbody tr .number');
-        numbers.forEach((cell, index) => {
-            cell.textContent = index + 1;
-        });
-    }
-</script>
-<script>
     function attachMemberApprovalListeners(context = document) {
         context.querySelectorAll('.member-approve-btn').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const approval = this.dataset.value;
                 const form = this.closest('.member-approval-form');
                 const id = form.dataset.id;
@@ -956,26 +864,15 @@
                 fetch(`/iseki_rifa/public/reporting/${id}/member-approve`, {
                         method: 'PUT',
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-CSRF-TOKEN': csrfToken,
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            approval
-                        })
+                        body: JSON.stringify({ approval })
                     })
                     .then(res => res.json())
                     .then(data => {
-                        const row = document.querySelector(`tr[data-id="${id}"]`);
-                        const oldCell = row.querySelector('td.status-member');
-
-                        const template = document.createElement('template');
-                        template.innerHTML = data.cell_html.trim();
-
-                        const newCell = template.content.firstElementChild;
-                        oldCell.replaceWith(newCell);
-
-                        attachMemberApprovalListeners(newCell);
+                        if (table) table.ajax.reload(null, false);
                     })
                     .catch(() => {
                         showApprovalNotif('Gagal menyimpan persetujuan member', 'error');
@@ -983,12 +880,8 @@
             });
         });
     }
-    document.addEventListener('DOMContentLoaded', () => {
-        attachMemberApprovalListeners();
-    });
-</script>
-<script>
-    document.addEventListener('click', function(e) {
+
+    document.addEventListener('click', function (e) {
         if (e.target.closest('.btn-view-replacement')) {
             const btn = e.target.closest('.btn-view-replacement');
             const absensiId = btn.getAttribute('data-id');

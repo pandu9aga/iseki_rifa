@@ -14,7 +14,8 @@
         "maatwebsite/excel": "^1.1",
         "phpoffice/phpspreadsheet": "^4.2",
         "spatie/browsershot": "^5.0",
-        "spatie/laravel-activitylog": "^4.10"
+        "spatie/laravel-activitylog": "^4.10",
+        "yajra/laravel-datatables-oracle": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
