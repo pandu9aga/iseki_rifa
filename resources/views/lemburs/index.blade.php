@@ -168,7 +168,7 @@
                     @endif
                 </tr>
                 <tr class="dt-filter-row">
-                    <th></th>
+                    <th class="sticky-col-left"></th>
                     <th class="{{ $isEmployee ? '' : 'sticky-col-left' }}">
                         <input type="text" class="filter dt-filter" data-col="nama" placeholder="Cari Nama"
                             @if($isEmployee) value="{{ session('employee_user')->name }}" readonly style="background-color: #e9ecef; cursor: not-allowed;" @endif>
@@ -178,7 +178,11 @@
                     <th><input type="text" class="filter dt-filter" data-col="divisi" placeholder="Cari Divisi"></th>
                     @endif
                     <th>
-                        <input id="customDate" name="customDate" type="date" class="filter dt-filter" data-col="tanggal">
+                        <div style="display:flex; align-items:center; gap:2px;">
+                            <button type="button" class="btn btn-sm btn-secondary" id="date-prev" style="padding:2px 6px; line-height:1;">&#8249;</button>
+                            <input id="customDate" name="customDate" type="date" class="filter dt-filter" data-col="tanggal">
+                            <button type="button" class="btn btn-sm btn-secondary" id="date-next" style="padding:2px 6px; line-height:1;">&#8250;</button>
+                        </div>
                         <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
                     </th>
                     @userType('leader')
@@ -235,7 +239,7 @@
                     <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
                     @endif
                     @if(Auth::check())
-                    <th></th>
+                    <th class="sticky-col-right"></th>
                     @endif
                 </tr>
             </thead>
@@ -427,6 +431,31 @@
                 updateBulananExcelBtnVisibility();
             });
         }
+
+        function dateNavigate(step) {
+            if (!dateFilter || !table) return;
+            if (!dateFilter.value) {
+                const t = new Date();
+                dateFilter.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+            }
+            if (dateFilter.type === 'month') {
+                let [y, m] = dateFilter.value.split('-').map(Number);
+                m += step;
+                if (m < 1) { m = 12; y--; }
+                if (m > 12) { m = 1; y++; }
+                dateFilter.value = y + '-' + String(m).padStart(2, '0');
+            } else {
+                const p = dateFilter.value.split('-');
+                const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+                d.setDate(d.getDate() + step);
+                dateFilter.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            }
+            table.ajax.reload();
+            updateBulananExcelBtnVisibility();
+        }
+
+        document.getElementById('date-prev')?.addEventListener('click', function () { dateNavigate(-1); });
+        document.getElementById('date-next')?.addEventListener('click', function () { dateNavigate(1); });
 
         // Export
         document.getElementById('export-lembur-btn')?.addEventListener('click', function (e) {

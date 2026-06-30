@@ -66,6 +66,16 @@
         min-width: 100%;
         border-collapse: collapse;
     }
+    #cuti-table thead tr:first-child th.sticky-col-left {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+    }
+    #cuti-table thead tr:nth-child(2) th.sticky-col-left {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+    }
     div#cuti-table_wrapper .dt-layout-row {
         align-items: center;
     }
@@ -257,7 +267,11 @@
             </a>
             @enduserType
             @userType('admin')
-            <input type="date" id="dailyReportInput" class="form-control" value="{{ now()->format('Y-m-d') }}" />
+            <div style="display:flex; align-items:center; gap:2px;">
+                <button type="button" class="btn btn-sm btn-secondary" id="dr-prev" style="padding:2px 6px; line-height:1;">&#8249;</button>
+                <input type="date" id="dailyReportInput" class="form-control" value="{{ now()->format('Y-m-d') }}" />
+                <button type="button" class="btn btn-sm btn-secondary" id="dr-next" style="padding:2px 6px; line-height:1;">&#8250;</button>
+            </div>
             <button class="btn btn-secondary" id="dailyReportBtn">
                 Laporan Harian
                 <i class="material-symbols-rounded">
@@ -288,7 +302,11 @@
             </div>
             @enduserType
             @userType('super')
-            <input type="date" id="dailyReportInput" class="form-control" value="{{ now()->format('Y-m-d') }}" />
+            <div style="display:flex; align-items:center; gap:2px;">
+                <button type="button" class="btn btn-sm btn-secondary" id="dr-prev" style="padding:2px 6px; line-height:1;">&#8249;</button>
+                <input type="date" id="dailyReportInput" class="form-control" value="{{ now()->format('Y-m-d') }}" />
+                <button type="button" class="btn btn-sm btn-secondary" id="dr-next" style="padding:2px 6px; line-height:1;">&#8250;</button>
+            </div>
             <button class="btn btn-secondary" id="dailyReportBtn">
                 Laporan Harian
                 <i class="material-symbols-rounded">
@@ -402,8 +420,12 @@
                         </select>
                     </th>
                     <th>
-                        <input class="filter dt-filter" id="filter-tanggal" type="date"
-                            value="{{ $isEmployeeReporting ? '' : date('Y-m-d') }}" />
+                        <div style="display:flex; align-items:center; gap:2px;">
+                            <button type="button" class="btn btn-sm btn-secondary" id="date-prev" style="padding:2px 6px; line-height:1;">&#8249;</button>
+                            <input class="filter dt-filter" id="filter-tanggal" type="date"
+                                value="{{ $isEmployeeReporting ? '' : date('Y-m-d') }}" style="flex:1; min-width:0;" />
+                            <button type="button" class="btn btn-sm btn-secondary" id="date-next" style="padding:2px 6px; line-height:1;">&#8250;</button>
+                        </div>
                     </th>
                     <th><input type="text" class="filter dt-filter" id="filter-keterangan" placeholder="Cari Keterangan" /></th>
                     <th>
@@ -607,6 +629,24 @@
             }
         }
 
+        function dateNavigate(step) {
+            const input = document.getElementById('filter-tanggal');
+            const colIdx = columnMap['tanggal_formatted'];
+            if (colIdx === undefined || !table) return;
+            if (!input.value) {
+                const t = new Date();
+                input.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+            }
+            const p = input.value.split('-');
+            const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+            d.setDate(d.getDate() + step);
+            input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            table.column(colIdx).search(input.value).draw();
+        }
+
+        document.getElementById('date-prev')?.addEventListener('click', function () { dateNavigate(-1); });
+        document.getElementById('date-next')?.addEventListener('click', function () { dateNavigate(1); });
+
         function connectFilter(filterId, colIndex) {
             const el = document.getElementById(filterId);
             if (!el) return;
@@ -694,6 +734,23 @@
     }
 
     document.getElementById('cancelDelete').addEventListener('click', hideDeletePopup);
+
+    function drNavigate(step) {
+        const input = document.getElementById('dailyReportInput');
+        if (!input) return;
+        const p = input.value ? input.value.split('-') : null;
+        if (!p) {
+            const t = new Date();
+            input.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+        } else {
+            const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+            d.setDate(d.getDate() + step);
+            input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+    }
+
+    document.getElementById('dr-prev')?.addEventListener('click', function () { drNavigate(-1); });
+    document.getElementById('dr-next')?.addEventListener('click', function () { drNavigate(1); });
 
     document.getElementById('dailyReportBtn')?.addEventListener('click', function () {
         const selectedDate = document.getElementById('dailyReportInput')?.value;

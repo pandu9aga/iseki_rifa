@@ -380,13 +380,33 @@ thead {
     width: 100%;
 }
 
-table thead tr th {
-    position: sticky;
-    top: 0;
-}
-
 thead tr:nth-child(2) th {
     font-weight: 400;
+}
+
+#cuti-table thead tr:first-child th.sticky-col-left,
+#lembur-table thead tr:first-child th.sticky-col-left {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+}
+#cuti-table thead tr:nth-child(2) th.sticky-col-left,
+#lembur-table thead tr:nth-child(2) th.sticky-col-left {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+}
+#cuti-table thead tr:first-child th.sticky-col-right,
+#lembur-table thead tr:first-child th.sticky-col-right {
+    position: sticky;
+    right: 0;
+    z-index: 4;
+}
+#cuti-table thead tr:nth-child(2) th.sticky-col-right,
+#lembur-table thead tr:nth-child(2) th.sticky-col-right {
+    position: sticky;
+    right: 0;
+    z-index: 4;
 }
 
 /* SELECT2 */
