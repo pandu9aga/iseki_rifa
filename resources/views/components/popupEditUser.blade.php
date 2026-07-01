@@ -70,9 +70,9 @@
 
 <script>
 function initEditUserSelect2() {
-    if ($('#edit-type').hasClass('select2-hidden-accessible')) return;
-    $('#edit-type, #edit-division').select2({ dropdownParent: $('#editUserModal .modal-content'), width: '100%' });
+    if ($('#edit-team').hasClass('select2-hidden-accessible')) {
+        $('#edit-team').select2('destroy');
+    }
     $('#edit-team').select2({ dropdownParent: $('#editUserModal .modal-content'), width: '100%' });
 }
-$(document).ready(initEditUserSelect2);
 </script>

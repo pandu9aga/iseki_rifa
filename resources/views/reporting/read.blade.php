@@ -477,7 +477,7 @@
 
                     const memberIdx = columnMap['member_approval_html'];
                     if (memberIdx !== undefined) {
-                        $(row).find('td').eq(memberIdx).addClass('status-member');
+                        $(row).find('td').eq(memberIdx).addClass('status-member text-center h-full text-sm ' + (data.member_approval_class || 'bg-yellow'));
                     }
 
                     const hrIdx = columnMap['hr_approval_label'];
@@ -622,7 +622,7 @@
     }
 
     document.addEventListener("click", function (e) {
-        if (!toggleButton.contains(e.target) && !dropdownForm.contains(e.target)) {
+        if (toggleButton && dropdownForm && !toggleButton.contains(e.target) && !dropdownForm.contains(e.target)) {
             dropdownForm.classList.add("hidden");
         }
     });

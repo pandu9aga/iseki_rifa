@@ -21,16 +21,16 @@
             <div class="row" style="gap:0.75rem;">
                 <div class="form-control" style="flex:1;">
                     <label for="edit-employee-status">Status</label>
-                    <select id="edit-employee-status" name="is_active">
-                        <option value="1">Aktif</option>
-                        <option value="0">Non-aktif</option>
+                    <select id="edit-employee-status" name="status">
+                        <option value="Direct">Direct</option>
+                        <option value="Non Direct">Non Direct</option>
                     </select>
                 </div>
                 <div class="form-control" style="flex:1;">
                     <label for="edit-employee-divisi">Divisi</label>
-                    <select id="edit-employee-divisi" name="divisi_id">
+                    <select id="edit-employee-divisi" name="divisi">
                         @foreach($divisions as $divisi)
-                            <option value="{{ $divisi->id }}">{{ $divisi->nama }}</option>
+                            <option value="{{ $divisi->nama }}">{{ $divisi->nama }}</option>
                         @endforeach
                     </select>
                 </div>

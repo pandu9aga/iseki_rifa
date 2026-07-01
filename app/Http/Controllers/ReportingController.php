@@ -168,6 +168,10 @@ class ReportingController extends Controller
             ->addColumn('member_approval_html', function ($absen) {
                 return view('partials.member-approval-cell', ['absen' => $absen])->render();
             })
+            ->addColumn('member_approval_class', function ($absen) {
+                if (is_null($absen->member_approved)) return 'bg-yellow';
+                return $absen->member_approved ? 'bg-success' : 'bg-red';
+            })
             ->addColumn('hr_approval_label', function ($absen) {
                 return $absen->hr_approval_label ?? 'Menunggu Persetujuan';
             })

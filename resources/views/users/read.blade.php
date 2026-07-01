@@ -194,12 +194,10 @@
             editName.value = name;
             editUsername.value = username;
             editDivision.value = division;
-            $('#edit-team').val(teamArray).trigger('change');
 
             showModal('editUserModal');
 
-            $('#edit-type').val(type).trigger('change');
-            $('#edit-division').val(division).trigger('change');
+            $('#edit-team').val(teamArray).trigger('change');
         });
     });
 

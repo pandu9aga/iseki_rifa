@@ -147,7 +147,7 @@ class LemburController extends Controller
                 if ($userType !== 'super') return '';
                 $isNull = is_null($row->approval_lembur);
                 if ($isNull) {
-                    return '<div class="flex flex-col btn-group">' .
+                    return '<div class="flex btn-group">' .
                         '<button type="button" data-value="1" class="btn bg-success text-sm rounded approve-btn">Setujui</button>' .
                         '<button type="button" data-value="0" class="btn bg-red text-sm rounded approve-btn">Tolak</button></div>';
                 } else {
@@ -478,7 +478,7 @@ class LemburController extends Controller
             $status_label = 'Menunggu Persetujuan';
             $status_class = 'bg-yellow';
             $button_html = '
-            <div class="flex flex-col btn-group">
+            <div class="flex btn-group">
                 <button type="button" data-value="1" class="approve-btn btn bg-success text-sm rounded">Setujui</button>
                 <button type="button" data-value="0" class="approve-btn btn bg-red text-sm rounded">Tolak</button>
             </div>

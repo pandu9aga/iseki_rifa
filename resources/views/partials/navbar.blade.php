@@ -96,7 +96,7 @@
     </nav>
 
     <!-- Drawer overlay backdrop -->
-    <div id="drawer-overlay" style="display:none;position:fixed;inset:0;z-index:49;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);"></div>
+    <div id="drawer-overlay" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);"></div>
 
     <!-- Drawer -->
     <div id="drawer">
@@ -133,15 +133,12 @@
                     <li class="{{ request()->is('employee/lembur') ? 'active' : '' }}">
                         <a href="{{ route('employee.lemburs.index') }}">Lembur</a>
                     </li>
-                    <li>
-                        <a href="#" onclick="toggleDropdown()" class="flex justify-between w-full">
-                            {{ session('employee_user')->name }}
-                            <i class="material-symbols-rounded">arrow_drop_down</i>
-                        </a>
-                        <form action="{{ route('logout') }}" method="POST" style="padding:0.5rem 1rem;">
+                    <li class="user-info">
+                        <div style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">{{ session('employee_user')->name }}</div>
+                        <form action="{{ route('logout') }}" method="POST" style="width:100%;">
                             @csrf
-                            <button type="submit" class="btn btn-danger w-full">
-                                <i class="material-symbols-rounded">logout</i>
+                            <button type="submit" class="btn btn-danger w-full" style="font-size:0.8125rem;">
+                                <i class="material-symbols-rounded" style="font-size:1.125rem;">logout</i>
                                 Logout
                             </button>
                         </form>
@@ -167,6 +164,16 @@
                         <a href="{{ url('/dates') }}">Tanggal</a>
                     </li>
                     @endif
+                    <li class="user-info">
+                        <div style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">{{ Auth::user()->name }}</div>
+                        <form action="{{ route('logout') }}" method="POST" style="width:100%;">
+                            @csrf
+                            <button type="submit" class="btn btn-danger w-full" style="font-size:0.8125rem;">
+                                <i class="material-symbols-rounded" style="font-size:1.125rem;">logout</i>
+                                Logout
+                            </button>
+                        </form>
+                    </li>
                 @endif
             </ul>
         </nav>
@@ -187,6 +194,11 @@
         width: 100%;
         padding: 0.625rem 0.75rem;
         border-radius: 6px;
+    }
+    #drawer .nav-links li.user-info {
+        display: flex;
+        flex-direction: column;
+        padding: 0.5rem 0.75rem;
     }
     @media (max-width: 768px) {
         .md-hide-mobile { display: none !important; }

@@ -13,13 +13,13 @@
     @include('components.popupDeleteLembur')
 
     <!-- Judul & tombol tambah -->
-    <div class="mb-8" style="margin-bottom: 2rem;">
+    <div class="mb-2">
         <br>
         <h3 class="font-bold text-2xl">Data Lembur</h3>
     </div>
 
     @if(Auth::check())
-    <form method="GET" class="mb-4 flex gap-3 flex-wrap bg-gray-50 p-3 rounded">
+    <form method="GET" class="flex flex-wrap bg-gray-50 rounded">
         <div>
             <label class="block text-sm font-medium text-gray-700">Tahun Penilaian</label>
             <select name="tahun" class="form-select mt-1" onchange="this.form.submit()">
@@ -495,18 +495,7 @@
                 }
                 if (data.selisih !== undefined) {
                     const selisih = data.selisih;
-                    const selisihBox = document.getElementById('selisih-box');
-                    const selisihText = document.getElementById('selisih-text');
                     document.getElementById('selisih-display').textContent = Math.abs(selisih).toFixed(1);
-                    if (selisih >= 0) {
-                        selisihBox.className = 'border px-4 py-2 rounded shadow text-sm bg-green-50 border-green-300';
-                        selisihText.className = 'text-base font-semibold text-green-700';
-                        selisihText.innerHTML = '+<span id="selisih-display">' + selisih.toFixed(1) + '</span> jam';
-                    } else {
-                        selisihBox.className = 'border px-4 py-2 rounded shadow text-sm bg-red-50 border-red-300';
-                        selisihText.className = 'text-base font-semibold text-red-700';
-                        selisihText.innerHTML = '-<span id="selisih-display">' + Math.abs(selisih).toFixed(1) + '</span> jam';
-                    }
                 }
                 if (data.jamProduksi !== undefined) {
                     document.getElementById('jam-produksi').textContent = data.jamProduksi.toFixed(1);
@@ -532,14 +521,14 @@
     let rowToDelete = null;
     window.showDeletePopup = function (row) {
         rowToDelete = row;
-        document.getElementById('popupDelete').classList.replace('hidden', 'flex');
+        document.getElementById('popupDeleteLembur').classList.replace('hidden', 'flex');
     };
     window.hideDeletePopup = function () {
         rowToDelete = null;
-        document.getElementById('popupDelete').classList.replace('flex', 'hidden');
+        document.getElementById('popupDeleteLembur').classList.replace('flex', 'hidden');
     };
     document.getElementById('cancelDelete')?.addEventListener('click', hideDeletePopup);
-    document.getElementById('confirmDelete')?.addEventListener('click', () => {
+    document.getElementById('confirmDeleteLembur')?.addEventListener('click', () => {
         if (rowToDelete) {
             const id = rowToDelete.dataset.id;
             fetch(`/iseki_rifa/public/lembur/${id}`, {
@@ -578,16 +567,16 @@
 
     function openEditModal(data) {
         document.getElementById('edit-lembur-id').value = data.id;
-        document.getElementById('edit-employee_name').value = data.employee_name;
-        document.getElementById('edit-employee_id').value = data.employee_id;
-        document.getElementById('edit-tanggal_lembur').value = data.tanggal_lembur || '';
+        document.getElementById('edit-lembur-pegawai').value = data.employee_id;
+        document.getElementById('edit-lembur-employee-name').value = data.employee_name;
+        document.getElementById('edit-lembur-tanggal').value = data.tanggal_lembur || '';
         const [jamMulai, jamSelesai] = (data.waktu || ' - ').split(' - ');
-        document.getElementById('edit-jam_mulai').value = jamMulai || '';
-        document.getElementById('edit-jam_selesai').value = jamSelesai || '';
-        document.getElementById('edit-durasi_lembur').value = data.durasi_lembur || '';
-        document.getElementById('edit-keterangan_lembur').value = data.keterangan_lembur || '';
+        document.getElementById('edit-lembur-jam-mulai').value = jamMulai || '';
+        document.getElementById('edit-lembur-jam-selesai').value = jamSelesai || '';
+        document.getElementById('edit-lembur-durasi').value = data.durasi_lembur || '';
+        document.getElementById('edit-lembur-pekerjaan').value = data.keterangan_lembur || '';
         let makan = (data.makan_lembur || '').toString().toLowerCase().trim();
-        document.getElementById('edit-makan_lembur').value = (makan === 'ya') ? 'ya' : 'tidak';
+        document.getElementById('edit-lembur-makan').value = (makan === 'ya') ? 'ya' : 'tidak';
         document.getElementById('editLemburModal').classList.replace('hidden', 'flex');
     }
 
@@ -597,14 +586,14 @@
             e.preventDefault();
             const id = document.getElementById('edit-lembur-id').value;
             const data = {
-                employee_name: document.getElementById('edit-employee_name').value,
-                employee_id: document.getElementById('edit-employee_id').value,
-                tanggal_lembur: document.getElementById('edit-tanggal_lembur').value,
-                jam_mulai: document.getElementById('edit-jam_mulai').value,
-                jam_selesai: document.getElementById('edit-jam_selesai').value,
-                durasi_lembur: document.getElementById('edit-durasi_lembur').value,
-                keterangan_lembur: document.getElementById('edit-keterangan_lembur').value,
-                makan_lembur: document.getElementById('edit-makan_lembur').value,
+                employee_name: document.getElementById('edit-lembur-employee-name').value,
+                employee_id: document.getElementById('edit-lembur-pegawai').value,
+                tanggal_lembur: document.getElementById('edit-lembur-tanggal').value,
+                jam_mulai: document.getElementById('edit-lembur-jam-mulai').value,
+                jam_selesai: document.getElementById('edit-lembur-jam-selesai').value,
+                durasi_lembur: document.getElementById('edit-lembur-durasi').value,
+                keterangan_lembur: document.getElementById('edit-lembur-pekerjaan').value,
+                makan_lembur: document.getElementById('edit-lembur-makan').value,
             };
 
             fetch(`/iseki_rifa/public/lembur/${id}`, {
@@ -627,6 +616,10 @@
         const modal = document.getElementById('editLemburModal');
         if (modal) modal.classList.replace('flex', 'hidden');
     }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.replace('flex', 'hidden');
+    }
 </script>
 
 <script>
@@ -636,8 +629,9 @@
         context.querySelectorAll('.approve-btn').forEach(button => {
             button.addEventListener('click', function () {
                 const approval = this.dataset.value;
-                const form = this.closest('.approval-form');
-                const id = form.dataset.id;
+                const row = this.closest('tr');
+                if (!row) return;
+                const id = row.dataset.id;
 
                 fetch(`/iseki_rifa/public/lembur/${id}/approve`, {
                     method: 'PUT',

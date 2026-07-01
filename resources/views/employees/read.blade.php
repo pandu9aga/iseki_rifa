@@ -198,6 +198,11 @@
                 }
             };
 
+            function closeModal(modalId) {
+                document.getElementById(modalId).classList.replace('flex', 'hidden');
+            }
+            window.closeModal = closeModal;
+
             function hideDeletePopup() {
                 const popup = document.getElementById('popupDelete');
                 if (popup) popup.classList.replace('flex', 'hidden');
@@ -221,6 +226,7 @@
                             document.querySelector(`tr[data-id="${id}"]`)?.remove();
                             hideDeletePopup();
                             applyFilters();
+                            updateRowNumbers();
                         } else {
                             alert('Gagal menghapus data');
                         }
@@ -242,38 +248,38 @@
                     const team = cells[6].textContent === '-' ? '' : cells[6].textContent;
                     const password = cells[7].textContent;
 
-                    document.getElementById('edit-id').value = id;
-                    document.getElementById('edit-nama').value = nama;
-                    document.getElementById('edit-nik').value = nik;
-                    document.getElementById('edit-status').value = status;
-                    document.getElementById('edit-divisi').value = divisi;
-                    document.getElementById('edit-team').value = team;
-                    document.getElementById('edit-password').value = password;
-
-                    if (typeof $ !== 'undefined') {
-                        $('#edit-status').val(status).trigger('change');
-                        $('#edit-divisi').val(divisi).trigger('change');
-                    }
+                    document.getElementById('edit-employee-id').value = id;
+                    document.getElementById('edit-employee-nama').value = nama;
+                    document.getElementById('edit-employee-nik').value = nik;
+                    document.getElementById('edit-employee-status').value = status;
+                    document.getElementById('edit-employee-divisi').value = divisi;
+                    document.getElementById('edit-employee-team').value = team;
+                    document.getElementById('edit-employee-password').value = password;
 
                     document.getElementById('editEmployeeModal').classList.replace('hidden',
                         'flex');
                 });
             });
 
-            window.closeEditModal = function() {
-                document.getElementById('editEmployeeModal')?.classList.replace('flex', 'hidden');
-            };
+                            // Update nomor urut di kolom No setelah hapus baris
+                function updateRowNumbers() {
+                    const numbers = document.querySelectorAll('#employees-table tbody tr .number');
+                    numbers.forEach((cell, index) => {
+                        cell.textContent = index + 1;
+                    });
+                }
+
 
             document.getElementById('editEmployeeForm')?.addEventListener('submit', function(e) {
                 e.preventDefault();
-                const id = document.getElementById('edit-id').value;
+                const id = document.getElementById('edit-employee-id').value;
                 const data = {
-                    nama: document.getElementById('edit-nama').value,
-                    nik: document.getElementById('edit-nik').value,
-                    status: document.getElementById('edit-status').value,
-                    divisi: document.getElementById('edit-divisi').value,
-                    team: document.getElementById('edit-team').value,
-                    password: document.getElementById('edit-password').value,
+                    nama: document.getElementById('edit-employee-nama').value,
+                    nik: document.getElementById('edit-employee-nik').value,
+                    status: document.getElementById('edit-employee-status').value,
+                    divisi: document.getElementById('edit-employee-divisi').value,
+                    team: document.getElementById('edit-employee-team').value,
+                    password: document.getElementById('edit-employee-password').value,
                 };
 
                 fetch(`/iseki_rifa/public/employees/${id}`, {

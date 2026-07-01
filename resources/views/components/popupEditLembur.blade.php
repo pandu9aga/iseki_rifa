@@ -16,25 +16,30 @@
                     @endforeach
                 </select>
             </div>
+            <input type="hidden" id="edit-lembur-employee-name" name="employee_name">
 
             <div class="row" style="gap:0.75rem;">
                 <div class="form-control" style="flex:2;">
                     <label for="edit-lembur-tanggal">Tanggal</label>
-                    <input type="date" id="edit-lembur-tanggal" name="tanggal">
+                    <input type="date" id="edit-lembur-tanggal" name="tanggal_lembur">
                 </div>
                 <div class="form-control" style="flex:1;">
-                    <label for="edit-lembur-jam">Jam</label>
-                    <input type="time" id="edit-lembur-jam" name="waktu">
+                    <label for="edit-lembur-jam-mulai">Jam Mulai</label>
+                    <input type="time" id="edit-lembur-jam-mulai" name="jam_mulai">
+                </div>
+                <div class="form-control" style="flex:1;">
+                    <label for="edit-lembur-jam-selesai">Jam Selesai</label>
+                    <input type="time" id="edit-lembur-jam-selesai" name="jam_selesai">
                 </div>
                 <div class="form-control" style="flex:1;">
                     <label for="edit-lembur-durasi">Durasi (jam)</label>
-                    <input type="number" id="edit-lembur-durasi" name="durasi" step="0.5">
+                    <input type="number" id="edit-lembur-durasi" name="durasi_lembur" step="0.5">
                 </div>
             </div>
 
             <div class="form-control">
                 <label for="edit-lembur-pekerjaan">Pekerjaan</label>
-                <select id="edit-lembur-pekerjaan" name="pekerjaan">
+                <select id="edit-lembur-pekerjaan" name="keterangan_lembur">
                     <option value="Produksi">Produksi</option>
                     <option value="Maintenance">Maintenance</option>
                     <option value="Kaizen">Kaizen</option>
@@ -45,7 +50,7 @@
 
             <div class="form-control">
                 <label for="edit-lembur-makan">Makan</label>
-                <input type="text" id="edit-lembur-makan" name="makan">
+                <input type="text" id="edit-lembur-makan" name="makan_lembur">
             </div>
 
             <div class="button-group">

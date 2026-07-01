@@ -32,7 +32,7 @@
                                 <option value="">-- Pilih Karyawan --</option>
                                 @foreach ($employees as $emp)
                                 <option value="{{ $emp->id }}"
-                                    data-division="{{ $emp->division->nama ?? '-' }}">
+                                    data-division="{{ $emp->division?->nama ?? '-' }}">
                                     {{ $emp->nama }}
                                 </option>
                                 @endforeach
@@ -86,18 +86,18 @@
 </div>
 <script>
     $(document).ready(function() {
-        // Inisialisasi select2 awal
-        $('.select2').select2();
+        function initDivisionAutoFill(container) {
+            container.find('.employee-select').on('select2:select', function(e) {
+                var data = e.params.data;
+                var division = data.element ? $(data.element).data('division') || '' : '';
+                $(this).closest('tr').find('.division').val(division);
+            });
+        }
 
-        // Fungsi update divisi saat pilih karyawan
-        $(document).on('change', '.employee-select', function() {
-            let division = $(this).find('option:selected').data('division') || '';
-            $(this).closest('tr').find('.division').val(division);
-        });
+        initDivisionAutoFill($(document));
 
         const tableBody = document.querySelector('#lembur-table tbody');
 
-        // Fungsi tambah baris baru
         function addRow() {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -106,7 +106,7 @@
                 <select name="employee_id[]" class="form-control select2 employee-select" required>
                     <option value="">-- Pilih Karyawan --</option>
                     @foreach ($employees as $emp)
-                        <option value="{{ $emp->id }}" data-division="{{ $emp->division->nama ?? '-' }}">
+                        <option value="{{ $emp->id }}" data-division="{{ $emp->division?->nama ?? '-' }}">
                             {{ $emp->nama }}
                         </option>
                     @endforeach
@@ -143,22 +143,19 @@
         `;
             tableBody.insertBefore(row, document.getElementById('row-button'));
 
-            // Inisialisasi select2 di baris baru
             $(row).find('.select2').select2();
+            initDivisionAutoFill($(row));
 
             updateRowNumbers();
         }
 
-        // Event tombol tambah baris
         $('#add-row').click(addRow);
 
-        // Event tombol hapus baris
         $(document).on('click', '.delete-row', function() {
             $(this).closest('tr').remove();
             updateRowNumbers();
         });
 
-        // Update nomor baris
         function updateRowNumbers() {
             tableBody.querySelectorAll('tr:not(#row-button)').forEach((row, index) => {
                 row.querySelector('td.number').textContent = index + 1;
