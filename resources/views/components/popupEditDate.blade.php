@@ -1,29 +1,32 @@
 <div id="editDateModal" class="overlay hidden">
-    <div class="modal-content">
-        <h2 class="text-lg font-semibold mb-4">Edit Data Tanggal</h2>
+    <div class="modal-content" style="max-width:24rem;">
+        <div class="modal-title">
+            <i class="material-symbols-rounded" style="color:var(--primary);">calendar_month</i>
+            Edit Tanggal
+        </div>
         <form id="editDateForm">
             @csrf
-            <input type="hidden" name="id" id="edit-id">
+            <input type="hidden" name="id" id="edit-date-id">
 
             <div class="form-control">
-                <label for="edit-tanggal">Tanggal</label>
-                <input type="date" id="edit-tanggal" name="tanggal" class="input w-full">
+                <label for="edit-date-tanggal">Tanggal</label>
+                <input type="date" id="edit-date-tanggal" name="tanggal">
             </div>
 
             <div class="form-control">
-                <label for="edit-jenis">Jenis Tanggal</label>
-                <select id="edit-jenis" name="jenis_tanggal" class="select2 input w-full" data-placeholder="Pilih tipe akun">
-                    <option></option>
-                    <option value="libur nasional">libur nasional</option>
-                    <option value="cuti perusahaan">cuti perusahaan</option>
-                    <option value="libur masuk">libur masuk</option>
-                    <option value="libur pengganti">libur pengganti</option>
+                <label for="edit-date-jenis">Jenis Tanggal</label>
+                <select id="edit-date-jenis" name="jenis_tanggal">
+                    <option value="Libur">Libur</option>
+                    <option value="Libur Bersama">Libur Bersama</option>
                 </select>
             </div>
 
-            <div class="button-group mt-4">
-                <button type="button" class="btn btn-neutral" onclick="closeEditModal()">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+            <div class="button-group">
+                <button type="button" class="btn btn-neutral" onclick="closeModal('editDateModal')">Batal</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="material-symbols-rounded">save</i>
+                    Simpan
+                </button>
             </div>
         </form>
     </div>

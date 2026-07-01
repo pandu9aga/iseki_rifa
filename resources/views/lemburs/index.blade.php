@@ -77,51 +77,35 @@
             @enduserType
         </div>
 
-        <div class="flex gap-8" style="gap: 2rem;">
-            <div class="bg-green-100 border border-green-300 px-6 py-3 rounded shadow text-sm">
-                <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Budget (<span
-                        id="bulan-budget-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
-                <div class="text-green-700 text-base font-semibold">
+        <div class="flex gap-4" style="flex-wrap:wrap;">
+            <div class="card" style="flex:1;min-width:160px;border-left:4px solid var(--success);">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Budget (<span id="bulan-budget-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
+                <div style="font-size:1.125rem;font-weight:700;color:var(--success);">
                     <span id="budget-display">{{ number_format($budgetValue, 1) }}</span> jam
                 </div>
             </div>
-            <div class="bg-blue-100 border border-blue-300 px-6 py-3 rounded shadow text-sm">
-                <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Total Durasi (<span
-                        id="bulan-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
-                <div class="text-blue-700 text-base font-semibold">
+            <div class="card" style="flex:1;min-width:160px;border-left:4px solid var(--info);">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Total Durasi (<span id="bulan-info">{{ \Carbon\Carbon::parse($bulanReferensi)->format('M Y') }}</span>)</div>
+                <div style="font-size:1.125rem;font-weight:700;color:var(--info);">
                     <span id="total-durasi-display">{{ number_format($totalDurasiBulanIni, 1) }}</span> jam
                 </div>
             </div>
-
-            <div id="selisih-box" class="border px-6 py-3 rounded shadow text-sm 
-                {{ $selisih >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300' }}">
-                <div class="text-gray-600 text-xs mb-2" style="margin-bottom: 0.5rem;">Selisih</div>
-                <div id="selisih-text"
-                    class="text-base font-semibold {{ $selisih >= 0 ? 'text-green-700' : 'text-red-700' }}">
+            <div class="card" style="flex:1;min-width:160px;border-left:4px solid {{ $selisih >= 0 ? 'var(--success)' : 'var(--danger)' }};">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Selisih</div>
+                <div style="font-size:1.125rem;font-weight:700;color:{{ $selisih >= 0 ? 'var(--success)' : 'var(--danger)' }};">
                     {{ $selisih >= 0 ? '+' : '' }}<span id="selisih-display">{{ number_format($selisih, 1) }}</span> jam
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="flex flex-wrap gap-6 mb-10 items-center" style="gap: 1.5rem; margin-bottom: 0.2rem;">
-        <div class="text-sm font-semibold text-gray-600 mr-2">Jam per Kategori:</div>
-        <div class="bg-purple-100 border border-purple-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-purple-700 font-semibold">Produksi: <span id="jam-produksi">0</span> jam</span>
-        </div>
-        <div class="bg-orange-100 border border-orange-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-orange-700 font-semibold">Maintenance: <span id="jam-maintenance">0</span> jam</span>
-        </div>
-        <div class="bg-teal-100 border border-teal-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-teal-700 font-semibold">Kaizen: <span id="jam-kaizen">0</span> jam</span>
-        </div>
-        <div class="bg-yellow-100 border border-yellow-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-yellow-700 font-semibold">5S: <span id="jam-5s">0</span> jam</span>
-        </div>
-            <div class="bg-indigo-100 border border-indigo-300 px-4 py-2 rounded shadow text-sm">
-                <span class="text-indigo-700 font-semibold">Leader/PIC: <span id="jam-leader">0</span> jam</span>
-            </div>
-        </section>
+    <section class="flex flex-wrap gap-3 mb-4 items-center">
+        <span class="badge badge-pink" style="font-size:0.875rem;padding:0.4rem 1rem;">Produksi: <span id="jam-produksi">0</span> jam</span>
+        <span class="badge badge-warning" style="font-size:0.875rem;padding:0.4rem 1rem;">Maintenance: <span id="jam-maintenance">0</span> jam</span>
+        <span class="badge badge-success" style="font-size:0.875rem;padding:0.4rem 1rem;">Kaizen: <span id="jam-kaizen">0</span> jam</span>
+        <span class="badge" style="font-size:0.875rem;padding:0.4rem 1rem;background:#e0e7ff;color:#4338ca;">5S: <span id="jam-5s">0</span> jam</span>
+        <span class="badge" style="font-size:0.875rem;padding:0.4rem 1rem;background:#e0e7ff;color:#4338ca;">Leader/PIC: <span id="jam-leader">0</span> jam</span>
+    </section>
     @endif
 
     <section class="container-table table-scroll-wrapper">

@@ -2,86 +2,11 @@
 
 @section('content')
 <style>
-    .badge-container {
-        margin: 1em 0;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 6px 12px;
-        margin: 4px 4px 8px 0;
-        font-size: 14px;
-        font-weight: bold;
-        border-radius: 12px;
-        text-transform: capitalize;
-    }
-
-    .badge-small {
-        display: inline-block;
-        padding: 3px 6px;
-        margin: 2px 2px 4px 0;
-        font-size: 10px;
-        font-weight: bold;
-        border-radius: 12px;
-        text-transform: capitalize;
-    }
-
-    .badge-submitted {
-        background-color: #ec057d;
-        color: white;
-    }
-
-    .badge-pending {
-        background-color: #ccc;
-        color: #333;
-    }
-
-    .notif-success {
-        background-color: #16a34a;
-    }
-
-    .notif-error {
-        background-color: #dc2626;
-    }
-
-    .notif-warning {
-        background-color: #f59e0b;
-        color: #000;
-    }
-
-    .table-scroll-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    @media (max-width: 640px) {
-        .table-scroll-wrapper {
-            width: max-content;
-        }
-    }
-
-    #cuti-table {
-        width: max-content;
-        min-width: 100%;
-        border-collapse: collapse;
-    }
-    #cuti-table thead tr:first-child th.sticky-col-left {
-        position: sticky;
-        left: 0;
-        z-index: 4;
-    }
-    #cuti-table thead tr:nth-child(2) th.sticky-col-left {
-        position: sticky;
-        left: 0;
-        z-index: 4;
-    }
-    div#cuti-table_wrapper .dt-layout-row {
-        align-items: center;
-    }
-    div#cuti-table_wrapper .dt-info {
-        padding-top: 6px;
-    }
+    .badge-container { margin: 1em 0; }
+    div#cuti-table_wrapper .dt-layout-row { align-items: center; }
+    div#cuti-table_wrapper .dt-info { padding-top: 6px; }
+    #cuti-table { width: max-content; min-width: 100%; border-collapse: collapse; }
+    @media (max-width: 640px) { .table-scroll-wrapper { width: max-content; } }
 </style>
 <main>
     @include('components.popupEdit')
@@ -101,44 +26,42 @@
         $isSubmitted = in_array(strtolower($team), $flatTeams);
         @endphp
 
-        <span class="badge {{ $isSubmitted ? 'badge-submitted' : 'badge-pending' }}">
+        <span class="badge {{ $isSubmitted ? 'badge-pink' : 'badge-warning' }}">
             {{ ucwords($team) }}
         </span>
         @endforeach
     </div>
 
-    <h5>
-        Leader Yang Telah Submit :
-    </h5>
-
-    <table class="table-auto w-full border border-gray-300 mt-4">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="border px-4 py-2 text-center">No</th>
-                <th class="border px-4 py-2">Nama</th>
-                <th class="border px-4 py-2">Divisi</th>
-                <th class="border px-4 py-2">Team</th>
-                <th class="border px-4 py-2">Submit Laporan</th>
-                <th class="border px-4 py-2">Update Laporan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($reportToday as $i => $report)
-            <tr>
-                <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
-                <td class="border px-4 py-2">{{ $report->user?->name ?? '-' }}</td>
-                <td class="border px-4 py-2">{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
-                <td class="border px-4 py-2">
-                    {{ is_array($report->user?->team) 
-                                ? implode(', ', $report->user->team) 
-                                : $report->user?->team ?? 'Tanpa Team' }}
-                </td>
-                <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
-                <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <div class="card">
+        <h5 style="margin-bottom:0.75rem;font-weight:600;">Leader Yang Telah Submit :</h5>
+        <div class="table-scroll-wrapper" style="border:1px solid var(--border);border-radius:var(--radius-sm);">
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>Divisi</th>
+                    <th>Team</th>
+                    <th>Submit Laporan</th>
+                    <th>Update Laporan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($reportToday as $i => $report)
+                <tr>
+                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td>{{ $report->user?->name ?? '-' }}</td>
+                    <td>{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
+                    <td>{{ is_array($report->user?->team) ? implode(', ', $report->user->team) : $report->user?->team ?? 'Tanpa Team' }}</td>
+                    <td>{{ $report->created_at->format('Y-m-d H:i') }}</td>
+                    <td>{{ $report->updated_at->format('Y-m-d H:i') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <br>
 
     <br>
     @enduserType
@@ -157,44 +80,42 @@
         $isSubmitted = in_array(strtolower($team), $flatTeams);
         @endphp
 
-        <span class="badge {{ $isSubmitted ? 'badge-submitted' : 'badge-pending' }}">
+        <span class="badge {{ $isSubmitted ? 'badge-pink' : 'badge-warning' }}">
             {{ ucwords($team) }}
         </span>
         @endforeach
     </div>
 
-    <h5>
-        Leader Yang Telah Submit :
-    </h5>
-
-    <table class="table-auto w-full border border-gray-300 mt-4">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="border px-4 py-2 text-center">No</th>
-                <th class="border px-4 py-2">Nama</th>
-                <th class="border px-4 py-2">Divisi</th>
-                <th class="border px-4 py-2">Team</th>
-                <th class="border px-4 py-2">Submit Laporan</th>
-                <th class="border px-4 py-2">Update Laporan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($reportToday as $i => $report)
-            <tr>
-                <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
-                <td class="border px-4 py-2">{{ $report->user?->name ?? '-' }}</td>
-                <td class="border px-4 py-2">{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
-                <td class="border px-4 py-2">
-                    {{ is_array($report->user?->team) 
-                                ? implode(', ', $report->user->team) 
-                                : $report->user?->team ?? 'Tanpa Team' }}
-                </td>
-                <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
-                <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <div class="card">
+        <h5 style="margin-bottom:0.75rem;font-weight:600;">Leader Yang Telah Submit :</h5>
+        <div class="table-scroll-wrapper" style="border:1px solid var(--border);border-radius:var(--radius-sm);">
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>Divisi</th>
+                    <th>Team</th>
+                    <th>Submit Laporan</th>
+                    <th>Update Laporan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($reportToday as $i => $report)
+                <tr>
+                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td>{{ $report->user?->name ?? '-' }}</td>
+                    <td>{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
+                    <td>{{ is_array($report->user?->team) ? implode(', ', $report->user->team) : $report->user?->team ?? 'Tanpa Team' }}</td>
+                    <td>{{ $report->created_at->format('Y-m-d H:i') }}</td>
+                    <td>{{ $report->updated_at->format('Y-m-d H:i') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <br>
 
     <br>
     @enduserType
@@ -213,44 +134,42 @@
         $isSubmitted = in_array(strtolower($team), $flatTeams);
         @endphp
 
-        <span class="badge {{ $isSubmitted ? 'badge-submitted' : 'badge-pending' }}">
+        <span class="badge {{ $isSubmitted ? 'badge-pink' : 'badge-warning' }}">
             {{ ucwords($team) }}
         </span>
         @endforeach
     </div>
 
-    <h5>
-        Leader Yang Telah Submit :
-    </h5>
-
-    <table class="table-auto w-full border border-gray-300 mt-4">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="border px-4 py-2 text-center">No</th>
-                <th class="border px-4 py-2">Nama</th>
-                <th class="border px-4 py-2">Divisi</th>
-                <th class="border px-4 py-2">Team</th>
-                <th class="border px-4 py-2">Submit Laporan</th>
-                <th class="border px-4 py-2">Update Laporan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($reportToday as $i => $report)
-            <tr>
-                <td class="border px-4 py-2 text-center">{{ $i + 1 }}</td>
-                <td class="border px-4 py-2">{{ $report->user?->name ?? '-' }}</td>
-                <td class="border px-4 py-2">{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
-                <td class="border px-4 py-2">
-                    {{ is_array($report->user?->team) 
-                                ? implode(', ', $report->user->team) 
-                                : $report->user?->team ?? 'Tanpa Team' }}
-                </td>
-                <td class="border px-4 py-2">{{ $report->created_at->format('Y-m-d H:i') }}</td>
-                <td class="border px-4 py-2">{{ $report->updated_at->format('Y-m-d H:i') }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <div class="card">
+        <h5 style="margin-bottom:0.75rem;font-weight:600;">Leader Yang Telah Submit :</h5>
+        <div class="table-scroll-wrapper" style="border:1px solid var(--border);border-radius:var(--radius-sm);">
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>Divisi</th>
+                    <th>Team</th>
+                    <th>Submit Laporan</th>
+                    <th>Update Laporan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($reportToday as $i => $report)
+                <tr>
+                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td>{{ $report->user?->name ?? '-' }}</td>
+                    <td>{{ $report->user?->division ?? 'Tanpa Divisi' }}</td>
+                    <td>{{ is_array($report->user?->team) ? implode(', ', $report->user->team) : $report->user?->team ?? 'Tanpa Team' }}</td>
+                    <td>{{ $report->created_at->format('Y-m-d H:i') }}</td>
+                    <td>{{ $report->updated_at->format('Y-m-d H:i') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <br>
 
     <br>
     @enduserType
@@ -348,20 +267,7 @@
         Jumlah Data: 0
     </p>
 
-    <div id="approvalNotif"
-        style="
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                padding: 20px;
-                z-index: 100;
-                color: white;
-                width: 50%;
-                max-width: 400px;
-                text-align: center;
-                border-radius: 8px;
-            ">
+    <div id="approvalNotif" class="notif-toast hidden">
         <span id="approvalNotifText"></span>
     </div>
 

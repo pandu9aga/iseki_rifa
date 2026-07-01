@@ -21,35 +21,37 @@
         </section>
 
         <!-- Filter -->
-        <form method="GET" class="mb-4 flex gap-3 flex-wrap bg-gray-50 p-3 rounded">
+        <form method="GET" class="card mb-4 flex gap-3 flex-wrap" style="padding:1rem;">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Tahun</label>
-                <select name="tahun" class="form-select mt-1" onchange="this.form.submit()">
-                    @foreach ($tahunOptions as $opt)
-                        <option value="{{ $opt }}" @selected($opt == $tahun)>{{ $opt }}</option>
-                    @endforeach
-                </select>
+                <label class="form-control" style="gap:0.25rem;">
+                    <span style="font-size:0.8125rem;font-weight:600;color:var(--text-secondary);">Tahun</span>
+                    <select name="tahun" onchange="this.form.submit()">
+                        @foreach ($tahunOptions as $opt)
+                            <option value="{{ $opt }}" @selected($opt == $tahun)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </label>
             </div>
-
             <div>
-                <label class="block text-sm font-medium text-gray-700">Divisi</label>
-                <select name="division_id" class="form-select mt-1" onchange="this.form.submit()">
-                    <option value="">Semua Divisi</option>
-                    @foreach ($divisions as $d)
-                        <option value="{{ $d->id }}" @selected($divisionId == $d->id)>
-                            {{ $d->nama }}
-                        </option>
-                    @endforeach
-                </select>
+                <label class="form-control" style="gap:0.25rem;">
+                    <span style="font-size:0.8125rem;font-weight:600;color:var(--text-secondary);">Divisi</span>
+                    <select name="division_id" onchange="this.form.submit()">
+                        <option value="">Semua Divisi</option>
+                        @foreach ($divisions as $d)
+                            <option value="{{ $d->id }}" @selected($divisionId == $d->id)>{{ $d->nama }}</option>
+                        @endforeach
+                    </select>
+                </label>
             </div>
-
             <div>
-                <label class="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" class="form-select mt-1" onchange="this.form.submit()">
-                    <option value="">Semua</option>
-                    <option value="Direct" @selected($status == 'Direct')>Direct</option>
-                    <option value="Non Direct" @selected($status == 'Non Direct')>Non Direct</option>
-                </select>
+                <label class="form-control" style="gap:0.25rem;">
+                    <span style="font-size:0.8125rem;font-weight:600;color:var(--text-secondary);">Status</span>
+                    <select name="status" onchange="this.form.submit()">
+                        <option value="">Semua</option>
+                        <option value="Direct" @selected($status == 'Direct')>Direct</option>
+                        <option value="Non Direct" @selected($status == 'Non Direct')>Non Direct</option>
+                    </select>
+                </label>
             </div>
         </form>
 

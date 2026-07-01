@@ -173,6 +173,10 @@
     const editTeam = document.getElementById('edit-team');
     const editId = document.getElementById('edit-id');
 
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.replace('flex', 'hidden');
+    }
+
     // Show Edit Modal
     document.querySelectorAll('.edit-row').forEach(button => {
         button.addEventListener('click', () => {
@@ -190,13 +194,12 @@
             editName.value = name;
             editUsername.value = username;
             editDivision.value = division;
-            editTeam.value = teamArray;
+            $('#edit-team').val(teamArray).trigger('change');
 
             showModal('editUserModal');
 
             $('#edit-type').val(type).trigger('change');
             $('#edit-division').val(division).trigger('change');
-            $('#edit-team').val(teamArray).trigger('change');
         });
     });
 
@@ -204,6 +207,7 @@
     function showModal(modalId) {
         const modal = document.getElementById(modalId);
         modal.classList.replace('hidden', 'flex');
+        if (typeof initEditUserSelect2 === 'function') initEditUserSelect2();
     }
 
     // Close modal
@@ -220,7 +224,7 @@
             username: editUsername.value,
             type: editType.value,
             division: editDivision.value,
-            team: Array.from(editTeam.selectedOptions).map(option => option.value),
+            team: $('#edit-team').val() || [],
         };
 
         const password = document.getElementById('edit-password').value;

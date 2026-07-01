@@ -9,15 +9,17 @@
     </div>
 
     {{-- Filter Tahun --}}
-    <form method="GET" class="mb-6 bg-gray-50 p-4 rounded">
+    <form method="GET" class="card mb-6" style="padding:1rem;">
         <div class="flex items-end gap-3 flex-wrap">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Tahun</label>
-                <select name="tahun" class="form-select mt-1" onchange="this.form.submit()">
-                    @for ($y = now()->year - 2; $y <= now()->year + 2; $y++)
-                        <option value="{{ $y }}" @selected($tahun==$y)>{{ $y }}</option>
+                <label class="form-control" style="gap:0.25rem;">
+                    <span style="font-size:0.8125rem;font-weight:600;color:var(--text-secondary);">Tahun</span>
+                    <select name="tahun" onchange="this.form.submit()">
+                        @for ($y = now()->year - 2; $y <= now()->year + 2; $y++)
+                            <option value="{{ $y }}" @selected($tahun==$y)>{{ $y }}</option>
                         @endfor
-                </select>
+                    </select>
+                </label>
             </div>
         </div>
     </form>

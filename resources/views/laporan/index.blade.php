@@ -67,48 +67,33 @@
 
     {{-- Ringkasan Jam per Kategori — sama persis seperti index lembur --}}
     @if(isset($breakdownKategori))
-    <section class="flex flex-wrap items-center" style="gap: 1.5rem; margin-bottom: 0.5rem;">
-        <div class="text-sm font-semibold text-gray-600">Jam per Kategori:</div>
-        <div class="bg-purple-100 border border-purple-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-purple-700 font-semibold">Produksi: {{ number_format($breakdownKategori['Produksi'] ?? 0, 1) }} jam</span>
-        </div>
-        <div class="bg-orange-100 border border-orange-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-orange-700 font-semibold">Maintenance: {{ number_format($breakdownKategori['Maintenance'] ?? 0, 1) }} jam</span>
-        </div>
-        <div class="bg-teal-100 border border-teal-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-teal-700 font-semibold">Kaizen: {{ number_format($breakdownKategori['Kaizen'] ?? 0, 1) }} jam</span>
-        </div>
-        <div class="bg-yellow-100 border border-yellow-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-yellow-700 font-semibold">5S: {{ number_format($breakdownKategori['5S'] ?? 0, 1) }} jam</span>
-        </div>
-        <div class="bg-indigo-100 border border-indigo-300 px-4 py-2 rounded shadow text-sm">
-            <span class="text-indigo-700 font-semibold">Leader/PIC: {{ number_format($breakdownKategori['Pekerjaan Leader/PIC Lembur'] ?? 0, 1) }} jam</span>
-        </div>
+    <section class="flex flex-wrap gap-3 items-center mb-4">
+        <span class="badge badge-pink" style="font-size:0.875rem;padding:0.4rem 1rem;">Produksi: {{ number_format($breakdownKategori['Produksi'] ?? 0, 1) }} jam</span>
+        <span class="badge badge-warning" style="font-size:0.875rem;padding:0.4rem 1rem;">Maintenance: {{ number_format($breakdownKategori['Maintenance'] ?? 0, 1) }} jam</span>
+        <span class="badge badge-success" style="font-size:0.875rem;padding:0.4rem 1rem;">Kaizen: {{ number_format($breakdownKategori['Kaizen'] ?? 0, 1) }} jam</span>
+        <span class="badge" style="font-size:0.875rem;padding:0.4rem 1rem;background:#e0e7ff;color:#4338ca;">5S: {{ number_format($breakdownKategori['5S'] ?? 0, 1) }} jam</span>
+        <span class="badge" style="font-size:0.875rem;padding:0.4rem 1rem;background:#e0e7ff;color:#4338ca;">Leader/PIC: {{ number_format($breakdownKategori['Pekerjaan Leader/PIC Lembur'] ?? 0, 1) }} jam</span>
     </section>
     @endif
 
     {{-- Kotak Informasi Budget & Durasi (hanya tampil jika bulan dipilih) --}}
     @if(!empty($bulan) && isset($bulanList[$bulan]))
-    <section class="flex flex-wrap items-center" style="gap: 2rem; margin-bottom: 1rem; margin-top: 0.75rem;">
-        <!-- Budget Bulanan -->
-        <div class="bg-green-100 border border-green-300 px-6 py-3 rounded shadow text-sm">
-            <div class="text-gray-600 text-xs" style="margin-bottom: 0.5rem;">Budget ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
-            <div class="text-green-700 text-base font-semibold">
+    <section class="flex flex-wrap gap-4 mb-4 mt-3">
+        <div class="card" style="flex:1;min-width:160px;border-left:4px solid var(--success);">
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Budget ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
+            <div style="font-size:1.125rem;font-weight:700;color:var(--success);">
                 {{ number_format($budgetBulanan, 1) }} jam
             </div>
         </div>
-        <!-- Total Durasi Bulanan -->
-        <div class="bg-blue-100 border border-blue-300 px-6 py-3 rounded shadow text-sm">
-            <div class="text-gray-600 text-xs" style="margin-bottom: 0.5rem;">Total Durasi ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
-            <div class="text-blue-700 text-base font-semibold">
+        <div class="card" style="flex:1;min-width:160px;border-left:4px solid var(--info);">
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Total Durasi ({{ $bulanList[$bulan] }} {{ $tahun }})</div>
+            <div style="font-size:1.125rem;font-weight:700;color:var(--info);">
                 {{ number_format($totalDurasiBulanan, 1) }} jam
             </div>
         </div>
-        <!-- Selisih (Budget - Durasi) -->
-        <div class="border px-6 py-3 rounded shadow text-sm
-            {{ $selisihBudget >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300' }}">
-            <div class="text-gray-600 text-xs" style="margin-bottom: 0.5rem;">Selisih</div>
-            <div class="text-base font-semibold {{ $selisihBudget >= 0 ? 'text-green-700' : 'text-red-700' }}">
+        <div class="card" style="flex:1;min-width:160px;border-left:4px solid {{ $selisihBudget >= 0 ? 'var(--success)' : 'var(--danger)' }};">
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Selisih</div>
+            <div style="font-size:1.125rem;font-weight:700;color:{{ $selisihBudget >= 0 ? 'var(--success)' : 'var(--danger)' }};">
                 {{ $selisihBudget >= 0 ? '+' : '' }}{{ number_format($selisihBudget, 1) }} jam
             </div>
         </div>

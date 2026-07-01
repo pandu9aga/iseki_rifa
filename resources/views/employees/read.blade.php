@@ -25,14 +25,16 @@
         </section>
 
         <!-- 🔸 FILTER TAHUN -->
-        <form method="GET" class="mb-4 flex gap-3 flex-wrap bg-gray-50 p-3 rounded">
+        <form method="GET" class="card mb-4 flex gap-3 flex-wrap" style="padding:1rem;">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Tahun Penilaian</label>
-                <select name="tahun" class="form-select mt-1" onchange="this.form.submit()">
-                    @foreach ($tahunOptions as $opt)
-                        <option value="{{ $opt }}" @selected($opt == $tahun)>{{ $opt }}</option>
-                    @endforeach
-                </select>
+                <label class="form-control" style="gap:0.25rem;">
+                    <span style="font-size:0.8125rem;font-weight:600;color:var(--text-secondary);">Tahun Penilaian</span>
+                    <select name="tahun" onchange="this.form.submit()">
+                        @foreach ($tahunOptions as $opt)
+                            <option value="{{ $opt }}" @selected($opt == $tahun)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </label>
             </div>
         </form>
 

@@ -72,8 +72,7 @@ class UserController extends Controller
             'username' => 'required|string|unique:users,username,' . $id,
             'type' => 'required|string',
             'division' => 'nullable|string',
-            'team' => 'nullable|array',
-            'team.*' => 'nullable|string',
+            'team' => 'nullable',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -81,7 +80,8 @@ class UserController extends Controller
         $user->username = $validated['username'];
         $user->type = $validated['type'];
         $user->division = $validated['division'] ?? null;
-        $user->team = $validated['team'] ?? null;
+        $team = $validated['team'] ?? null;
+        $user->team = is_string($team) ? array_map('trim', explode(',', $team)) : $team;
 
         // Jika password diisi, update dan hash
         if (!empty($validated['password'])) {

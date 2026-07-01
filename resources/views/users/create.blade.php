@@ -121,7 +121,7 @@
 
     document.getElementById('user-form').addEventListener('submit', function(e) {
         const errorText = document.getElementById('error-text');
-        const typeInputs = document.querySelectorAll('input[name="type[]"]');
+        const typeInputs = document.querySelectorAll('select[name="type[]"]');
         const namaInputs = document.querySelectorAll('input[name="nama[]"]');
         const usernameInputs = document.querySelectorAll('input[name="username[]"]');
         const divisiInputs = document.querySelectorAll('select[name="divisi[]"]');
