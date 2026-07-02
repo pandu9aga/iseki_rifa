@@ -132,10 +132,10 @@ class ReportingController extends Controller
                     $html .= nl2br(e($absen->keterangan)) . '<br>';
                 }
                 if ($absen->jam_masuk) {
-                    $html .= '<span class="badge badge-small badge-submitted">Jam masuk: ' . $absen->jam_masuk . '</span> ';
+                    $html .= '<span class="badge badge-small badge-primary">Jam masuk: ' . $absen->jam_masuk . '</span> ';
                 }
                 if ($absen->jam_keluar) {
-                    $html .= '<span class="badge badge-small badge-submitted">Jam keluar: ' . $absen->jam_keluar . '</span> ';
+                    $html .= '<span class="badge badge-small badge-primary">Jam keluar: ' . $absen->jam_keluar . '</span> ';
                 }
                 if (!$absen->keterangan && !$absen->jam_masuk && !$absen->jam_keluar) {
                     $html = '-';
