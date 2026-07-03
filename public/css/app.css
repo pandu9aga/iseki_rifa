@@ -84,11 +84,32 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+#particle-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.bg-particle {
+    position: absolute;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    filter: blur(4px);
+    pointer-events: none;
+    will-change: transform;
+}
+
 .content {
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     flex: 1;
+    position: relative;
+    z-index: 2;
 }
 
 header {
