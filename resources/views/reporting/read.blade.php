@@ -730,6 +730,10 @@
                 editJamKeluar.value = '';
 
                 showModal(editModal);
+                if ($('#edit-jenis').hasClass('select2-hidden-accessible')) {
+                    $('#edit-jenis').select2('destroy');
+                }
+                $('#edit-jenis').select2({ dropdownParent: $('#editModal .modal-content') });
                 $('#edit-jenis').val(jenis).trigger('change');
             });
         });

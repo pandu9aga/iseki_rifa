@@ -57,9 +57,3 @@
         </form>
     </div>
 </div>
-
-<script>
-    $('#edit-jenis').select2({
-        dropdownParent: $('#editModal .modal-content')
-    });
-</script>
