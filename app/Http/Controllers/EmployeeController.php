@@ -89,7 +89,21 @@ class EmployeeController extends Controller
         $divisionList = $request->input('divisi', []);
         $teamList = $request->input('team', []);
 
+        $destinationPath = public_path('photo_employee');
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
+        }
+
         foreach ($namaList as $index => $nama) {
+            $photoName = null;
+            if ($request->hasFile("photo_employee.$index")) {
+                $file = $request->file("photo_employee.$index");
+                if ($file->isValid()) {
+                    $photoName = time() . '_' . $index . '_' . Str::slug($nama) . '.' . $file->getClientOriginalExtension();
+                    $file->move($destinationPath, $photoName);
+                }
+            }
+
             Employee::create([
                 'nama' => $nama,
                 'nik' => $nikList[$index] ?? null,
@@ -97,6 +111,7 @@ class EmployeeController extends Controller
                 'status' => $statusList[$index] ?? null,
                 'division_id' => $divisionList[$index] ?? null,
                 'team' => $teamList[$index] ?? null,
+                'photo_employee' => $photoName,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -115,6 +130,7 @@ class EmployeeController extends Controller
         $request->validate([
             'nama' => 'required|string',
             'password' => 'nullable|string|max:3', // Validasi maksimal 3 karakter
+            'photo_employee' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:4096',
         ]);
 
         $employee = Employee::findOrFail($id);
@@ -126,15 +142,37 @@ class EmployeeController extends Controller
         }
 
         $division = Division::where('nama', $request->divisi)->first();
-        $employee->update([
+        
+        $updateData = [
             'nama' => $request->nama,
             'nik' => $nik,
-            'password' => $request->password, // Update password jika diisi
             'status' => $request->status ?? null,
             'division_id' => $division->id ?? null,
             'team' => $request->team ?? null,
             'updated_at' => now(),
-        ]);
+        ];
+
+        if ($request->filled('password')) {
+            $updateData['password'] = $request->password;
+        }
+
+        if ($request->hasFile('photo_employee')) {
+            $destinationPath = public_path('photo_employee');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            if ($employee->photo_employee && file_exists($destinationPath . '/' . $employee->photo_employee)) {
+                @unlink($destinationPath . '/' . $employee->photo_employee);
+            }
+
+            $file = $request->file('photo_employee');
+            $photoName = time() . '_' . Str::slug($request->nama) . '.' . $file->getClientOriginalExtension();
+            $file->move($destinationPath, $photoName);
+            $updateData['photo_employee'] = $photoName;
+        }
+
+        $employee->update($updateData);
 
         return response()->json(['message' => 'Data berhasil diupdate.'], 200);
     }

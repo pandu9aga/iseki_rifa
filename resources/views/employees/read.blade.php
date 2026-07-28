@@ -4,6 +4,7 @@
     <main>
         @include('components.popupEditEmployee')
         @include('components.popupDelete')
+        @include('components.popupPreviewEmployeePhoto')
 
         <section class="title-button d-flex flex-row justify-between items-center mb-4">
             <div>
@@ -55,6 +56,7 @@
                 <thead class="bg-gray-100">
                     <tr>
                         <th rowspan="2" class="px-3 py-2 text-left">No</th>
+                        <th rowspan="2" class="px-3 py-2 text-left">Foto</th>
                         <th class="px-3 py-2 text-left">Nama</th>
                         <th class="px-3 py-2 text-left">Nilai</th>
                         <th class="px-3 py-2 text-left">NIK</th>
@@ -65,21 +67,21 @@
                         <th rowspan="2" class="px-3 py-2 text-left sticky-col-right">Aksi</th>
                     </tr>
                     <tr>
-                        <th><input class="filter w-full px-2 py-1 border rounded" data-column="1" type="text"
-                                placeholder="Cari Nama" /></th>
                         <th><input class="filter w-full px-2 py-1 border rounded" data-column="2" type="text"
-                                placeholder="Cari Nilai" /></th>
+                                placeholder="Cari Nama" /></th>
                         <th><input class="filter w-full px-2 py-1 border rounded" data-column="3" type="text"
+                                placeholder="Cari Nilai" /></th>
+                        <th><input class="filter w-full px-2 py-1 border rounded" data-column="4" type="text"
                                 placeholder="Cari NIK" /></th>
                         <th>
-                            <select class="filter w-full px-2 py-1 border rounded" data-column="4" data-exact="true">
+                            <select class="filter w-full px-2 py-1 border rounded" data-column="5" data-exact="true">
                                 <option value="">Semua</option>
                                 <option value="Direct">Direct</option>
                                 <option value="Non Direct">Non Direct</option>
                             </select>
                         </th>
                         <th>
-                            <select class="filter w-full px-2 py-1 border rounded" data-column="5" data-exact="true">
+                            <select class="filter w-full px-2 py-1 border rounded" data-column="6" data-exact="true">
                                 <option value="">Semua Divisi</option>
                                 @foreach ($divisions as $division)
                                     <option value="{{ $division->nama }}">{{ $division->nama }}</option>
@@ -87,20 +89,36 @@
                             </select>
                         </th>
                         <th>
-                            <input class="filter w-full px-2 py-1 border rounded" data-column="6" type="text"
+                            <input class="filter w-full px-2 py-1 border rounded" data-column="7" type="text"
                                 placeholder="Cari Tim" />
                         </th>
                         <th>
-                            <input class="filter w-full px-2 py-1 border rounded" data-column="7" type="text"
+                            <input class="filter w-full px-2 py-1 border rounded" data-column="8" type="text"
                                 placeholder="Cari Password" />
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($employees as $index => $employee)
-                        <tr data-id="{{ $employee->id }}" class="border-t hover:bg-gray-50">
+                        <tr data-id="{{ $employee->id }}"
+                            data-nama="{{ $employee->nama ?? '-' }}"
+                            data-nik="{{ $employee->nik ?? '-' }}"
+                            data-divisi="{{ $employee->division?->nama ?? '-' }}"
+                            data-team="{{ $employee->team ?? '-' }}"
+                            data-status="{{ $employee->status ?? '-' }}"
+                            data-photo="{{ $employee->photo_url }}"
+                            class="border-t hover:bg-gray-50">
                             <td class="px-3 py-2 number">{{ $index + 1 }}</td>
-                            <td class="px-3 py-2">{{ $employee->nama ?? '-' }}</td>
+                            <td class="px-3 py-2 preview-photo-btn cursor-pointer" title="Klik untuk preview foto {{ $employee->nama }}">
+                                @if ($employee->photo_url)
+                                    <img src="{{ $employee->photo_url }}" alt="{{ $employee->nama }}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #e5e7eb; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                                @else
+                                    <div style="width:40px; height:40px; border-radius:50%; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#9ca3af; border:1px solid #e5e7eb; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                                        <i class="material-symbols-rounded" style="font-size:20px;">person</i>
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="px-3 py-2 font-medium">{{ $employee->nama ?? '-' }}</td>
                             <td class="px-3 py-2">{{ $employee->nilaiTahunan->first()?->nilai ?? '-' }}</td>
                             <td class="px-3 py-2">{{ $employee->nik ?? '-' }}</td>
                             <td class="px-3 py-2">{{ $employee->status ?? '-' }}</td>
@@ -109,7 +127,10 @@
                             <td class="px-3 py-2">{{ $employee->password ?? '-' }}</td>
                             <td class="px-3 py-2 sticky-col-right">
                                 <div class="btn-group flex gap-1">
-                                    <button type="button" class="btn btn-icon edit-row">
+                                    <button type="button" class="btn btn-icon preview-photo-btn" title="Preview Foto">
+                                        <i class="material-symbols-rounded text-purple-600">visibility</i>
+                                    </button>
+                                    <button type="button" class="btn btn-icon edit-row" title="Edit">
                                         <i class="material-symbols-rounded text-blue-600">edit_square</i>
                                     </button>
                                     <button type="button" class="btn btn-icon"
@@ -123,7 +144,7 @@
 
                     @if ($employees->isEmpty())
                         <tr>
-                            <td colspan="8" class="text-center py-6 text-gray-500">Tidak ada data karyawan.</td>
+                            <td colspan="10" class="text-center py-6 text-gray-500">Tidak ada data karyawan.</td>
                         </tr>
                     @endif
                 </tbody>
@@ -241,12 +262,13 @@
                     const cells = row.querySelectorAll('td');
 
                     const id = row.dataset.id;
-                    const nama = cells[1].textContent;
-                    const nik = cells[3].textContent;
-                    const status = cells[4].textContent;
-                    const divisi = cells[5].textContent;
-                    const team = cells[6].textContent === '-' ? '' : cells[6].textContent;
-                    const password = cells[7].textContent;
+                    const photoUrl = row.dataset.photo;
+                    const nama = cells[2].textContent.trim();
+                    const nik = cells[4].textContent.trim();
+                    const status = cells[5].textContent.trim();
+                    const divisi = cells[6].textContent.trim();
+                    const team = cells[7].textContent.trim() === '-' ? '' : cells[7].textContent.trim();
+                    const password = cells[8].textContent.trim();
 
                     document.getElementById('edit-employee-id').value = id;
                     document.getElementById('edit-employee-nama').value = nama;
@@ -256,39 +278,50 @@
                     document.getElementById('edit-employee-team').value = team;
                     document.getElementById('edit-employee-password').value = password;
 
+                    const photoInput = document.getElementById('edit-employee-photo');
+                    if (photoInput) photoInput.value = '';
+
+                    const previewImg = document.getElementById('edit-photo-preview');
+                    const placeholder = document.getElementById('edit-photo-placeholder');
+                    if (photoUrl) {
+                        previewImg.src = photoUrl;
+                        previewImg.style.display = 'block';
+                        previewImg.classList.remove('hidden');
+                        if (placeholder) placeholder.style.display = 'none';
+                    } else {
+                        previewImg.src = '';
+                        previewImg.style.display = 'none';
+                        previewImg.classList.add('hidden');
+                        if (placeholder) placeholder.style.display = 'flex';
+                    }
+
                     document.getElementById('editEmployeeModal').classList.replace('hidden',
                         'flex');
                 });
             });
 
-                            // Update nomor urut di kolom No setelah hapus baris
-                function updateRowNumbers() {
-                    const numbers = document.querySelectorAll('#employees-table tbody tr .number');
-                    numbers.forEach((cell, index) => {
-                        cell.textContent = index + 1;
-                    });
-                }
-
+            // Update nomor urut di kolom No setelah hapus baris
+            function updateRowNumbers() {
+                const numbers = document.querySelectorAll('#employees-table tbody tr .number');
+                numbers.forEach((cell, index) => {
+                    cell.textContent = index + 1;
+                });
+            }
 
             document.getElementById('editEmployeeForm')?.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const id = document.getElementById('edit-employee-id').value;
-                const data = {
-                    nama: document.getElementById('edit-employee-nama').value,
-                    nik: document.getElementById('edit-employee-nik').value,
-                    status: document.getElementById('edit-employee-status').value,
-                    divisi: document.getElementById('edit-employee-divisi').value,
-                    team: document.getElementById('edit-employee-team').value,
-                    password: document.getElementById('edit-employee-password').value,
-                };
+                const form = document.getElementById('editEmployeeForm');
+                const formData = new FormData(form);
+                formData.append('_method', 'PUT');
 
                 fetch(`/iseki_rifa/public/employees/${id}`, {
-                        method: 'PUT',
+                        method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': csrfToken,
-                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                         },
-                        body: JSON.stringify(data),
+                        body: formData,
                     })
                     .then(response => {
                         if (response.ok) {
@@ -298,6 +331,118 @@
                         }
                     })
                     .catch(() => alert('Terjadi kesalahan saat menyimpan'));
+            });
+
+            // ==== PREVIEW FOTO MODAL ====
+            let currentPhotoIndex = -1;
+            let visiblePhotoRows = [];
+
+            function getVisibleEmployeeRows() {
+                return Array.from(document.querySelectorAll('#employees-table tbody tr')).filter(row => {
+                    return row.style.display !== 'none' && row.dataset && row.dataset.id;
+                });
+            }
+
+            function updatePhotoPreviewContent(index) {
+                visiblePhotoRows = getVisibleEmployeeRows();
+                if (visiblePhotoRows.length === 0 || index < 0 || index >= visiblePhotoRows.length) return;
+
+                currentPhotoIndex = index;
+                const row = visiblePhotoRows[currentPhotoIndex];
+
+                const nama = row.dataset.nama || '-';
+                const nik = row.dataset.nik || '-';
+                const divisi = row.dataset.divisi || '-';
+                const team = row.dataset.team || '-';
+                const status = row.dataset.status || '-';
+                const photoUrl = row.dataset.photo;
+
+                document.getElementById('preview-employee-nama').textContent = nama;
+                document.getElementById('preview-employee-nik').textContent = `NIK: ${nik}`;
+                document.getElementById('preview-employee-divisi').textContent = `Divisi: ${divisi}`;
+                document.getElementById('preview-employee-team').textContent = team;
+                document.getElementById('preview-employee-status').textContent = status;
+                document.getElementById('preview-counter').textContent = `Pegawai ${currentPhotoIndex + 1} dari ${visiblePhotoRows.length}`;
+
+                const imgEl = document.getElementById('preview-employee-img');
+                const placeholderEl = document.getElementById('preview-employee-placeholder');
+
+                if (photoUrl && photoUrl.trim() !== '') {
+                    imgEl.src = photoUrl;
+                    imgEl.style.display = 'block';
+                    placeholderEl.style.display = 'none';
+                } else {
+                    imgEl.src = '';
+                    imgEl.style.display = 'none';
+                    placeholderEl.style.display = 'flex';
+                }
+
+                // Update status tombol Navigasi
+                const isFirst = currentPhotoIndex === 0;
+                const isLast = currentPhotoIndex === visiblePhotoRows.length - 1;
+
+                ['btn-prev-photo', 'btn-prev-photo-footer'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) {
+                        btn.disabled = isFirst;
+                        btn.style.opacity = isFirst ? '0.35' : '1';
+                        btn.style.cursor = isFirst ? 'not-allowed' : 'pointer';
+                    }
+                });
+
+                ['btn-next-photo', 'btn-next-photo-footer'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) {
+                        btn.disabled = isLast;
+                        btn.style.opacity = isLast ? '0.35' : '1';
+                        btn.style.cursor = isLast ? 'not-allowed' : 'pointer';
+                    }
+                });
+            }
+
+            window.openPhotoPreviewModal = function(row) {
+                visiblePhotoRows = getVisibleEmployeeRows();
+                const index = visiblePhotoRows.indexOf(row);
+                if (index !== -1) {
+                    updatePhotoPreviewContent(index);
+                    const modal = document.getElementById('previewEmployeePhotoModal');
+                    if (modal) modal.classList.replace('hidden', 'flex');
+                }
+            };
+
+            window.closePhotoPreviewModal = function() {
+                const modal = document.getElementById('previewEmployeePhotoModal');
+                if (modal) modal.classList.replace('flex', 'hidden');
+            };
+
+            window.navigatePhotoPreview = function(direction) {
+                const nextIndex = currentPhotoIndex + direction;
+                if (nextIndex >= 0 && nextIndex < visiblePhotoRows.length) {
+                    updatePhotoPreviewContent(nextIndex);
+                }
+            };
+
+            // Event listener klik pada foto atau tombol preview
+            document.querySelectorAll('.preview-photo-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const row = btn.closest('tr');
+                    if (row) openPhotoPreviewModal(row);
+                });
+            });
+
+            // Shortcut Keyboard (Panah Kiri, Panah Kanan, Escape)
+            document.addEventListener('keydown', function(e) {
+                const modal = document.getElementById('previewEmployeePhotoModal');
+                if (!modal || modal.classList.contains('hidden')) return;
+
+                if (e.key === 'ArrowLeft') {
+                    navigatePhotoPreview(-1);
+                } else if (e.key === 'ArrowRight') {
+                    navigatePhotoPreview(1);
+                } else if (e.key === 'Escape') {
+                    closePhotoPreviewModal();
+                }
             });
         });
     </script>

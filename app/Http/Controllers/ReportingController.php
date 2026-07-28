@@ -35,15 +35,21 @@ class ReportingController extends Controller
             ->get();
 
         // Ambil data status dari mirai
-        $miraiAttendances = DB::connection('mirai')->table('attendances')
-            ->whereIn('id_rifa', $absensis->pluck('id'))
-            ->get()
-            ->keyBy('id_rifa');
+        try {
+            $miraiAttendances = DB::connection('mirai')->table('attendances')
+                ->whereIn('id_rifa', $absensis->pluck('id'))
+                ->get()
+                ->keyBy('id_rifa');
 
-        $miraiLeaves = DB::connection('mirai')->table('leaves')
-            ->whereIn('id_rifa', $absensis->pluck('id'))
-            ->get()
-            ->keyBy('id_rifa');
+            $miraiLeaves = DB::connection('mirai')->table('leaves')
+                ->whereIn('id_rifa', $absensis->pluck('id'))
+                ->get()
+                ->keyBy('id_rifa');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Gagal terhubung ke DB Mirai pada ReportingController: ' . $e->getMessage());
+            $miraiAttendances = collect();
+            $miraiLeaves = collect();
+        }
 
         foreach ($absensis as $absen) {
             $miraiStatus = null;

@@ -10,13 +10,14 @@
     <p class="text-sm flex w-full justify-end">Jumlah Data:&nbsp;<span id="jumlah-data">{{ old('nama') ? count(old('nama')) : 1 }}</span></p>
 
 
-    <form action="{{ route('employees.store') }}" method="POST" id="employee-form" class="g-5">
+    <form action="{{ route('employees.store') }}" method="POST" enctype="multipart/form-data" id="employee-form" class="g-5">
         @csrf
         <section class="container-table">
             <table id="employees-table">
                 <thead class="bg-gray-200">
                     <tr>
                         <th class="table-cell w-4">No</th>
+                        <th class="table-cell w-20">Foto</th>
                         <th class="table-cell w-31">Nama</th>
                         <th class="table-cell w-16">Nik</th>
                         <th class="table-cell w-16">Status</th>
@@ -28,6 +29,9 @@
                 <tbody>
                     <tr>
                         <td class="number">1</td>
+                        <td>
+                            <input type="file" name="photo_employee[0]" accept="image/*" class="photo_employee text-xs w-full">
+                        </td>
                         <td>
                             <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama...">
                             <span id="error" class="text-red-500"></span>
@@ -63,7 +67,7 @@
                         </td>
                     </tr>
                     <tr id="row-button" class="hover-none">
-                        <td colspan="7">
+                        <td colspan="8">
                             <button type="button" id="add-row" class="btn btn-secondary">
                                 <i class="material-symbols-rounded btn-primary">
                                     add
@@ -94,6 +98,8 @@
         rows.forEach((row, index) => {
             const noCell = row.querySelector('td.number');
             if (noCell) noCell.textContent = index + 1;
+            const photoInput = row.querySelector('input.photo_employee');
+            if (photoInput) photoInput.name = `photo_employee[${index}]`;
         });
         updateJumlahData();
     }
@@ -138,12 +144,6 @@
             }
         });
 
-        // teamInputs.forEach((select) => {
-        //     if (!select.value) {
-        //         isValid = false;
-        //     }
-        // });
-
         if (!isValid) {
             e.preventDefault();
             errorText.classList.remove('hidden');
@@ -160,9 +160,13 @@
 
     // Fungsi untuk membuat baris baru
     function addRow() {
+        const rowCount = tableBody.querySelectorAll('tr:not(#row-button)').length;
         const row = document.createElement('tr');
         row.innerHTML = `
             <td class="number"></td>
+            <td>
+                <input type="file" name="photo_employee[${rowCount}]" accept="image/*" class="photo_employee text-xs w-full">
+            </td>
             <td>
                 <input type="text" name="nama[]" class="nama w-full" autocomplete="off" placeholder="Masukkan nama..." list="nama_datalist">
                 <p class="error-help hidden"></p>
