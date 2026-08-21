@@ -96,6 +96,12 @@
                     {{ $selisih >= 0 ? '+' : '' }}<span id="selisih-display">{{ number_format($selisih, 1) }}</span> jam
                 </div>
             </div>
+            <div class="card" id="card-durasi-hari" style="display:none; flex:1;min-width:160px;border-left:4px solid var(--primary);">
+                <div id="label-durasi-hari" style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Total Durasi (Hari)</div>
+                <div style="font-size:1.125rem;font-weight:700;color:var(--primary);">
+                    <span id="total-durasi-hari-display">0.0</span> jam
+                </div>
+            </div>
         </div>
     </section>
 
@@ -490,6 +496,26 @@
                 if (data.totalDurasi !== undefined) {
                     document.getElementById('total-durasi-display').textContent = data.totalDurasi.toFixed(1);
                 }
+                
+                // --- LOGIKA CARD KE-4 (HARIAN) ---
+                if (data.totalDurasiHari !== null && data.totalDurasiHari !== undefined) {
+                    document.getElementById('card-durasi-hari').style.display = 'flex';
+                    document.getElementById('total-durasi-hari-display').textContent = data.totalDurasiHari.toFixed(1);
+                    
+                    // Format tanggal (contoh: "8 Agustus 2026")
+                    if (data.tanggalReferensi) {
+                        const dateObj = new Date(data.tanggalReferensi);
+                        const day = dateObj.getDate();
+                        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                        const monthName = monthNames[dateObj.getMonth()];
+                        const year = dateObj.getFullYear();
+                        document.getElementById('label-durasi-hari').textContent = `Total Durasi (${day} ${monthName} ${year})`;
+                    }
+                } else {
+                    document.getElementById('card-durasi-hari').style.display = 'none';
+                }
+                // ----------------------------------
+
                 if (data.budgetValue !== undefined) {
                     document.getElementById('budget-display').textContent = data.budgetValue.toFixed(1);
                 }

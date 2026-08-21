@@ -41,8 +41,14 @@ class LemburController extends Controller
         $startOfMonth = Carbon::parse($bulanReferensi)->startOfMonth();
         $endOfMonth = Carbon::parse($bulanReferensi)->endOfMonth();
 
-        $totalDurasiBulanIni = Lembur::whereBetween('tanggal_lembur', [$startOfMonth, $endOfMonth])
-            ->sum('durasi_lembur');
+        $monthlyQuery = Lembur::whereBetween('tanggal_lembur', [$startOfMonth, $endOfMonth]);
+        if (session()->has('employee_login') && session('employee_login')) {
+            $nik = session('employee_user')->username;
+            $monthlyQuery->whereHas('employee', function ($q) use ($nik) {
+                $q->where('nik', $nik);
+            });
+        }
+        $totalDurasiBulanIni = $monthlyQuery->sum('durasi_lembur');
 
         // === AMBIL BUDGET BULAN INI ===
         $budgetRecord = Budget::where('Tanggal_Budget', $bulanReferensi)->first();
@@ -263,9 +269,16 @@ class LemburController extends Controller
             });
         }
 
+        // Simpan query dasar untuk perhitungan bulanan
+        $monthlyQuery = clone $query;
+        $totalDurasiHari = null;
+        $tanggalReferensi = null;
+
         if ($tanggal) {
             $query->whereDate('tanggal_lembur', $tanggal);
             $bulanReferensi = date('Y-m', strtotime($tanggal));
+            $totalDurasiHari = (float) $query->sum('durasi_lembur');
+            $tanggalReferensi = $tanggal;
         } elseif ($bulan && $tahun) {
             $startOfMonth = Carbon::create($tahun, $bulan, 1)->startOfMonth();
             $endOfMonth = Carbon::create($tahun, $bulan, 1)->endOfMonth();
@@ -278,7 +291,12 @@ class LemburController extends Controller
             $query->whereBetween('tanggal_lembur', [$startOfMonth, $endOfMonth]);
         }
 
-        $totalDurasi = (float) $query->sum('durasi_lembur');
+        // Hitung total durasi bulanan (paten)
+        $startOfMonthRef = Carbon::parse($bulanReferensi)->startOfMonth();
+        $endOfMonthRef = Carbon::parse($bulanReferensi)->endOfMonth();
+        $totalDurasi = (float) (clone $monthlyQuery)
+            ->whereBetween('tanggal_lembur', [$startOfMonthRef, $endOfMonthRef])
+            ->sum('durasi_lembur');
 
         $budgetRecord = Budget::where('Tanggal_Budget', $bulanReferensi)->first();
         $budgetValue = (float) ($budgetRecord?->Jumlah_Budget ?? 0);
@@ -315,6 +333,8 @@ class LemburController extends Controller
 
         return response()->json([
             'totalDurasi' => $totalDurasi,
+            'totalDurasiHari' => $totalDurasiHari,
+            'tanggalReferensi' => $tanggalReferensi,
             'budgetValue' => $budgetValue,
             'selisih' => $selisih,
             'jamProduksi' => $jamProduksi,
@@ -1104,5 +1124,219 @@ class LemburController extends Controller
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $fileName);
+    }
+
+    /**
+     * Export Bulanan PDF — format sama persis dengan Excel, hanya format PDF.
+     */
+    public function exportBulananPdf(Request $request)
+    {
+        $tahun = $request->get('tahun', now()->year);
+        $bulan = $request->get('bulan', now()->month);
+
+        if (!is_numeric($bulan) || $bulan < 1 || $bulan > 12) {
+            $bulan = now()->month;
+        }
+        if (!is_numeric($tahun) || $tahun < 2000 || $tahun > now()->year + 1) {
+            $tahun = now()->year;
+        }
+
+        $bulanList = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $bulanNama = $bulanList[(int)$bulan];
+
+        $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+        $endDate   = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
+
+        $lemburs = Lembur::with(['employee', 'employee.division'])
+            ->whereHas('employee')
+            ->whereBetween('tanggal_lembur', [$startDate->toDateString(), $endDate->toDateString()])
+            ->orderBy('tanggal_lembur', 'asc')
+            ->orderBy('id_lembur', 'asc')
+            ->get();
+
+        if ($lemburs->isEmpty()) {
+            return back()->with('error', "Tidak ada data lembur untuk {$bulanNama} {$tahun}.");
+        }
+
+        // Group per tanggal, lalu chunk 24 per halaman
+        $groupedData = $lemburs->groupBy(function ($item) {
+            return Carbon::parse($item->tanggal_lembur)->format('Y-m-d');
+        })->map(function ($items) {
+            return $items->chunk(24);
+        });
+
+        // Build HTML dengan format sama persis Excel
+        $html = $this->buildSaranPdfHtml($groupedData, $bulan, $tahun, $bulanNama, $bulanList);
+
+        $mpdf = new \Mpdf\Mpdf([
+            'format' => 'A4',
+            'orientation' => 'P',
+            'default_font' => 'serif',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+        ]);
+
+        $mpdf->WriteHTML($html);
+        $fileName = "Laporan_Lembur_Bulanan_{$bulanNama}_{$tahun}.pdf";
+        return $mpdf->Output($fileName, 'I');
+    }
+
+    /**
+     * Build HTML table dengan format sama persis Excel export.
+     */
+    private function buildSaranPdfHtml($groupedData, $bulan, $tahun, $bulanNama, $bulanList)
+    {
+        $html = '';
+        $html .= '<!DOCTYPE html>';
+        $html .= '<html lang="id">';
+        $html .= '<head>';
+        $html .= '<meta charset="UTF-8">';
+        $html .= '<style>';
+        $html .= '/* Reset & Base */';
+        $html .= 'body { font-family: "Times New Roman", Times, serif; font-size: 10pt; color: #000; background: #fff; margin: 0; padding: 0; }';
+        $html .= '.page { width: 210mm; min-height: 297mm; padding: 10mm 10mm 10mm 10mm; page-break-after: always; }';
+        $html .= '.page:last-child { page-break-after: avoid; }';
+        $html .= '.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6mm; }';
+        $html .= '.header img { height: 35px; }';
+        $html .= '.title-block { text-align: center; background: #ddd; border: 1px solid #000; padding: 4px 0; margin-bottom: 4mm; }';
+        $html .= '.title-block p { font-size: 12pt; font-weight: bold; text-decoration: underline; }';
+        $html .= '.info-row { display: flex; justify-content: space-between; margin-bottom: 4mm; gap: 10mm; margin-top: 2mm; }';
+        $html .= '.info-box { border: 1.5px solid #000; padding: 3px 6px; font-size: 9pt; min-width: 120px; }';
+        $html .= '.info-box table { border-collapse: collapse; }';
+        $html .= '.info-box td { padding: 1px 3px; }';
+        $html .= '.info-box td.sep { text-align: center; padding: 0 4px; }';
+        $html .= '';
+        $html .= '/* Data Table */';
+        $html .= 'table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }';
+        $html .= 'table.data-table th, table.data-table td { border: 1px solid #000; padding: 3px 4px; text-align: center; vertical-align: middle; font-size: 8.5pt; }';
+        $html .= 'table.data-table th { background: #ececec; font-weight: bold; }';
+        $html .= 'table.data-table td.nama { text-align: left; }';
+        $html .= 'table.data-table td.pekerjaan { text-align: left; }';
+        $html .= '.row-empty { height: 22px; }';
+        $html .= '.total-row td { font-weight: bold; background: #f5f5f5; }';
+        $html .= '';
+        $html .= '/* Perhatian */';
+        $html .= '.perhatian { margin-top: 4mm; font-size: 8pt; }';
+        $html .= '.perhatian p { margin-bottom: 2px; }';
+        $html .= '.perhatian .title { font-weight: bold; }';
+        $html .= '';
+        $html .= '@page { size: A4 portrait; margin: 0; }';
+        $html .= '</style>';
+        $html .= '</head>';
+        $html .= '<body>';
+
+        // Iterate per tanggal like the original
+        $html .= '@foreach($groupedData as $tanggal => $chunks)';
+        $html .= '@foreach($chunks as $chunkIndex => $chunk)';
+        $html .= '<div class="page">';
+
+        // HEADER
+        $html .= '<div class="header">';
+        $html .= '<img src="{{ public_path(\'images/LOGO1.png\') }}" alt="Logo">';
+        $html .= '<img class="logo-right" src="{{ public_path(\'images/LOGO5.png\') }}" alt="Logo ISEKI">';
+        $html .= '</div>';
+
+        // JUDUL
+        $html .= '<div class="title-block">';
+        $html .= '<p>時間外、祝日出勤申請書</p>';
+        $html .= '<p>Surat Permohonan Kerja Lembur, Kerja pada Hari Libur</p>';
+        $html .= '</div>';
+
+        // INFO ROW
+        $html .= '<div class="info-row">';
+        $html .= '<div class="info-box">';
+        $html .= '<table>';
+        $html .= '<tr><td>管理部署</td><td class="sep">:</td><td>総務、人事</td></tr>';
+        $html .= '<tr><td>Dept. Pengendali</td><td class="sep"></td><td>GA, HR</td></tr>';
+        $html .= '<tr><td>管理番号</td><td class="sep">:</td><td></td></tr>';
+        $html .= '<tr><td>No. Manajemen</td><td class="sep"></td><td></td></tr>';
+        $html .= '</table>';
+        $html .= '</div>';
+        $html .= '<div class="info-box">';
+        $html .= '<table>';
+        $html .= '<tr><td>申請日 / Tgl Permohonan</td><td class="sep">:</td><td><strong>' . \Carbon\Carbon::parse($tanggal)->isoFormat('D MMMM Y') . '</strong></td></tr>';
+        $html .= '</table>';
+        $html .= '</div>';
+        $html .= '</div>';
+
+        // TABEL DATA - sama persis Excel
+        $html .= '<table class="data-table">';
+        $html .= '<thead>';
+        $html .= '<tr>';
+        $html .= '<th rowspan="2" style="width:24px">No</th>';
+        $html .= '<th rowspan="2" style="min-width:90px">氏名<br><small>Nama</small></th>';
+        $html .= '<th rowspan="2" style="min-width:70px">部署<br><small>Dept.</small></th>';
+        $html .= '<th rowspan="2" style="min-width:65px">実施日<br><small>Hari Pelaksanaan</small></th>';
+        $html .= '<th colspan="2" style="min-width:90px">時間帯<br><small>Dari jam sampai</small></th>';
+        $html .= '<th rowspan="2" style="min-width:65px">業務、仕事内容<br><small>Isi Pekerjaan</small></th>';
+        $html .= '<th rowspan="2" style="width:30px">飯<br><small>Makan</small></th>';
+        $html .= '<th rowspan="2" style="min-width:70px">上司の承認<br><small>Persetujuan Atasan</small></th>';
+        $html .= '</tr>';
+        $html .= '<tr>';
+        $html .= '<th style="width:45px"><small>Jam</small></th>';
+        $html .= '<th style="width:35px"><small>Durasi</small></th>';
+        $html .= '</tr>';
+        $html .= '</thead>';
+        $html .= '<tbody>';
+
+        $html .= '@php $globalStart = $chunkIndex * 24; @endphp';
+        $html .= '@foreach($chunk->values() as $i => $item)';
+        $html .= '<tr>';
+        $html .= '<td>' . ($globalStart + $i + 1) . '</td>';
+        $html .= '<td class="nama">' . ($item->employee->nama ?? '-') . '</td>';
+        $html .= '<td>' . ($item->employee->division->nama ?? '-') . '</td>';
+        $html .= '<td>' . \Carbon\Carbon::parse($item->tanggal_lembur)->format('d-m-Y') . '</td>';
+        $html .= '<td>' . ($item->waktu_lembur ?? '-') . '</td>';
+        $html .= '<td>' . number_format((float)$item->durasi_lembur, 1) . '</td>';
+        $html .= '<td class="pekerjaan">' . ($item->keterangan_lembur ?? '-') . '</td>';
+        $html .= '<td>' . ($item->makan_lembur ?? '-') . '</td>';
+        $html .= '<td></td>';
+        $html .= '</tr>';
+        $html .= '@endforeach';
+
+        // Baris kosong sampai minimal 24 baris
+        $html .= '@for($e = $chunk->count(); $e < 24; $e++)';
+        $html .= '<tr class="row-empty">';
+        $html .= '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';
+        $html .= '</tr>';
+        $html .= '@endfor';
+
+        // TOTAL JAM
+        $html .= '<tr class="total-row">';
+        $html .= '<td colspan="5" style="text-align:right">TOTAL JAM</td>';
+        $html .= '<td>' . number_format($chunk->sum(fn($i) => (float)$i->durasi_lembur), 1) . '</td>';
+        $html .= '<td colspan="3"></td>';
+        $html .= '</tr>';
+
+        $html .= '</tbody>';
+        $html .= '</table>';
+
+        // PERHATIAN
+        $html .= '<div class="perhatian">';
+        $html .= '<p class="title">Perhatian :</p>';
+        $html .= '<p>1. 薄枠は申請者（従業員）が記入する。Yang di dalam kotak tipis adalah diisi oleh pemohon (karyawan).</p>';
+        $html .= '<p>2. 太枠は上司が記入する。Yang di dalam kotak tebal adalah diisi oleh Atasan.</p>';
+        $html .= '<p>3. 二重線枠は総務、人事の方で記入する。Yang di dalam kotak dengan 2 garis diisi oleh dept. GA HR.</p>';
+        $html .= '<p>4. 時間外、祝日出勤3時間以上の場合は会社が飯を用意する義務がある為丸して下さい、3時間以内はXにして下さい。<br>';
+        $html .= '&nbsp;&nbsp;&nbsp;Untuk kerja lembur atau hari libur masuk kerja selama dan atau lebih dari 3 jam, maka perusahaan mempunyai kewajiban menyediakan makan, untuk itu beri tanda O, jika kurang dari 3 jam beri tanda X.</p>';
+        $html .= '<p>5. 本届けを上司に承認を得た後に総務、人事部の方へ提出する事。<br>';
+        $html .= '&nbsp;&nbsp;&nbsp;Setelah mendapatkan persetujuan dari atasan, serahkan surat ini ke bagian GA, HRD.</p>';
+        $html .= '</div>';
+
+        $html .= '</div>'; // /page
+        $html .= '@endforeach';
+        $html .= '@endforeach';
+
+        $html .= '</body>';
+        $html .= '</html>';
+
+        return $html;
     }
 }
