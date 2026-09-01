@@ -18,6 +18,17 @@
         <h3 class="font-bold text-2xl">Data Lembur</h3>
     </div>
 
+    @if($isEmployee)
+    <section class="btn-group flex flex-wrap gap-8 mb-4 items-center justify-between" style="gap: 2rem; margin-bottom: 0.5rem;">
+        <div class="flex gap-4" style="gap: 1rem;">
+            <a href="{{ route('employee.lemburs.create') }}" class="btn btn-primary">
+                <span>Tambah Data</span>
+                <i class="material-symbols-rounded">add</i>
+            </a>
+        </div>
+    </section>
+    @endif
+
     @if(Auth::check())
     <form method="GET" class="flex flex-wrap bg-gray-50 rounded">
         <div>
@@ -34,10 +45,6 @@
         style="gap: 2rem; margin-bottom: 0.2rem;">
         <div class="flex gap-4" style="gap: 1rem;">
             @userType('leader')
-            <a href="{{ route('lemburs.create') }}" class="btn btn-primary">
-                <span>Tambah Data</span>
-                <i class="material-symbols-rounded">add</i>
-            </a>
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
                 <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
             </a>
@@ -126,6 +133,7 @@
                     @endif
                     <th>Tanggal</th>
                     @userType('leader')
+                    <th>Approval Leader</th>
                     <th>Status Persetujuan</th>
                     <th>Jam</th>
                     <th>Durasi</th>
@@ -133,6 +141,7 @@
                     <th>Makan</th>
                     @enduserType
                     @userType('admin')
+                    <th>Persetujuan Leader</th>
                     <th>Status Persetujuan</th>
                     <th>Jam</th>
                     <th>Durasi</th>
@@ -141,6 +150,7 @@
                     @enduserType
                     @userType('super')
                     <th>Approval</th>
+                    <th>Persetujuan Leader</th>
                     <th>Status Persetujuan</th>
                     <th>Jam</th>
                     <th>Durasi</th>
@@ -149,8 +159,12 @@
                     @enduserType
 
                     @if($isEmployee)
+                    <th>Persetujuan Leader</th>
+                    <th>Status Persetujuan</th>
                     <th>Jam</th>
                     <th>Durasi</th>
+                    <th>Pekerjaan</th>
+                    <th>Makan</th>
                     @endif
                     
                     @if(Auth::check())
@@ -176,6 +190,7 @@
                         <button type="button" id="toggleType" class="btn btn-secondary btn-sm mt-1">Month</button>
                     </th>
                     @userType('leader')
+                    <th><input type="text" class="filter dt-filter" data-col="status_leader" placeholder="Status Leader"></th>
                     <th><input type="text" class="filter dt-filter" data-col="status" placeholder="Approval"></th>
                     <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
                     <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
@@ -192,6 +207,7 @@
                     <th><input type="text" class="filter dt-filter" data-col="makan" placeholder="Makan"></th>
                     @enduserType
                     @userType('admin')
+                    <th><input type="text" class="filter dt-filter" data-col="status_leader" placeholder="Status Leader"></th>
                     <th><input type="text" class="filter dt-filter" data-col="status" placeholder="Approval"></th>
                     <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
                     <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
@@ -209,6 +225,7 @@
                     @enduserType
                     @userType('super')
                     <th></th>
+                    <th><input type="text" class="filter dt-filter" data-col="status_leader" placeholder="Status Leader"></th>
                     <th><input type="text" class="filter dt-filter" data-col="status" placeholder="Approval"></th>
                     <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
                     <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
@@ -225,8 +242,21 @@
                     <th><input type="text" class="filter dt-filter" data-col="makan" placeholder="Makan"></th>
                     @enduserType
                     @if($isEmployee)
+                    <th><input type="text" class="filter dt-filter" data-col="status_leader" placeholder="Status Leader"></th>
+                    <th><input type="text" class="filter dt-filter" data-col="status" placeholder="Approval"></th>
                     <th><input type="text" class="filter dt-filter" data-col="waktu" placeholder="Jam"></th>
                     <th><input type="text" class="filter dt-filter" data-col="durasi" placeholder="Durasi"></th>
+                    <th>
+                        <select class="filter dt-filter" data-col="pekerjaan" id="filter-pekerjaan-emp">
+                            <option value="">Semua</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Kaizen">Kaizen</option>
+                            <option value="5S">5S</option>
+                            <option value="Pekerjaan Leader/PIC Lembur">Leader/PIC</option>
+                        </select>
+                    </th>
+                    <th><input type="text" class="filter dt-filter" data-col="makan" placeholder="Makan"></th>
                     @endif
                     @if(Auth::check())
                     <th class="sticky-col-right"></th>
@@ -256,7 +286,15 @@
         }
         cols.push({ data: 'tanggal' });
 
-        if (userType === 'leader' || userType === 'admin') {
+        if (userType === 'leader') {
+            cols.push({ data: 'approval_leader_buttons', orderable: false, searchable: false });
+            cols.push({ data: 'status_label' });
+            cols.push({ data: 'waktu' });
+            cols.push({ data: 'durasi' });
+            cols.push({ data: 'pekerjaan' });
+            cols.push({ data: 'makan' });
+        } else if (userType === 'admin') {
+            cols.push({ data: 'status_leader_label' });
             cols.push({ data: 'status_label' });
             cols.push({ data: 'waktu' });
             cols.push({ data: 'durasi' });
@@ -264,6 +302,7 @@
             cols.push({ data: 'makan' });
         } else if (userType === 'super') {
             cols.push({ data: 'approval_buttons', orderable: false, searchable: false });
+            cols.push({ data: 'status_leader_label' });
             cols.push({ data: 'status_label' });
             cols.push({ data: 'waktu' });
             cols.push({ data: 'durasi' });
@@ -272,8 +311,12 @@
         }
 
         if (isEmployee) {
+            cols.push({ data: 'status_leader_label' });
+            cols.push({ data: 'status_label' });
             cols.push({ data: 'waktu' });
             cols.push({ data: 'durasi' });
+            cols.push({ data: 'pekerjaan' });
+            cols.push({ data: 'makan' });
         }
 
         if (userType) {
@@ -292,6 +335,8 @@
 
     function getFilterColIndex(el) {
         const key = el.dataset.col;
+        if (key === 'status_leader') return getColIndex('status_leader_label');
+        if (key === 'status') return getColIndex('status_label');
         return getColIndex(key);
     }
 
@@ -346,6 +391,7 @@
             },
             drawCallback: function () {
                 attachApprovalListeners(document);
+                attachLeaderApprovalListeners(document);
                 updateBudgetFromServer();
                 initEditButtons();
             },
@@ -356,6 +402,10 @@
                 const namaIdx = getColIndex('nama');
                 if (namaIdx >= 0 && !isEmployee) {
                     $(row).find('td').eq(namaIdx).addClass('sticky-col-left');
+                }
+                const statusLeaderIdx = getColIndex('status_leader_label');
+                if (statusLeaderIdx >= 0) {
+                    $(row).find('td').eq(statusLeaderIdx).addClass('status text-center h-full text-sm ' + (data.status_leader_class || ''));
                 }
                 const statusIdx = getColIndex('status_label');
                 if (statusIdx >= 0) {
@@ -673,6 +723,32 @@
                         if (table) table.ajax.reload(null, false);
                     })
                     .catch(() => alert('Gagal memperbarui status'));
+            });
+        });
+    }
+
+    function attachLeaderApprovalListeners(context = document) {
+        context.querySelectorAll('.leader-approve-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const approval = this.dataset.value;
+                const row = this.closest('tr');
+                if (!row) return;
+                const id = row.dataset.id;
+
+                fetch(`/iseki_rifa/public/lembur/${id}/leader-approve`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfTokenLembur,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ approval: approval })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (table) table.ajax.reload(null, false);
+                    })
+                    .catch(() => alert('Gagal memperbarui status leader'));
             });
         });
     }

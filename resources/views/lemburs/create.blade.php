@@ -1,8 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $isEmployee = !Auth::check() && session('employee_login');
+    $currentEmp = $employees->first();
+@endphp
 <div class="container">
-    <form action="{{ route('lemburs.store') }}" method="POST">
+    <form action="{{ $isEmployee ? route('employee.lemburs.store') : route('lemburs.store') }}" method="POST">
         @csrf
 
         <h3 class="mb-3">Tambah Jadwal Lembur</h3>
@@ -28,24 +32,28 @@
                     <tr>
                         <td class="number">1</td>
                         <td>
-                            <select name="employee_id[]" class="form-control select2 employee-select" required>
-                                <option value="">-- Pilih Karyawan --</option>
-                                @foreach ($employees as $emp)
-                                <option value="{{ $emp->id }}"
-                                    data-division="{{ $emp->division?->nama ?? '-' }}">
-                                    {{ $emp->nama }}
-                                </option>
-                                @endforeach
-                            </select>
+                            @if($isEmployee)
+                                <input type="text" class="form-control" value="{{ $currentEmp?->nama ?? session('employee_user')->name }}" readonly style="background-color:#e9ecef; cursor:not-allowed;">
+                                <input type="hidden" name="employee_id[]" value="{{ $currentEmp?->id }}">
+                            @else
+                                <select name="employee_id[]" class="form-control select2 employee-select" required>
+                                    <option value="">-- Pilih Karyawan --</option>
+                                    @foreach ($employees as $emp)
+                                    <option value="{{ $emp->id }}"
+                                        data-division="{{ $emp->division?->nama ?? '-' }}">
+                                        {{ $emp->nama }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            @endif
                         </td>
-                        <td><input type="text" name="division[]" class="form-control division" readonly></td>
+                        <td><input type="text" name="division[]" class="form-control division" value="{{ $isEmployee ? ($currentEmp?->division?->nama ?? '-') : '' }}" readonly></td>
                         <td><input type="date" name="tanggal_lembur[]" class="form-control" required></td>
                         <td><input type="time" name="jam_mulai[]" class="form-control"></td>
                         <td><input type="time" name="jam_selesai[]" class="form-control"></td>
                         <td>
                             <input type="number" name="durasi_lembur[]" class="form-control" placeholder="Durasi (jam)"
                                 min="0" step="0.01" required>
-                        </td>
                         </td>
                         <td>
                             <select name="keterangan_lembur[]" class="form-control" required>
@@ -81,10 +89,15 @@
         <!-- END WRAPPER -->
 
         <button type="submit" class="btn btn-primary mt-2">Simpan</button>
-        <a href="{{ route('lemburs.index') }}" class="btn btn-secondary mt-2">Batal</a>
+        <a href="{{ $isEmployee ? route('employee.lemburs.index') : route('lemburs.index') }}" class="btn btn-secondary mt-2">Batal</a>
     </form>
 </div>
 <script>
+    const isEmployee = @json($isEmployee);
+    const currentEmpId = @json($currentEmp?->id ?? '');
+    const currentEmpName = @json($currentEmp?->nama ?? (session('employee_user')->name ?? ''));
+    const currentEmpDivision = @json($currentEmp?->division?->nama ?? '-');
+
     $(document).ready(function() {
         function initDivisionAutoFill(container) {
             container.find('.employee-select').on('select2:select', function(e) {
@@ -100,19 +113,33 @@
 
         function addRow() {
             const row = document.createElement('tr');
+            
+            let nameColHtml = '';
+            let divColHtml = '';
+            if (isEmployee) {
+                nameColHtml = `
+                    <input type="text" class="form-control" value="${currentEmpName}" readonly style="background-color:#e9ecef; cursor:not-allowed;">
+                    <input type="hidden" name="employee_id[]" value="${currentEmpId}">
+                `;
+                divColHtml = `<input type="text" name="division[]" class="form-control division" value="${currentEmpDivision}" readonly>`;
+            } else {
+                nameColHtml = `
+                    <select name="employee_id[]" class="form-control select2 employee-select" required>
+                        <option value="">-- Pilih Karyawan --</option>
+                        @foreach ($employees as $emp)
+                            <option value="{{ $emp->id }}" data-division="{{ $emp->division?->nama ?? '-' }}">
+                                {{ $emp->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                `;
+                divColHtml = `<input type="text" name="division[]" class="form-control division" readonly>`;
+            }
+
             row.innerHTML = `
             <td class="number"></td>
-            <td>
-                <select name="employee_id[]" class="form-control select2 employee-select" required>
-                    <option value="">-- Pilih Karyawan --</option>
-                    @foreach ($employees as $emp)
-                        <option value="{{ $emp->id }}" data-division="{{ $emp->division?->nama ?? '-' }}">
-                            {{ $emp->nama }}
-                        </option>
-                    @endforeach
-                </select>
-            </td>
-            <td><input type="text" name="division[]" class="form-control division" readonly></td>
+            <td>${nameColHtml}</td>
+            <td>${divColHtml}</td>
             <td><input type="date" name="tanggal_lembur[]" class="form-control" required></td>
             <td><input type="time" name="jam_mulai[]" class="form-control"></td>
             <td><input type="time" name="jam_selesai[]" class="form-control"></td>
@@ -120,8 +147,9 @@
                 <input type="number" name="durasi_lembur[]" 
                     class="form-control" 
                     placeholder="Durasi (jam)" 
-                    min="0" step="0.1" required>
-            </td>            <td>
+                    min="0" step="0.01" required>
+            </td>
+            <td>
                 <select name="keterangan_lembur[]" class="form-control" required>
                     <option value="">-- Pilih Pekerjaan --</option>
                     <option value="Produksi">Produksi</option>
@@ -143,8 +171,10 @@
         `;
             tableBody.insertBefore(row, document.getElementById('row-button'));
 
-            $(row).find('.select2').select2();
-            initDivisionAutoFill($(row));
+            if (!isEmployee) {
+                $(row).find('.select2').select2();
+                initDivisionAutoFill($(row));
+            }
 
             updateRowNumbers();
         }
