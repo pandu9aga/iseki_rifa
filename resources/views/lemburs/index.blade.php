@@ -121,7 +121,28 @@
     </section>
     @endif
 
-    <section class="container-table table-scroll-wrapper">
+    <!-- Mobile filter bar (only visible on mobile) -->
+    <div class="mobile-card-filter-bar" id="mobile-filter-bar-lembur">
+        <button class="mobile-filter-toggle-btn" id="mobile-filter-toggle">
+            <span><span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;">filter_list</span> Filter &amp; Cari</span>
+            <span class="material-symbols-rounded" style="font-size:1.1rem;" id="mobile-filter-icon">expand_more</span>
+        </button>
+        <div id="mobile-filter-fields" style="display:none; flex-direction:column; gap:0.5rem;">
+            <input type="text" id="mobile-filter-nama" placeholder="🔍 Cari Nama...">
+            <input type="date" id="mobile-filter-tanggal" placeholder="Tanggal">
+            <input type="text" id="mobile-filter-status" placeholder="Status (mis: Disetujui)">
+        </div>
+    </div>
+
+    <!-- Mobile card list (only visible on mobile) -->
+    <div class="mobile-card-list" id="mobile-lembur-cards">
+        <div style="text-align:center; color:var(--text-muted); padding:2rem 0;">
+            <span class="material-symbols-rounded" style="font-size:2.5rem; display:block;">hourglass_empty</span>
+            Memuat data...
+        </div>
+    </div>
+
+    <section class="container-table table-scroll-wrapper desktop-table-section">
         <table class="table-auto w-full border border-gray-300 mt-4" id="lembur-table">
             <thead>
                 <tr>
@@ -394,6 +415,7 @@
                 attachLeaderApprovalListeners(document);
                 updateBudgetFromServer();
                 initEditButtons();
+                renderMobileCards();
             },
             createdRow: function (row, data, dataIndex) {
                 $(row).attr('data-id', data.id_lembur);
@@ -521,6 +543,154 @@
         });
 
         updateBulananExcelBtnVisibility();
+    });
+
+    /* =====================================================
+       MOBILE CARD RENDERING
+    ====================================================== */
+    function renderMobileCards() {
+        const container = document.getElementById('mobile-lembur-cards');
+        if (!container) return;
+        // Only build cards if on mobile
+        if (window.innerWidth > 768) return;
+
+        const rows = table ? table.rows({ page: 'current' }).data().toArray() : [];
+        if (!rows.length) {
+            container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem 0;"><span class="material-symbols-rounded" style="font-size:2.5rem;display:block;">inbox</span>Tidak ada data</div>';
+            return;
+        }
+
+        // Apply mobile text filters
+        const namaFilter  = (document.getElementById('mobile-filter-nama')?.value  || '').toLowerCase();
+        const statusFilter = (document.getElementById('mobile-filter-status')?.value || '').toLowerCase();
+
+        const filtered = rows.filter(d => {
+            const matchNama   = !namaFilter  || (d.nama  || '').toLowerCase().includes(namaFilter);
+            const matchStatus = !statusFilter || (d.status_label || '').toLowerCase().includes(statusFilter)
+                                             || (d.status_leader_label || '').toLowerCase().includes(statusFilter);
+            return matchNama && matchStatus;
+        });
+
+        if (!filtered.length) {
+            container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem 0;">Tidak ada data yang cocok.</div>';
+            return;
+        }
+
+        container.innerHTML = filtered.map((d, i) => {
+            const statusClass = d.status_class || '';
+            const statusLeaderClass = d.status_leader_class || '';
+            const statusLabel = d.status_label || '-';
+            const statusLeaderLabel = d.status_leader_label || '-';
+
+            // Approval buttons for leader
+            let approvalHtml = '';
+            if (userType === 'leader' && d.approval_leader_buttons) {
+                approvalHtml = `<div class="mobile-card-actions" data-id="${d.id_lembur}">${d.approval_leader_buttons}</div>`;
+            } else if (userType === 'super' && d.approval_buttons) {
+                approvalHtml = `<div class="mobile-card-actions" data-id="${d.id_lembur}">${d.approval_buttons}</div>`;
+            }
+
+            // Action buttons
+            let actionHtml = '';
+            if (userType && d.action_buttons) {
+                actionHtml = `<div class="mobile-card-actions" style="flex-wrap:wrap;" data-id="${d.id_lembur}">${d.action_buttons}</div>`;
+            }
+
+            return `
+                <div class="mobile-data-card" data-id="${d.id_lembur}">
+                    <div class="mobile-card-header">
+                        <div>
+                            <div class="mobile-card-title">${d.nama || '-'}</div>
+                            <div class="mobile-card-subtitle">${d.divisi_nama || ''} ${d.nilai ? '• ' + d.nilai : ''}</div>
+                        </div>
+                        <span class="badge ${statusClass}" style="white-space:nowrap;font-size:0.7rem;">${statusLabel}</span>
+                    </div>
+                    <div class="mobile-card-meta">
+                        <span class="mobile-card-meta-item"><span class="material-symbols-rounded">calendar_today</span>${d.tanggal || '-'}</span>
+                        <span class="mobile-card-meta-item"><span class="material-symbols-rounded">schedule</span>${d.waktu || '-'}</span>
+                        <span class="mobile-card-meta-item"><span class="material-symbols-rounded">timer</span>${d.durasi || '-'} jam</span>
+                        <span class="mobile-card-meta-item"><span class="material-symbols-rounded">work</span>${d.pekerjaan || '-'}</span>
+                        ${d.makan ? `<span class="mobile-card-meta-item"><span class="material-symbols-rounded">restaurant</span>${d.makan}</span>` : ''}
+                    </div>
+                    <div class="mobile-card-badges">
+                        <span style="font-size:0.7rem;color:var(--text-muted);">Leader: </span>
+                        <span class="badge ${statusLeaderClass}" style="font-size:0.7rem;">${statusLeaderLabel}</span>
+                    </div>
+                    ${approvalHtml}
+                    ${actionHtml}
+                </div>
+            `;
+        }).join('');
+
+        // Re-attach listeners for buttons rendered in cards
+        container.querySelectorAll('.approve-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const approval = this.dataset.value;
+                const card = this.closest('[data-id]');
+                if (!card) return;
+                const id = card.dataset.id;
+                fetch(`/iseki_rifa/public/lembur/${id}/approve`, {
+                    method: 'PUT',
+                    headers: { 'X-CSRF-TOKEN': csrfTokenLembur, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approval })
+                }).then(r => r.json()).then(() => { if (table) table.ajax.reload(null, false); });
+            });
+        });
+        container.querySelectorAll('.leader-approve-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const approval = this.dataset.value;
+                const card = this.closest('[data-id]');
+                if (!card) return;
+                const id = card.dataset.id;
+                fetch(`/iseki_rifa/public/lembur/${id}/leader-approve`, {
+                    method: 'PUT',
+                    headers: { 'X-CSRF-TOKEN': csrfTokenLembur, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approval })
+                }).then(r => r.json()).then(() => { if (table) table.ajax.reload(null, false); });
+            });
+        });
+        container.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const data = {
+                    id: btn.dataset.id, employee_name: btn.dataset.employee_name,
+                    employee_id: btn.dataset.employee_id, tanggal_lembur: btn.dataset.tanggal,
+                    waktu: btn.dataset.waktu, durasi_lembur: btn.dataset.durasi,
+                    keterangan_lembur: btn.dataset.keterangan, makan_lembur: btn.dataset.makan
+                };
+                openEditModal(data);
+            });
+        });
+        container.querySelectorAll('[data-action="delete"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('[data-id]');
+                if (card) showDeletePopup(card);
+            });
+        });
+    }
+
+    // Mobile filter bar toggle
+    document.getElementById('mobile-filter-toggle')?.addEventListener('click', function() {
+        const fields = document.getElementById('mobile-filter-fields');
+        const icon = document.getElementById('mobile-filter-icon');
+        const isOpen = fields.style.display !== 'none';
+        fields.style.display = isOpen ? 'none' : 'flex';
+        if (icon) icon.textContent = isOpen ? 'expand_more' : 'expand_less';
+    });
+
+    // Mobile text filters trigger card re-render
+    ['mobile-filter-nama', 'mobile-filter-status'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', renderMobileCards);
+    });
+    document.getElementById('mobile-filter-tanggal')?.addEventListener('change', function() {
+        // Sync with desktop date filter and reload DataTable
+        const desktopDate = document.getElementById('customDate');
+        if (desktopDate) { desktopDate.value = this.value; }
+        if (table) table.ajax.reload(null, false);
+    });
+
+    // Re-render cards on window resize crossing breakpoint
+    window.addEventListener('resize', function() {
+        if (window.innerWidth <= 768 && table) renderMobileCards();
     });
 
     function updateBudgetFromServer() {
