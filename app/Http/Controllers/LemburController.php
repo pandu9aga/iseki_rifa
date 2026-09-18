@@ -149,25 +149,6 @@ class LemburController extends Controller
             ->addColumn('tanggal', function ($row) {
                 return \Carbon\Carbon::parse($row->tanggal_lembur)->format('d-m-Y');
             })
-            ->addColumn('approval_leader_buttons', function ($row) use ($userType) {
-                if ($userType !== 'leader') return '';
-                $isNull = is_null($row->approval_leader);
-                if ($isNull) {
-                    return '<div class="flex btn-group">' .
-                        '<button type="button" data-value="1" class="btn bg-success text-sm rounded leader-approve-btn">Setujui</button>' .
-                        '<button type="button" data-value="0" class="btn bg-red text-sm rounded leader-approve-btn">Tolak</button></div>';
-                } else {
-                    return '<button type="button" data-value="null" class="btn bg-yellow text-sm rounded leader-approve-btn">Batalkan</button>';
-                }
-            })
-            ->addColumn('status_leader_label', function ($row) {
-                if (is_null($row->approval_leader)) return 'Menunggu';
-                return $row->approval_leader ? 'Disetujui' : 'Ditolak';
-            })
-            ->addColumn('status_leader_class', function ($row) {
-                if (is_null($row->approval_leader)) return 'bg-yellow';
-                return $row->approval_leader ? 'bg-success' : 'bg-red';
-            })
             ->addColumn('approval_buttons', function ($row) use ($userType) {
                 if ($userType !== 'super') return '';
                 $isNull = is_null($row->approval_lembur);
@@ -244,21 +225,12 @@ class LemburController extends Controller
                     $q->where('nilai', 'like', "%{$keyword}%");
                 });
             })
-            ->filterColumn('status_leader_label', function ($query, $keyword) {
-                if (strtolower($keyword) === 'disetujui') {
-                    $query->where('approval_leader', true);
-                } elseif (strtolower($keyword) === 'ditolak') {
-                    $query->where('approval_leader', false);
-                } elseif (strtolower($keyword) === 'menunggu' || strtolower($keyword) === 'menunggu persetujuan') {
-                    $query->whereNull('approval_leader');
-                }
-            })
             ->filterColumn('status_label', function ($query, $keyword) {
                 if (strtolower($keyword) === 'disetujui') {
                     $query->where('approval_lembur', true);
                 } elseif (strtolower($keyword) === 'ditolak') {
                     $query->where('approval_lembur', false);
-                } elseif (strtolower($keyword) === 'menunggu persetujuan' || strtolower($keyword) === 'menunggu') {
+                } elseif (strtolower($keyword) === 'menunggu persetujuan') {
                     $query->whereNull('approval_lembur');
                 }
             })
@@ -279,7 +251,7 @@ class LemburController extends Controller
                     $q->orderBy('nama', $order);
                 });
             })
-            ->rawColumns(['approval_leader_buttons', 'approval_buttons', 'action_buttons'])
+            ->rawColumns(['approval_buttons', 'action_buttons'])
             ->make(true);
     }
 
@@ -377,13 +349,7 @@ class LemburController extends Controller
 
     public function create()
     {
-        $isEmployee = !Auth::check() && session('employee_login');
-        if ($isEmployee) {
-            $nik = session('employee_user')->username;
-            $employees = Employee::with('division')->where('nik', $nik)->whereNull('deleted_at')->get();
-        } else {
-            $employees = Employee::with('division')->whereNull('deleted_at')->get();
-        }
+        $employees = Employee::with('division')->whereNull('deleted_at')->get();
         return view('lemburs.create', compact('employees'));
     }
 
@@ -399,19 +365,7 @@ class LemburController extends Controller
             'makan_lembur.*' => 'nullable|string',
         ]);
 
-        $isEmployee = !Auth::check() && session('employee_login');
-        $loggedInEmployeeId = null;
-        if ($isEmployee) {
-            $nik = session('employee_user')->username;
-            $loggedInEmployee = Employee::where('nik', $nik)->first();
-            $loggedInEmployeeId = $loggedInEmployee?->id;
-        }
-
         foreach ($request->employee_id as $index => $emp_id) {
-            if ($isEmployee && $loggedInEmployeeId) {
-                $emp_id = $loggedInEmployeeId;
-            }
-
             $tanggal     = $request->tanggal_lembur[$index];
             $jamMulai    = $request->jam_mulai[$index] ?? null;
             $jamSelesai  = $request->jam_selesai[$index] ?? null;
@@ -450,10 +404,8 @@ class LemburController extends Controller
             $this->insertLembur($emp_id, $index, $request);
         }
 
-        $redirectRoute = $isEmployee ? 'employee.lemburs.index' : 'lemburs.index';
-
         return redirect()
-            ->route($redirectRoute)
+            ->route('lemburs.index')
             ->with('success', 'Data lembur berhasil disimpan (data bentrok otomatis dilewati)');
     }
 
@@ -470,7 +422,6 @@ class LemburController extends Controller
             'keterangan_lembur' => $request->keterangan_lembur[$index] ?? null,
             'makan_lembur'      => $request->makan_lembur[$index] ?? null,
             'approval_lembur'   => null,
-            'approval_leader'   => null,
         ]);
     }
 
@@ -560,46 +511,6 @@ class LemburController extends Controller
             $status_label = 'Ditolak';
             $status_class = 'bg-red';
             $button_html = '<button type="button" data-value="null" class="approve-btn btn bg-yellow text-sm rounded">Batalkan</button>';
-        }
-
-        return response()->json([
-            'status_label' => $status_label,
-            'status_class' => $status_class,
-            'button_html' => $button_html,
-        ]);
-    }
-
-    public function leaderApprove(Request $request, $id)
-    {
-        $lembur = Lembur::findOrFail($id);
-        $approval = $request->approval;
-
-        if ($approval === '1') {
-            $lembur->approval_leader = true;
-        } elseif ($approval === '0') {
-            $lembur->approval_leader = false;
-        } else {
-            $lembur->approval_leader = null;
-        }
-        $lembur->save();
-
-        if (is_null($lembur->approval_leader)) {
-            $status_label = 'Menunggu';
-            $status_class = 'bg-yellow';
-            $button_html = '
-            <div class="flex btn-group">
-                <button type="button" data-value="1" class="leader-approve-btn btn bg-success text-sm rounded">Setujui</button>
-                <button type="button" data-value="0" class="leader-approve-btn btn bg-red text-sm rounded">Tolak</button>
-            </div>
-        ';
-        } elseif ($lembur->approval_leader) {
-            $status_label = 'Disetujui';
-            $status_class = 'bg-success';
-            $button_html = '<button type="button" data-value="null" class="leader-approve-btn btn bg-yellow text-sm rounded">Batalkan</button>';
-        } else {
-            $status_label = 'Ditolak';
-            $status_class = 'bg-red';
-            $button_html = '<button type="button" data-value="null" class="leader-approve-btn btn bg-yellow text-sm rounded">Batalkan</button>';
         }
 
         return response()->json([

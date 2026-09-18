@@ -55,8 +55,6 @@ Route::middleware(CheckEmployeeLogin::class)->group(function () {
     Route::get('/employee/lembur', [LemburController::class, 'index'])->name('employee.lemburs.index');
     Route::get('/employee/lembur/data', [LemburController::class, 'dataTable'])->name('employee.lemburs.data');
     Route::get('/employee/lembur/summary', [LemburController::class, 'summary'])->name('employee.lemburs.summary');
-    Route::get('/employee/lembur/create', [LemburController::class, 'create'])->name('employee.lemburs.create');
-    Route::post('/employee/lembur', [LemburController::class, 'store'])->name('employee.lemburs.store');
     Route::get('/employee/reporting/data', [ReportingController::class, 'dataTable'])->name('employee.reporting.data');
 });
 
@@ -110,7 +108,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/export-lembur-bulanan-excel', [LemburController::class, 'exportBulananExcel'])->name('export.lembur.bulanan.excel'); // kept for legacy
     Route::get('/export-lembur-bulanan-pdf', [LemburController::class, 'exportBulananPdf'])->name('export.lembur.bulanan.pdf');
     Route::put('/lembur/{id}/approve', [LemburController::class, 'approve'])->name('lembur.approve');
-    Route::put('/lembur/{id}/leader-approve', [LemburController::class, 'leaderApprove'])->name('lembur.leader.approve');
 
     // ✅ BUDGET LEMBUR — DIPERBAIKI (HANYA 2 ROUTE)
     Route::get('/budget-lembur', [BudgetController::class, 'index'])->name('budget.lembur.index');
