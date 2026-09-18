@@ -7,8 +7,8 @@
 
         <h3 class="mb-3">Tambah Jadwal Lembur</h3>
 
-        <!-- DESKTOP: WRAPPER SCROLL HORIZONTAL -->
-        <div class="table-responsive desktop-form-table" style="overflow-x:auto;">
+        <!-- WRAPPER SCROLL HORIZONTAL -->
+        <div class="table-responsive" style="overflow-x:auto;">
             <table class="table table-bordered" id="lembur-table">
                 <thead>
                     <tr>
@@ -154,7 +154,6 @@
         $(document).on('click', '.delete-row', function() {
             $(this).closest('tr').remove();
             updateRowNumbers();
-            syncMobileFromDesktop();
         });
 
         function updateRowNumbers() {
@@ -163,158 +162,5 @@
             });
         }
     });
-
-    /* ==========================================================
-       MOBILE CARD FORM LOGIC
-    ========================================================== */
-    const employeesData = @json($employees->map(fn($e) => ['id' => $e->id, 'nama' => $e->nama, 'division' => $e->division?->nama ?? '-']));
-    const mobileCards = document.getElementById('mobile-form-cards');
-    const pekerjaan = [
-        { value: '', label: '-- Pilih Pekerjaan --' },
-        { value: 'Produksi', label: 'Produksi' },
-        { value: 'Maintenance', label: 'Maintenance' },
-        { value: 'Kaizen', label: 'Kaizen' },
-        { value: '5S', label: '5S' },
-        { value: 'Pekerjaan Leader/PIC Lembur', label: 'Pekerjaan Leader/PIC Lembur' },
-    ];
-
-    function buildPekerjaanOptions(selected = '') {
-        return pekerjaan.map(p => `<option value="${p.value}" ${p.value === selected ? 'selected' : ''}>${p.label}</option>`).join('');
-    }
-
-    function buildMobileCard(index, data = {}) {
-        const nameField = isEmployee
-            ? `<div class="form-field">
-                <label>Nama</label>
-                <input type="text" value="${currentEmpName}" readonly>
-               </div>`
-            : `<div class="form-field">
-                <label>Nama Karyawan</label>
-                <select class="mc-employee" data-idx="${index}">
-                    <option value="">-- Pilih Karyawan --</option>
-                    ${employeesData.map(e => `<option value="${e.id}" data-division="${e.division}" ${data.empId == e.id ? 'selected' : ''}>${e.nama}</option>`).join('')}
-                </select>
-               </div>`;
-
-        return `
-        <div class="mobile-form-card" data-card-idx="${index}">
-            <div class="card-number">${index + 1}</div>
-            ${nameField}
-            <div class="form-field">
-                <label>Divisi</label>
-                <input type="text" class="mc-division" value="${isEmployee ? currentEmpDivision : (data.division || '')}" readonly>
-            </div>
-            <div class="form-field">
-                <label>Tanggal <span style="color:var(--danger)">*</span></label>
-                <input type="date" class="mc-tanggal" value="${data.tanggal || ''}" required>
-            </div>
-            <div class="field-row">
-                <div class="form-field">
-                    <label>Jam Mulai</label>
-                    <input type="time" class="mc-jam-mulai" value="${data.jamMulai || ''}">
-                </div>
-                <div class="form-field">
-                    <label>Jam Selesai</label>
-                    <input type="time" class="mc-jam-selesai" value="${data.jamSelesai || ''}">
-                </div>
-            </div>
-            <div class="form-field">
-                <label>Durasi (jam) <span style="color:var(--danger)">*</span></label>
-                <input type="number" class="mc-durasi" value="${data.durasi || ''}" min="0" step="0.01" placeholder="mis: 3.5" required>
-            </div>
-            <div class="form-field">
-                <label>Pekerjaan <span style="color:var(--danger)">*</span></label>
-                <select class="mc-pekerjaan" required>
-                    ${buildPekerjaanOptions(data.pekerjaan || '')}
-                </select>
-            </div>
-            <div class="form-field">
-                <label>Makan</label>
-                <select class="mc-makan">
-                    <option value="tidak" ${(data.makan || 'tidak') === 'tidak' ? 'selected' : ''}>Tidak</option>
-                    <option value="ya" ${data.makan === 'ya' ? 'selected' : ''}>Ya</option>
-                </select>
-            </div>
-            ${index > 0 ? `<button type="button" class="btn btn-secondary card-remove-btn" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);">
-                <span class="material-symbols-rounded" style="font-size:1rem;">delete</span> Hapus
-            </button>` : ''}
-        </div>`;
-    }
-
-    let mobileCardCount = 0;
-
-    function addMobileCard(data = {}) {
-        const card = document.createElement('div');
-        card.innerHTML = buildMobileCard(mobileCardCount, data);
-        const cardEl = card.firstElementChild;
-        mobileCards.appendChild(cardEl);
-
-        // Division autofill
-        cardEl.querySelector('.mc-employee')?.addEventListener('change', function() {
-            const selected = this.options[this.selectedIndex];
-            const division = selected?.dataset.division || '';
-            cardEl.querySelector('.mc-division').value = division;
-        });
-
-        // Remove card
-        cardEl.querySelector('.card-remove-btn')?.addEventListener('click', function() {
-            cardEl.remove();
-            // Renumber cards
-            mobileCards.querySelectorAll('.mobile-form-card').forEach((c, i) => {
-                c.querySelector('.card-number').textContent = i + 1;
-            });
-        });
-
-        mobileCardCount++;
-    }
-
-    // Initialize first card on mobile
-    if (window.innerWidth <= 768) {
-        addMobileCard();
-    }
-
-    document.getElementById('mobile-add-card')?.addEventListener('click', () => addMobileCard());
-
-    // On form submit: sync mobile cards to hidden desktop table form inputs
-    document.getElementById('lembur-create-form')?.addEventListener('submit', function(e) {
-        if (window.innerWidth > 768) return; // desktop handles itself
-
-        // Remove existing desktop rows
-        const tbody = document.querySelector('#lembur-table tbody');
-        tbody.querySelectorAll('tr:not(#row-button)').forEach(r => r.remove());
-
-        // Build hidden rows from mobile cards
-        document.querySelectorAll('.mobile-form-card').forEach((card, i) => {
-            const empSelect = card.querySelector('.mc-employee');
-            const empId = isEmployee ? currentEmpId : (empSelect?.value || '');
-            const division = card.querySelector('.mc-division')?.value || '';
-            const tanggal = card.querySelector('.mc-tanggal')?.value || '';
-            const jamMulai = card.querySelector('.mc-jam-mulai')?.value || '';
-            const jamSelesai = card.querySelector('.mc-jam-selesai')?.value || '';
-            const durasi = card.querySelector('.mc-durasi')?.value || '';
-            const keterangan = card.querySelector('.mc-pekerjaan')?.value || '';
-            const makan = card.querySelector('.mc-makan')?.value || 'tidak';
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="number">${i + 1}</td>
-                <td>
-                    ${isEmployee ? `<input type="hidden" name="employee_id[]" value="${empId}">` : `<input type="hidden" name="employee_id[]" value="${empId}">`}
-                </td>
-                <td><input type="hidden" name="division[]" value="${division}"></td>
-                <td><input type="hidden" name="tanggal_lembur[]" value="${tanggal}"></td>
-                <td><input type="hidden" name="jam_mulai[]" value="${jamMulai}"></td>
-                <td><input type="hidden" name="jam_selesai[]" value="${jamSelesai}"></td>
-                <td><input type="hidden" name="durasi_lembur[]" value="${durasi}"></td>
-                <td><input type="hidden" name="keterangan_lembur[]" value="${keterangan}"></td>
-                <td><input type="hidden" name="makan_lembur[]" value="${makan}"></td>
-            `;
-            tbody.insertBefore(row, document.getElementById('row-button'));
-        });
-    });
-
-    function syncMobileFromDesktop() {
-        // Stub: desktop changes are authoritative; mobile form is rebuild only on add
-    }
 </script>
 @endsection

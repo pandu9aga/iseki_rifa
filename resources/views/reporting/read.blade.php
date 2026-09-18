@@ -275,47 +275,7 @@
     @php
         $isEmployeeReporting = session()->has('employee_login') && session('employee_login');
     @endphp
-
-    <!-- Mobile filter bar for Absensi (only visible on mobile) -->
-    <div class="mobile-card-filter-bar" id="mobile-filter-bar-absensi">
-        <button class="mobile-filter-toggle-btn" id="mobile-absensi-filter-toggle">
-            <span><span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;">filter_list</span> Filter &amp; Cari</span>
-            <span class="material-symbols-rounded" style="font-size:1.1rem;" id="mobile-absensi-filter-icon">expand_more</span>
-        </button>
-        <div id="mobile-absensi-filter-fields" style="display:none; flex-direction:column; gap:0.5rem;">
-            @if(!$isEmployeeReporting)
-            <input type="text" id="mobile-absensi-filter-nama" placeholder="🔍 Cari Nama...">
-            @endif
-            <input type="date" id="mobile-absensi-filter-tanggal" value="{{ $isEmployeeReporting ? '' : date('Y-m-d') }}">
-            <select id="mobile-absensi-filter-jenis">
-                <option value="">Semua Jenis Izin</option>
-                <option>Cuti</option>
-                <option>Cuti Setengah Hari Pagi</option>
-                <option>Cuti Setengah Hari Siang</option>
-                <option>Terlambat</option>
-                <option>Izin Keluar</option>
-                <option>Pulang Cepat</option>
-                <option>Absen</option>
-                <option>Sakit</option>
-            </select>
-            <select id="mobile-absensi-filter-status">
-                <option value="">Semua Status Persetujuan</option>
-                <option>Disetujui</option>
-                <option>Menunggu Persetujuan</option>
-                <option>Ditolak</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Mobile card list for Absensi (only visible on mobile) -->
-    <div class="mobile-card-list" id="mobile-absensi-cards">
-        <div style="text-align:center; color:var(--text-muted); padding:2rem 0;">
-            <span class="material-symbols-rounded" style="font-size:2.5rem; display:block;">hourglass_empty</span>
-            Memuat data...
-        </div>
-    </div>
-
-    <section class="container-table table-scroll-wrapper desktop-table-section">
+    <section class="container-table table-scroll-wrapper">
         <table id="cuti-table">
             <thead>
                 <tr>
@@ -515,7 +475,6 @@
                 attachApprovalListeners(document);
                 attachMemberApprovalListeners(document);
                 initEditButtons();
-                renderMobileCardsAbsensi();
             },
             createdRow: function (row, data, dataIndex) {
                 $(row).attr('data-id', data.id);
@@ -936,152 +895,5 @@
         const modal = document.getElementById(modalId);
         modal.classList.replace('flex', 'hidden');
     }
-
-    /* ==========================================================
-       MOBILE CARD RENDERING — ABSENSI
-    ========================================================== */
-    function renderMobileCardsAbsensi() {
-        const container = document.getElementById('mobile-absensi-cards');
-        if (!container) return;
-        if (window.innerWidth > 768) return;
-
-        const rows = table ? table.rows({ page: 'current' }).data().toArray() : [];
-        if (!rows.length) {
-            container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem 0;"><span class="material-symbols-rounded" style="font-size:2.5rem;display:block;">inbox</span>Tidak ada data</div>';
-            return;
-        }
-
-        // Apply mobile text filters
-        const namaFilter   = (document.getElementById('mobile-absensi-filter-nama')?.value   || '').toLowerCase();
-        const jenisFilter  = (document.getElementById('mobile-absensi-filter-jenis')?.value  || '').toLowerCase();
-        const statusFilter = (document.getElementById('mobile-absensi-filter-status')?.value || '').toLowerCase();
-
-        const filtered = rows.filter(d => {
-            const matchNama   = !namaFilter   || (d.nama      || '').toLowerCase().includes(namaFilter);
-            const matchJenis  = !jenisFilter  || (d.jenis_izin|| '').toLowerCase().includes(jenisFilter);
-            const matchStatus = !statusFilter || (d.status_super?.label || '').toLowerCase().includes(statusFilter);
-            return matchNama && matchJenis && matchStatus;
-        });
-
-        if (!filtered.length) {
-            container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem 0;">Tidak ada data yang cocok.</div>';
-            return;
-        }
-
-        // Jenis izin color badge map
-        const jenisColorMap = {
-            'Cuti': '#3b82f6', 'Sakit': '#f59e0b', 'Terlambat': '#f97316',
-            'Absen': '#ef4444', 'Izin Keluar': '#8b5cf6', 'Pulang Cepat': '#ec4899',
-        };
-
-        container.innerHTML = filtered.map(d => {
-            const jenisBg   = jenisColorMap[d.jenis_izin] || '#6b7280';
-            const statusObj = d.status_super || {};
-            const statusClass = statusObj.class || 'bg-yellow';
-            const statusLabel = statusObj.label || 'Menunggu';
-
-            // Approval super buttons (super role)
-            let approvalHtml = '';
-            if (userType === 'super' && d.approval_buttons) {
-                approvalHtml = `<div class="mobile-card-actions" data-id="${d.id}">${d.approval_buttons}</div>`;
-            }
-
-            // Member approval (if has approval capability)
-            const memberApprovalHtml = d.member_approval_html
-                ? `<div class="mobile-card-meta-item" style="background:transparent;border:none;">${d.member_approval_html}</div>`
-                : '';
-
-            const actionHtml = d.action_buttons
-                ? `<div class="mobile-card-actions" data-id="${d.id}">${d.action_buttons}</div>`
-                : '';
-
-            return `
-                <div class="mobile-data-card" data-id="${d.id}">
-                    <div class="mobile-card-header">
-                        <div>
-                            <div class="mobile-card-title">${d.nama || '-'}</div>
-                            <div class="mobile-card-subtitle">${d.divisi || ''} ${d.tim ? '• ' + d.tim : ''}</div>
-                        </div>
-                        <span style="background:${jenisBg};color:white;border-radius:20px;padding:0.2rem 0.65rem;font-size:0.7rem;font-weight:700;white-space:nowrap;">${d.jenis_izin || '-'}</span>
-                    </div>
-                    <div class="mobile-card-meta">
-                        <span class="mobile-card-meta-item"><span class="material-symbols-rounded">calendar_today</span>${d.tanggal_formatted || '-'}</span>
-                        ${d.jam_masuk ? `<span class="mobile-card-meta-item"><span class="material-symbols-rounded">login</span>${d.jam_masuk}</span>` : ''}
-                        ${d.jam_keluar ? `<span class="mobile-card-meta-item"><span class="material-symbols-rounded">logout</span>${d.jam_keluar}</span>` : ''}
-                        ${d.sisa_cuti !== null && d.sisa_cuti !== undefined ? `<span class="mobile-card-meta-item"><span class="material-symbols-rounded">beach_access</span>Sisa Cuti: ${d.sisa_cuti}</span>` : ''}
-                    </div>
-                    ${d.keterangan_html ? `<div style="font-size:0.8125rem;color:var(--text-secondary);background:var(--surface-secondary);border-radius:var(--radius-sm);padding:0.35rem 0.5rem;">${d.keterangan_html}</div>` : ''}
-                    <div class="mobile-card-badges" style="gap:0.5rem;align-items:center;">
-                        <span style="font-size:0.7rem;color:var(--text-muted);">Persetujuan:</span>
-                        <span class="badge ${statusClass}" style="font-size:0.7rem;">${statusLabel}</span>
-                        ${d.hr_approval_label ? `<span class="badge ${d.hr_approval_class || 'bg-yellow'}" style="font-size:0.7rem;">HR: ${d.hr_approval_label}</span>` : ''}
-                        ${memberApprovalHtml}
-                    </div>
-                    ${approvalHtml}
-                    ${actionHtml}
-                </div>
-            `;
-        }).join('');
-
-        // Re-attach approval listeners for mobile cards
-        container.querySelectorAll('.approve-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const approval = this.dataset.value;
-                const card = this.closest('[data-id]');
-                if (!card) return;
-                const id = card.dataset.id;
-                fetch(`/iseki_rifa/public/reporting/${id}/approve`, {
-                    method: 'PUT',
-                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ approval })
-                }).then(r => r.json()).then(() => { if (table) table.ajax.reload(null, false); });
-            });
-        });
-        container.querySelectorAll('.member-approve-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const approval = this.dataset.value;
-                const card = this.closest('[data-id]');
-                if (!card) return;
-                const id = card.dataset.id;
-                fetch(`/iseki_rifa/public/reporting/${id}/member-approve`, {
-                    method: 'PUT',
-                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ approval })
-                }).then(r => r.json()).then(() => { if (table) table.ajax.reload(null, false); });
-            });
-        });
-    }
-
-    // Mobile filter bar toggle for absensi
-    document.getElementById('mobile-absensi-filter-toggle')?.addEventListener('click', function() {
-        const fields = document.getElementById('mobile-absensi-filter-fields');
-        const icon   = document.getElementById('mobile-absensi-filter-icon');
-        const isOpen = fields.style.display !== 'none';
-        fields.style.display = isOpen ? 'none' : 'flex';
-        if (icon) icon.textContent = isOpen ? 'expand_more' : 'expand_less';
-    });
-
-    // Mobile text filters for absensi trigger card re-render
-    ['mobile-absensi-filter-nama', 'mobile-absensi-filter-jenis', 'mobile-absensi-filter-status'].forEach(id => {
-        document.getElementById(id)?.addEventListener('input', renderMobileCardsAbsensi);
-        document.getElementById(id)?.addEventListener('change', renderMobileCardsAbsensi);
-    });
-    document.getElementById('mobile-absensi-filter-tanggal')?.addEventListener('change', function() {
-        const desktopDate = document.getElementById('filter-tanggal');
-        const colIdx = columnMap ? columnMap['tanggal_formatted'] : undefined;
-        if (desktopDate) {
-            desktopDate.value = this.value;
-        }
-        if (table && colIdx !== undefined) {
-            table.column(colIdx).search(this.value).draw();
-        } else if (table) {
-            table.ajax.reload(null, false);
-        }
-    });
-
-    // Re-render on resize
-    window.addEventListener('resize', function() {
-        if (window.innerWidth <= 768 && table) renderMobileCardsAbsensi();
-    });
 </script>
 @endsection

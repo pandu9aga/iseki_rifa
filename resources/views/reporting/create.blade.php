@@ -17,22 +17,22 @@
         <p class="text-sm flex w-full justify-end">Jumlah Data:&nbsp;<span
                 id="jumlah-data">{{ old('nama') ? count(old('nama')) : 1 }}</span></p>
 
-        <div class="text-sm" style="margin: 1px 0; margin-bottom: -15px;">
+        <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
             Untuk Terlambat wajib mengisi jam masuk
-        </div>
-        <div class="text-sm" style="margin: 1px 0; margin-bottom: -15px;">
+        </p>
+        <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
             Untuk Pulang Cepat wajib mengisi jam keluar
-        </div>
-        <div class="text-sm" style="margin: 1px 0; margin-bottom: -15px;">
+        </p>
+        <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
             Untuk Izin Keluar wajib mengisi jam masuk & jam keluar
-        </div>
-        <div class="text-sm" style="margin: 1px 0;">
+        </p>
+        <p class="text-sm" style="margin: 1px 0; line-height: 0.3;">
             Untuk Salah Fingerprint wajib mengisi jam masuk atau jam keluar
-        </div>
+        </p>
 
         <form action="{{ route('reporting.store') }}" method="POST" id="izin-form" class="g-5">
             @csrf
-            <section class="w-full container-table desktop-form-table">
+            <section class="w-full container-table">
                 <table id="cuti-table" class="min-w-full table-auto border-collapse">
                     <thead class="table-head">
                         <tr>
@@ -120,15 +120,9 @@
                 </table>
             </section>
 
-            <!-- MOBILE CARD FORM -->
-            <div class="mobile-form-cards" id="mobile-izin-form-cards"></div>
-            <button type="button" id="mobile-izin-add-card" class="btn btn-secondary mobile-only" style="width:100%;margin-top:0.5rem;">
-                <span class="material-symbols-rounded">add</span> Tambah Izin
-            </button>
-
             <p id="error-text" class="text-red-500 hidden"></p>
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.75rem;">
-                <button type="submit" id="submit-data" class="btn btn-primary" style="flex:1;min-width:120px;">Simpan</button>
+            <div class="">
+                <button type="submit" id="submit-data" class="btn btn-primary">Simpan</button>
             </div>
         </form>
     </main>
@@ -377,114 +371,6 @@
                 jamMasuk.prop('readonly', false);
                 jamKeluar.prop('readonly', false);
             }
-        });
-
-        /* ==========================================================
-           MOBILE CARD FORM — IZIN/ABSENSI
-        ========================================================== */
-        const izinMobileContainer = document.getElementById('mobile-izin-form-cards');
-        const jenisIzinList = [
-            '', 'Cuti', 'Cuti Setengah Hari Pagi', 'Cuti Setengah Hari Siang',
-            'Terlambat', 'Izin Keluar', 'Pulang Cepat', 'Pulang Cepat Dengan Surat',
-            'Absen', 'Absen Setengah Hari Pagi', 'Absen Setengah Hari Siang',
-            'Sakit', 'Cuti Khusus', 'Serikat', 'Salah Fingerprint'
-        ];
-        const employeeListIzin = @json($employees->map(fn($e) => ['id' => $e->id, 'nama' => $e->nama]));
-        let izinCardCount = 0;
-
-        function buildIzinCard(index) {
-            return `
-            <div class="mobile-form-card" data-izin-card="${index}">
-                <div class="card-number">${index + 1}</div>
-                <div class="form-field">
-                    <label>Nama Pegawai <span style="color:var(--danger)">*</span></label>
-                    <select class="mic-nama" required>
-                        <option value="">-- Pilih Pegawai --</option>
-                        ${employeeListIzin.map(e => `<option value="${e.id}">${e.nama}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Jenis Izin <span style="color:var(--danger)">*</span></label>
-                    <select class="mic-jenis" required>
-                        ${jenisIzinList.map(j => `<option value="${j}">${j || '-- Pilih Jenis Izin --'}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Keterangan</label>
-                    <input type="text" class="mic-keterangan" placeholder="Keterangan...">
-                </div>
-                <div class="form-field">
-                    <label>Tanggal <span style="color:var(--danger)">*</span></label>
-                    <input type="date" class="mic-tanggal" value="{{ now()->format('Y-m-d') }}" required>
-                </div>
-                <div class="field-row">
-                    <div class="form-field">
-                        <label>Jam Masuk</label>
-                        <input type="time" class="mic-jam-masuk">
-                    </div>
-                    <div class="form-field">
-                        <label>Jam Keluar</label>
-                        <input type="time" class="mic-jam-keluar">
-                    </div>
-                </div>
-                ${index > 0 ? `<button type="button" class="btn btn-secondary mic-remove-btn" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);">
-                    <span class="material-symbols-rounded" style="font-size:1rem;">delete</span> Hapus
-                </button>` : ''}
-            </div>`;
-        }
-
-        function addIzinCard() {
-            if (!izinMobileContainer) return;
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = buildIzinCard(izinCardCount);
-            const cardEl = wrapper.firstElementChild;
-            izinMobileContainer.appendChild(cardEl);
-            cardEl.querySelector('.mic-remove-btn')?.addEventListener('click', function() {
-                cardEl.remove();
-                izinMobileContainer.querySelectorAll('.mobile-form-card').forEach((c, i) => {
-                    c.querySelector('.card-number').textContent = i + 1;
-                });
-            });
-            izinCardCount++;
-        }
-
-        if (window.innerWidth <= 768) {
-            addIzinCard();
-        }
-
-        document.getElementById('mobile-izin-add-card')?.addEventListener('click', addIzinCard);
-
-        // On submit: sync mobile cards to hidden desktop table
-        document.getElementById('izin-form')?.addEventListener('submit', function(e) {
-            if (window.innerWidth > 768) return;
-
-            const tbody = document.querySelector('#cuti-table tbody');
-            tbody.querySelectorAll('tr:not(#row-button)').forEach(r => r.remove());
-
-            document.querySelectorAll('#mobile-izin-form-cards .mobile-form-card').forEach((card, i) => {
-                const namaId    = card.querySelector('.mic-nama')?.value    || '';
-                const jenis     = card.querySelector('.mic-jenis')?.value   || '';
-                const ket       = card.querySelector('.mic-keterangan')?.value || '';
-                const tanggal   = card.querySelector('.mic-tanggal')?.value || '';
-                const jamMasuk  = card.querySelector('.mic-jam-masuk')?.value || '';
-                const jamKeluar = card.querySelector('.mic-jam-keluar')?.value || '';
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="number">${i + 1}</td>
-                    <td><input type="hidden" name="nama[]" value="${namaId}"></td>
-                    <td><input type="hidden" name="jenis_cuti[]" value="${jenis}"></td>
-                    <td><input type="hidden" name="keterangan[]" value="${ket}"></td>
-                    <td><input type="hidden" name="tanggal[]" value="${tanggal}"></td>
-                    <td><input type="hidden" name="jam_masuk[]" value="${jamMasuk}"></td>
-                    <td><input type="hidden" name="jam_keluar[]" value="${jamKeluar}"></td>
-                    <td class="status"></td>
-                    <td class="divisi"></td>
-                    <td class="team"></td>
-                    <td></td>
-                `;
-                tbody.insertBefore(row, document.getElementById('row-button'));
-            });
         });
     </script>
 @endsection
