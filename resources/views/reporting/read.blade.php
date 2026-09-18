@@ -468,11 +468,19 @@
     });
 
     let table;
+    const initialTanggal = document.getElementById('filter-tanggal')?.value || '';
+    const initialSearchCols = columns.map(col => {
+        if (col.data === 'tanggal_formatted' && initialTanggal) {
+            return { search: initialTanggal };
+        }
+        return null;
+    });
 
     $(document).ready(function () {
             table = $('#cuti-table').DataTable({
             processing: true,
             serverSide: true,
+            searchCols: initialSearchCols,
             ajax: {
                 url: isEmployee ? '/iseki_rifa/public/employee/reporting/data' : '/iseki_rifa/public/reporting/data',
                 type: 'GET',
@@ -613,14 +621,7 @@
                     table.column(colIndex).search(this.value).draw();
                 }
             });
-            if (el.value) {
-                setTimeout(() => {
-                    if (table && table.column(colIndex)) {
-                        table.column(colIndex).search(el.value).draw();
-                    }
-                }, 100);
-            }
-        }
+        }      }
 
         // Map column indices to filter IDs
         const filterMap = {};
