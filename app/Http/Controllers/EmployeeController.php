@@ -100,7 +100,9 @@ class EmployeeController extends Controller
                 $file = $request->file("photo_employee.$index");
                 if ($file->isValid()) {
                     $photoName = time() . '_' . $index . '_' . Str::slug($nama) . '.' . $file->getClientOriginalExtension();
+                    $targetPath = $destinationPath . '/' . $photoName;
                     $file->move($destinationPath, $photoName);
+                    $this->resizeImageIfNeeded($targetPath, 2 * 1024 * 1024);
                 }
             }
 
@@ -130,7 +132,7 @@ class EmployeeController extends Controller
         $request->validate([
             'nama' => 'required|string',
             'password' => 'nullable|string|max:3', // Validasi maksimal 3 karakter
-            'photo_employee' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:4096',
+            'photo_employee' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp',
         ]);
 
         $employee = Employee::findOrFail($id);
@@ -168,13 +170,113 @@ class EmployeeController extends Controller
 
             $file = $request->file('photo_employee');
             $photoName = time() . '_' . Str::slug($request->nama) . '.' . $file->getClientOriginalExtension();
+            $targetPath = $destinationPath . '/' . $photoName;
             $file->move($destinationPath, $photoName);
+            $this->resizeImageIfNeeded($targetPath, 2 * 1024 * 1024);
             $updateData['photo_employee'] = $photoName;
         }
 
         $employee->update($updateData);
 
         return response()->json(['message' => 'Data berhasil diupdate.'], 200);
+    }
+
+    /**
+     * Auto resize dan kompres gambar jika ukuran file melebihi batas (default 2MB)
+     */
+    private function resizeImageIfNeeded(string $filePath, int $maxBytes = 2097152): void
+    {
+        if (!file_exists($filePath) || filesize($filePath) <= $maxBytes) {
+            return;
+        }
+
+        $imageInfo = @getimagesize($filePath);
+        if (!$imageInfo) {
+            return;
+        }
+
+        [$width, $height, $imageType] = $imageInfo;
+
+        $sourceImage = match ($imageType) {
+            IMAGETYPE_JPEG => @imagecreatefromjpeg($filePath),
+            IMAGETYPE_PNG  => @imagecreatefrompng($filePath),
+            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($filePath) : null,
+            default        => null,
+        };
+
+        if (!$sourceImage) {
+            return;
+        }
+
+        // Resolusi maksimum untuk avatar / foto profil
+        $maxDimension = 1600;
+        $currWidth = $width;
+        $currHeight = $height;
+
+        if ($currWidth > $maxDimension || $currHeight > $maxDimension) {
+            $ratio = min($maxDimension / $currWidth, $maxDimension / $currHeight);
+            $newWidth = (int) round($currWidth * $ratio);
+            $newHeight = (int) round($currHeight * $ratio);
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            if ($imageType === IMAGETYPE_PNG || $imageType === IMAGETYPE_WEBP) {
+                imagealphablending($resized, false);
+                imagesavealpha($resized, true);
+            }
+
+            imagecopyresampled($resized, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $currWidth, $currHeight);
+            imagedestroy($sourceImage);
+            $sourceImage = $resized;
+            $currWidth = $newWidth;
+            $currHeight = $newHeight;
+        }
+
+        // Iteratif kompresi hingga di bawah maxBytes
+        $quality = 85;
+        $tempPath = $filePath . '.tmp';
+
+        while (true) {
+            if ($imageType === IMAGETYPE_PNG) {
+                // Konversi compression level (0-9) untuk PNG
+                $pngQuality = (int) round((100 - $quality) / 10);
+                imagepng($sourceImage, $tempPath, min(9, max(0, $pngQuality)));
+            } elseif ($imageType === IMAGETYPE_WEBP && function_exists('imagewebp')) {
+                imagewebp($sourceImage, $tempPath, $quality);
+            } else {
+                imagejpeg($sourceImage, $tempPath, $quality);
+            }
+
+            clearstatcache(true, $tempPath);
+            $fileSize = filesize($tempPath);
+
+            if ($fileSize <= $maxBytes || $quality <= 30) {
+                break;
+            }
+
+            // Kurangi kualitas dan jika masih terlalu besar, kurangi juga dimensinya
+            $quality -= 15;
+            if ($fileSize > $maxBytes && ($currWidth > 800 || $currHeight > 800)) {
+                $newWidth = (int) round($currWidth * 0.85);
+                $newHeight = (int) round($currHeight * 0.85);
+                $smaller = imagecreatetruecolor($newWidth, $newHeight);
+                if ($imageType === IMAGETYPE_PNG || $imageType === IMAGETYPE_WEBP) {
+                    imagealphablending($smaller, false);
+                    imagesavealpha($smaller, true);
+                }
+                imagecopyresampled($smaller, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $currWidth, $currHeight);
+                imagedestroy($sourceImage);
+                $sourceImage = $smaller;
+                $currWidth = $newWidth;
+                $currHeight = $newHeight;
+            }
+        }
+
+        imagedestroy($sourceImage);
+
+        if (file_exists($tempPath)) {
+            @unlink($filePath);
+            rename($tempPath, $filePath);
+        }
     }
 
     public function destroy($id)

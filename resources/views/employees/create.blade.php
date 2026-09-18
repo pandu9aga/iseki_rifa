@@ -110,7 +110,66 @@
         jumlahDataElement.textContent = rows.length;
     }
 
-    document.getElementById('employee-form').addEventListener('submit', function(e) {
+    // Compress foto jika di atas 2MB sebelum submit
+    async function compressImageFileUnder2MB(file, maxBytes = 2 * 1024 * 1024) {
+        if (!file || !file.type.startsWith('image/') || file.size <= maxBytes) {
+            return file;
+        }
+
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    let width = img.width;
+                    let height = img.height;
+
+                    const maxDim = 1600;
+                    if (width > maxDim || height > maxDim) {
+                        const ratio = Math.min(maxDim / width, maxDim / height);
+                        width = Math.round(width * ratio);
+                        height = Math.round(height * ratio);
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    let quality = 0.85;
+
+                    function tryCompress() {
+                        canvas.toBlob((blob) => {
+                            if (!blob) {
+                                resolve(file);
+                                return;
+                            }
+                            if (blob.size <= maxBytes || quality <= 0.3) {
+                                const newFile = new File([blob], file.name, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now()
+                                });
+                                resolve(newFile);
+                            } else {
+                                quality -= 0.15;
+                                tryCompress();
+                            }
+                        }, 'image/jpeg', quality);
+                    }
+
+                    tryCompress();
+                };
+                img.onerror = () => resolve(file);
+            };
+            reader.onerror = () => resolve(file);
+        });
+    }
+
+    const employeeForm = document.getElementById('employee-form');
+    employeeForm.addEventListener('submit', async function(e) {
         const errorText = document.getElementById('error-text');
         const namaInputs = document.querySelectorAll('input[name="nama[]"]');
         const nikInputs = document.querySelectorAll('input[name="nik[]"]');
@@ -148,13 +207,46 @@
             e.preventDefault();
             errorText.classList.remove('hidden');
             errorText.textContent = 'Data tidak boleh ada yang kosong. Pastikan kembali data setiap baris.';
+            return;
         } else if (namaInputs.length <= 0) {
             e.preventDefault();
             errorText.classList.remove('hidden');
             errorText.textContent = 'Minimal 1 baris data untuk disimpan.';
+            return;
         } else {
             errorText.classList.add('hidden');
             errorText.textContent = '';
+        }
+
+        // Cek dan kompres file foto yang ukurannya > 2MB
+        const photoInputs = document.querySelectorAll('input.photo_employee');
+        let needsCompression = false;
+        for (const input of photoInputs) {
+            if (input.files && input.files[0] && input.files[0].size > 2 * 1024 * 1024) {
+                needsCompression = true;
+                break;
+            }
+        }
+
+        if (needsCompression) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submit-data');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Mengompres foto...';
+
+            for (const input of photoInputs) {
+                if (input.files && input.files[0] && input.files[0].size > 2 * 1024 * 1024) {
+                    const compressed = await compressImageFileUnder2MB(input.files[0]);
+                    const dt = new DataTransfer();
+                    dt.items.add(compressed);
+                    input.files = dt.files;
+                }
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            employeeForm.submit();
         }
     });
 
