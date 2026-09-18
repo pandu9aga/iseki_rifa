@@ -286,7 +286,7 @@
             @if(!$isEmployeeReporting)
             <input type="text" id="mobile-absensi-filter-nama" placeholder="🔍 Cari Nama...">
             @endif
-            <input type="date" id="mobile-absensi-filter-tanggal">
+            <input type="date" id="mobile-absensi-filter-tanggal" value="{{ $isEmployeeReporting ? '' : date('Y-m-d') }}">
             <select id="mobile-absensi-filter-jenis">
                 <option value="">Semua Jenis Izin</option>
                 <option>Cuti</option>
@@ -565,12 +565,18 @@
             }
         });
 
+        function syncMobileDate(val) {
+            const mDate = document.getElementById('mobile-absensi-filter-tanggal');
+            if (mDate) mDate.value = val || '';
+        }
+
         function clearDateFilter() {
             const dateInput = document.getElementById('filter-tanggal');
             if (!dateInput || !dateInput.value) return;
             const dateColIdx = columnMap['tanggal_formatted'];
             if (dateColIdx === undefined) return;
             dateInput.value = '';
+            syncMobileDate('');
             if (table && table.column(dateColIdx)) {
                 table.column(dateColIdx).search('');
             }
@@ -588,6 +594,7 @@
             const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
             d.setDate(d.getDate() + step);
             input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            syncMobileDate(input.value);
             table.column(colIdx).search(input.value).draw();
         }
 
@@ -1060,11 +1067,15 @@
     });
     document.getElementById('mobile-absensi-filter-tanggal')?.addEventListener('change', function() {
         const desktopDate = document.getElementById('filter-tanggal');
+        const colIdx = columnMap ? columnMap['tanggal_formatted'] : undefined;
         if (desktopDate) {
             desktopDate.value = this.value;
-            desktopDate.dispatchEvent(new Event('input'));
         }
-        if (table) table.ajax.reload(null, false);
+        if (table && colIdx !== undefined) {
+            table.column(colIdx).search(this.value).draw();
+        } else if (table) {
+            table.ajax.reload(null, false);
+        }
     });
 
     // Re-render on resize
