@@ -621,7 +621,7 @@
                     table.column(colIndex).search(this.value).draw();
                 }
             });
-        }      }
+        }
 
         // Map column indices to filter IDs
         const filterMap = {};
