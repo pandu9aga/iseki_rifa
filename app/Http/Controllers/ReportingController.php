@@ -171,6 +171,9 @@ class ReportingController extends Controller
                 if (is_null($absen->is_approved)) return 'bg-yellow';
                 return $absen->is_approved ? 'bg-success' : 'bg-red';
             })
+            ->addColumn('dokumen_upload_html', function ($absen) {
+                return view('partials.dokumen-upload-cell', ['absen' => $absen])->render();
+            })
             ->addColumn('member_approval_html', function ($absen) {
                 return view('partials.member-approval-cell', ['absen' => $absen])->render();
             })
@@ -293,7 +296,7 @@ class ReportingController extends Controller
             })
             ->rawColumns([
                 'keterangan_html', 'sisa_cuti', 'approval_buttons',
-                'member_approval_html', 'replacement_info', 'action_buttons'
+                'dokumen_upload_html', 'member_approval_html', 'replacement_info', 'action_buttons'
             ]);
 
         $response = $dataTable->toJson();
@@ -1381,11 +1384,208 @@ class ReportingController extends Controller
         $absen = Absensi::findOrFail($id);
 
         $approval = $request->approval;
+
+        // Kategori yang wajib upload dokumen saat approve
+        $kategoriWajibDokumen = ['CK', 'S']; // Cuti Khusus, Sakit
+        $isPulangCepatDenganSurat = $absen->kategori === 'P' && str_starts_with($absen->keterangan ?? '', 'Dengan Surat');
+
+        $butuhDokumen = in_array($absen->kategori, $kategoriWajibDokumen) || $isPulangCepatDenganSurat;
+
+        // Jika approve (bukan tolak/batalkan) dan kategori wajib dokumen
+        if ($approval === '1' && $butuhDokumen) {
+            // Validasi: minimal dokumen_1 wajib ada
+            if (!$request->hasFile('dokumen_1')) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Dokumen wajib diunggah untuk kategori ini sebelum menyetujui.',
+                ], 422);
+            }
+
+            $rules = [
+                'dokumen_1' => 'required|image|mimes:jpeg,jpg,png,webp|max:10240',
+            ];
+            if ($request->hasFile('dokumen_2')) {
+                $rules['dokumen_2'] = 'image|mimes:jpeg,jpg,png,webp|max:10240';
+            }
+
+            $request->validate($rules, [
+                'dokumen_1.required' => 'Dokumen 1 wajib diunggah.',
+                'dokumen_1.image' => 'Dokumen 1 harus berupa gambar.',
+                'dokumen_1.mimes' => 'Format dokumen 1 harus jpeg, jpg, png, atau webp.',
+                'dokumen_2.image' => 'Dokumen 2 harus berupa gambar.',
+                'dokumen_2.mimes' => 'Format dokumen 2 harus jpeg, jpg, png, atau webp.',
+            ]);
+
+            // Simpan dokumen
+            $uploadPath = public_path('dokumen_absensi');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            foreach (['dokumen_1', 'dokumen_2'] as $field) {
+                if ($request->hasFile($field)) {
+                    $file = $request->file($field);
+                    $filename = $field . '_' . $absen->id . '_' . time() . '.jpg';
+                    $destinationPath = $uploadPath . DIRECTORY_SEPARATOR . $filename;
+
+                    // Resize image agar di bawah 1 MB menggunakan GD
+                    $this->resizeImageUnder1MB($file->getRealPath(), $destinationPath);
+
+                    // Hapus file lama jika ada
+                    if ($absen->$field) {
+                        $oldPath = public_path('dokumen_absensi/' . $absen->$field);
+                        if (file_exists($oldPath)) {
+                            unlink($oldPath);
+                        }
+                    }
+
+                    $absen->$field = $filename;
+                }
+            }
+        }
+
+        // Jika batalkan approval, hapus juga dokumen
+        if ($approval === 'null') {
+            foreach (['dokumen_1', 'dokumen_2'] as $field) {
+                if ($absen->$field) {
+                    $oldPath = public_path('dokumen_absensi/' . $absen->$field);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                    $absen->$field = null;
+                }
+            }
+        }
+
         $absen->member_approved = $approval === 'null' ? null : (bool)$approval;
         $absen->save();
 
         return response()->json([
             'cell_html' => view('partials.member-approval-cell', compact('absen'))->render()
         ]);
+    }
+
+    /**
+     * Update dokumen (dari preview modal) tanpa mengubah status approval.
+     */
+    public function updateDokumen(Request $request, $id)
+    {
+        $absen = Absensi::findOrFail($id);
+
+        $rules = [];
+        if ($request->hasFile('dokumen_1')) {
+            $rules['dokumen_1'] = 'image|mimes:jpeg,jpg,png,webp|max:10240';
+        }
+        if ($request->hasFile('dokumen_2')) {
+            $rules['dokumen_2'] = 'image|mimes:jpeg,jpg,png,webp|max:10240';
+        }
+
+        if (empty($rules)) {
+            return response()->json(['message' => 'Tidak ada dokumen yang diunggah.'], 422);
+        }
+
+        $request->validate($rules, [
+            'dokumen_1.image' => 'Dokumen 1 harus berupa gambar.',
+            'dokumen_1.mimes' => 'Format dokumen 1 harus jpeg, jpg, png, atau webp.',
+            'dokumen_2.image' => 'Dokumen 2 harus berupa gambar.',
+            'dokumen_2.mimes' => 'Format dokumen 2 harus jpeg, jpg, png, atau webp.',
+        ]);
+
+        $uploadPath = public_path('dokumen_absensi');
+        if (!file_exists($uploadPath)) {
+            mkdir($uploadPath, 0755, true);
+        }
+
+        foreach (['dokumen_1', 'dokumen_2'] as $field) {
+            if ($request->hasFile($field)) {
+                $file = $request->file($field);
+                $filename = $field . '_' . $absen->id . '_' . time() . '.jpg';
+                $destinationPath = $uploadPath . DIRECTORY_SEPARATOR . $filename;
+
+                $this->resizeImageUnder1MB($file->getRealPath(), $destinationPath);
+
+                // Hapus file lama jika ada
+                if ($absen->$field) {
+                    $oldPath = public_path('dokumen_absensi/' . $absen->$field);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                }
+
+                $absen->$field = $filename;
+            }
+        }
+
+        $absen->save();
+
+        return response()->json(['message' => 'Dokumen berhasil diperbarui.']);
+    }
+
+    /**
+     * Resize gambar agar ukurannya di bawah 1 MB menggunakan GD.
+     */
+    private function resizeImageUnder1MB(string $sourcePath, string $destinationPath, int $maxFileSize = 1048576): void
+    {
+        $imageInfo = getimagesize($sourcePath);
+        if (!$imageInfo) {
+            // Bukan gambar valid, copy saja
+            copy($sourcePath, $destinationPath);
+            return;
+        }
+
+        $mime = $imageInfo['mime'];
+        $sourceImage = match ($mime) {
+            'image/jpeg' => imagecreatefromjpeg($sourcePath),
+            'image/png'  => imagecreatefrompng($sourcePath),
+            'image/webp' => imagecreatefromwebp($sourcePath),
+            default      => imagecreatefromjpeg($sourcePath),
+        };
+
+        if (!$sourceImage) {
+            copy($sourcePath, $destinationPath);
+            return;
+        }
+
+        $width = imagesx($sourceImage);
+        $height = imagesy($sourceImage);
+
+        // Coba simpan dengan kualitas tinggi dulu
+        $quality = 90;
+        $scale = 1.0;
+
+        do {
+            $newWidth = (int)($width * $scale);
+            $newHeight = (int)($height * $scale);
+
+            if ($newWidth < 100 || $newHeight < 100) {
+                // Jangan resize terlalu kecil
+                break;
+            }
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled($resized, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+            // Simpan ke file
+            imagejpeg($resized, $destinationPath, $quality);
+            imagedestroy($resized);
+
+            clearstatcache(true, $destinationPath);
+            $fileSize = filesize($destinationPath);
+
+            if ($fileSize <= $maxFileSize) {
+                break;
+            }
+
+            // Kurangi kualitas dulu
+            if ($quality > 40) {
+                $quality -= 10;
+            } else {
+                // Jika kualitas sudah rendah, kurangi skala
+                $quality = 75;
+                $scale -= 0.15;
+            }
+        } while ($fileSize > $maxFileSize && $scale > 0.1);
+
+        imagedestroy($sourceImage);
     }
 }

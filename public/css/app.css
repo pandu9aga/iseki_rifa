@@ -1356,3 +1356,100 @@ form .form-row input:focus {
         font-size: 0.75rem;
     }
 }
+
+/* ---------- DOKUMEN UPLOAD ABSENSI ---------- */
+.dokumen-slot {
+    width: 70px;
+    flex-shrink: 0;
+}
+
+.dokumen-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border: 2px dashed #ccc;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--surface-secondary);
+    position: relative;
+}
+
+.dokumen-label:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.15);
+}
+
+.dokumen-label.has-file {
+    border-style: solid;
+    border-color: var(--success);
+}
+
+.dokumen-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+}
+
+.dokumen-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: calc(var(--radius-sm) - 2px);
+}
+
+.dokumen-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.dokumen-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: var(--shadow-md);
+}
+
+.dokumen-upload-area {
+    padding: 6px;
+    background: #fff8f0;
+    border: 1px solid #ffd6a5;
+    border-radius: var(--radius-sm);
+}
+
+.member-approval-form .dokumen-upload-area .text-xs {
+    font-size: 0.65rem;
+    line-height: 1.2;
+}
+
+/* Loading state saat upload */
+.member-approval-form.uploading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.member-approval-form.uploading::after {
+    content: 'Mengunggah...';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.8);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    border-radius: var(--radius-sm);
+}

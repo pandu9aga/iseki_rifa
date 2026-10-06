@@ -42,6 +42,7 @@ Route::get('/divisioning', [EmployeeController::class, 'totalInDivisions']);
 Route::middleware(CheckEmployeeLogin::class)->group(function () {
     Route::get('/employee/reporting', [ReportingController::class, 'read'])->name('employee.reporting');
     Route::put('/reporting/{id}/member-approve', [ReportingController::class, 'memberApprove']);
+    Route::post('/reporting/{id}/update-dokumen', [ReportingController::class, 'updateDokumen'])->name('employee.reporting.update-dokumen');
     Route::get('/employee/reporting/create', [ReportingController::class, 'create']);
     Route::post('/employee/reporting', [ReportingController::class, 'store'])->name('employee.reporting.store');
     Route::get('/employee/employee/details', [ReportingController::class, 'getEmployeeDetails'])->name('employee.details');
@@ -71,6 +72,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/reporting/{id}', [ReportingController::class, 'update'])->name('reporting.update');
     Route::delete('/reporting/{id}', [ReportingController::class, 'destroy'])->name('reporting.destroy');
     Route::put('/reporting/{id}/approve', [ReportingController::class, 'approve'])->name('reporting.approve');
+    Route::post('/reporting/{id}/update-dokumen', [ReportingController::class, 'updateDokumen'])->name('reporting.update-dokumen');
     Route::get('/reporting/daily-report', [ReportingController::class, 'dailyReport']);
     Route::post('/reporting/nihil', [ReportingController::class, 'storeNihil'])->name('reporting.nihil');
     Route::get('/reporting/download-excel', [ReportingController::class, 'excel'])->name('reporting.excel');

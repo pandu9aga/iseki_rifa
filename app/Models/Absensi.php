@@ -21,6 +21,8 @@ class Absensi extends Model
         'jam_keluar',
         'is_approved',
         'member_approved',
+        'dokumen_1',
+        'dokumen_2',
     ];
 
     protected $casts = [

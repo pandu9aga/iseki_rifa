@@ -11,6 +11,7 @@
 <main>
     @include('components.popupEdit')
     @include('components.popupDailyReport')
+    @include('components.popupPreviewDokumen')
 
     @userType('leader')
     <h4 class="font-bold mt-4">
@@ -289,6 +290,7 @@
                     <th rowspan="2">Approvement</th>
                     @enduserType
                     <th>Status Persetujuan</th>
+                    <th rowspan="2">Dokumen</th>
                     <th>Persetujuan Member</th>
                     <th>Persetujuan HR</th>
                     @if(!$isEmployeeReporting)
@@ -409,6 +411,7 @@
     }
     columns.push(
         { data: 'status_super_label' },
+        { data: 'dokumen_upload_html', orderable: false, searchable: false },
         { data: 'member_approval_html' },
         { data: 'hr_approval_label' },
     );
@@ -830,27 +833,110 @@
     });
 
     function attachMemberApprovalListeners(context = document) {
+        // Attach preview listeners untuk file input dokumen
+        context.querySelectorAll('.dokumen-input').forEach(input => {
+            input.addEventListener('change', function () {
+                const previewId = this.dataset.target;
+                const placeholderId = this.dataset.placeholder;
+                const preview = document.getElementById(previewId);
+                const placeholder = document.getElementById(placeholderId);
+                const label = this.closest('.dokumen-slot').querySelector('.dokumen-label');
+
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        if (preview) {
+                            preview.src = e.target.result;
+                            preview.classList.remove('hidden');
+                        }
+                        if (placeholder) {
+                            placeholder.classList.add('hidden');
+                        }
+                        if (label) {
+                            label.classList.add('has-file');
+                        }
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                } else {
+                    if (preview) {
+                        preview.src = '';
+                        preview.classList.add('hidden');
+                    }
+                    if (placeholder) {
+                        placeholder.classList.remove('hidden');
+                    }
+                    if (label) {
+                        label.classList.remove('has-file');
+                    }
+                }
+            });
+        });
+
         context.querySelectorAll('.member-approve-btn').forEach(button => {
             button.addEventListener('click', function () {
                 const approval = this.dataset.value;
                 const form = this.closest('.member-approval-form');
                 const id = form.dataset.id;
+                const row = form.closest('tr');
+
+                // Cari dokumen cell di row yang sama
+                const dokumenCell = row ? row.querySelector('.dokumen-cell') : null;
+                const butuhDokumen = dokumenCell && dokumenCell.dataset.butuhDokumen === '1';
+
+                // Jika approve dan butuh dokumen, validasi file di kolom dokumen
+                if (approval === '1' && butuhDokumen) {
+                    const dok1Input = dokumenCell.querySelector('input[name="dokumen_1"]');
+                    if (!dok1Input || !dok1Input.files || dok1Input.files.length === 0) {
+                        showApprovalNotif('Dokumen 1 wajib diunggah sebelum menyetujui!', 'error', 3500);
+                        return;
+                    }
+                }
+
+                // Gunakan FormData agar bisa kirim file
+                const formData = new FormData();
+                formData.append('approval', approval);
+                formData.append('_method', 'PUT');
+
+                // Ambil file dari kolom dokumen
+                if (butuhDokumen && approval === '1' && dokumenCell) {
+                    const dok1 = dokumenCell.querySelector('input[name="dokumen_1"]');
+                    const dok2 = dokumenCell.querySelector('input[name="dokumen_2"]');
+                    if (dok1 && dok1.files[0]) formData.append('dokumen_1', dok1.files[0]);
+                    if (dok2 && dok2.files[0]) formData.append('dokumen_2', dok2.files[0]);
+                }
+
+                // Loading state
+                form.style.position = 'relative';
+                form.classList.add('uploading');
 
                 fetch(`/iseki_rifa/public/reporting/${id}/member-approve`, {
-                        method: 'PUT',
+                        method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': csrfToken,
                             'Accept': 'application/json',
-                            'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ approval })
+                        body: formData
                     })
-                    .then(res => res.json())
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok) throw data;
+                        return data;
+                    })
                     .then(data => {
+                        form.classList.remove('uploading');
                         if (table) table.ajax.reload(null, false);
+                        if (approval === '1') {
+                            showApprovalNotif('Persetujuan member berhasil disimpan', 'success');
+                        } else if (approval === '0') {
+                            showApprovalNotif('Perizinan ditolak oleh member', 'error');
+                        } else {
+                            showApprovalNotif('Persetujuan member dibatalkan', 'warning');
+                        }
                     })
-                    .catch(() => {
-                        showApprovalNotif('Gagal menyimpan persetujuan member', 'error');
+                    .catch(err => {
+                        form.classList.remove('uploading');
+                        const msg = err.message || err.errors?.dokumen_1?.[0] || 'Gagal menyimpan persetujuan member';
+                        showApprovalNotif(msg, 'error', 4000);
                     });
             });
         });
@@ -895,5 +981,195 @@
         const modal = document.getElementById(modalId);
         modal.classList.replace('flex', 'hidden');
     }
+
+    // ===== DOKUMEN PREVIEW MODAL =====
+    let currentDokumenAbsenId = null;
+
+    function openDokumenPreviewModal(el) {
+        const absenId = el.dataset.absenId;
+        const nama = el.dataset.nama || '-';
+        const dok1 = el.dataset.dok1 || '';
+        const dok2 = el.dataset.dok2 || '';
+        const canEdit = el.dataset.canEdit === '1';
+        const memberApproved = el.dataset.memberApproved;
+
+        currentDokumenAbsenId = absenId;
+
+        // Set nama
+        const namaEl = document.getElementById('preview-dokumen-nama');
+        if (namaEl) namaEl.textContent = nama;
+
+        // Dokumen 1
+        const dok1Img = document.getElementById('preview-dok1-img');
+        const dok1Placeholder = document.getElementById('preview-dok1-placeholder');
+        if (dok1) {
+            dok1Img.src = dok1;
+            dok1Img.style.display = 'block';
+            dok1Placeholder.style.display = 'none';
+        } else {
+            dok1Img.src = '';
+            dok1Img.style.display = 'none';
+            dok1Placeholder.style.display = 'flex';
+        }
+
+        // Dokumen 2
+        const dok2Img = document.getElementById('preview-dok2-img');
+        const dok2Placeholder = document.getElementById('preview-dok2-placeholder');
+        const dok2Section = document.getElementById('preview-dok2-section');
+        if (dok2) {
+            dok2Img.src = dok2;
+            dok2Img.style.display = 'block';
+            dok2Placeholder.style.display = 'none';
+            if (dok2Section) dok2Section.style.display = 'block';
+        } else {
+            dok2Img.src = '';
+            dok2Img.style.display = 'none';
+            dok2Placeholder.style.display = 'flex';
+            // Tampilkan placeholder "Tidak ada dokumen 2"
+            if (dok2Section) dok2Section.style.display = 'block';
+        }
+
+        // Tombol Edit (hanya member yang belum di-approve)
+        const showEdit = canEdit && memberApproved === 'null';
+        document.querySelectorAll('.dokumen-edit-btn').forEach(btn => {
+            btn.style.display = showEdit ? 'inline-flex' : 'none';
+            if (showEdit) btn.classList.remove('hidden');
+        });
+        const saveBtn = document.getElementById('save-dokumen-btn');
+        if (saveBtn) {
+            saveBtn.style.display = showEdit ? 'inline-flex' : 'none';
+            if (showEdit) saveBtn.classList.remove('hidden');
+        }
+
+        // Show modal
+        const modal = document.getElementById('previewDokumenModal');
+        if (modal) modal.classList.replace('hidden', 'flex');
+    }
+
+    function closeDokumenPreviewModal() {
+        const modal = document.getElementById('previewDokumenModal');
+        if (modal) modal.classList.replace('flex', 'hidden');
+        currentDokumenAbsenId = null;
+    }
+
+    function zoomDokumenImage(img) {
+        if (!img || !img.src) return;
+        const zoomModal = document.getElementById('zoomDokumenModal');
+        const zoomImg = document.getElementById('zoom-dokumen-img');
+        if (zoomModal && zoomImg) {
+            zoomImg.src = img.src;
+            zoomModal.classList.replace('hidden', 'flex');
+        }
+    }
+
+    function closeZoomDokumen() {
+        const zoomModal = document.getElementById('zoomDokumenModal');
+        if (zoomModal) zoomModal.classList.replace('flex', 'hidden');
+    }
+
+    function saveDokumenEdit() {
+        if (!currentDokumenAbsenId) return;
+
+        const dok1Input = document.getElementById('edit-dokumen-1-input');
+        const dok2Input = document.getElementById('edit-dokumen-2-input');
+
+        if ((!dok1Input || !dok1Input.files.length) && (!dok2Input || !dok2Input.files.length)) {
+            alert('Pilih minimal satu dokumen untuk diganti.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        if (dok1Input && dok1Input.files[0]) formData.append('dokumen_1', dok1Input.files[0]);
+        if (dok2Input && dok2Input.files[0]) formData.append('dokumen_2', dok2Input.files[0]);
+
+        const saveBtn = document.getElementById('save-dokumen-btn');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="material-symbols-rounded" style="font-size:18px;">hourglass_empty</i> Menyimpan...';
+        }
+
+        fetch(`/iseki_rifa/public/reporting/${currentDokumenAbsenId}/update-dokumen`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+            body: formData,
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw data;
+            return data;
+        })
+        .then(data => {
+            closeDokumenPreviewModal();
+            if (table) table.ajax.reload(null, false);
+            showApprovalNotif('Dokumen berhasil diperbarui', 'success');
+        })
+        .catch(err => {
+            const msg = err.message || 'Gagal menyimpan dokumen';
+            showApprovalNotif(msg, 'error', 4000);
+        })
+        .finally(() => {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="material-symbols-rounded" style="font-size:18px;">save</i> Simpan Perubahan';
+            }
+            // Reset file inputs
+            if (dok1Input) dok1Input.value = '';
+            if (dok2Input) dok2Input.value = '';
+        });
+    }
+
+    // File input preview untuk edit modal dokumen
+    document.getElementById('edit-dokumen-1-input')?.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = document.getElementById('preview-dok1-img');
+                const placeholder = document.getElementById('preview-dok1-placeholder');
+                if (img) { img.src = e.target.result; img.style.display = 'block'; }
+                if (placeholder) placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    document.getElementById('edit-dokumen-2-input')?.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = document.getElementById('preview-dok2-img');
+                const placeholder = document.getElementById('preview-dok2-placeholder');
+                if (img) { img.src = e.target.result; img.style.display = 'block'; }
+                if (placeholder) placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    // Event delegation: handle klik thumbnail dokumen dari DataTables (dynamic rows)
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.dokumen-preview-btn');
+        if (btn) {
+            e.stopPropagation();
+            openDokumenPreviewModal(btn);
+        }
+    });
+
+    // Keyboard shortcuts untuk modal dokumen
+    document.addEventListener('keydown', function (e) {
+        const modal = document.getElementById('previewDokumenModal');
+        const zoomModal = document.getElementById('zoomDokumenModal');
+
+        if (zoomModal && !zoomModal.classList.contains('hidden')) {
+            if (e.key === 'Escape') closeZoomDokumen();
+            return;
+        }
+        if (modal && !modal.classList.contains('hidden')) {
+            if (e.key === 'Escape') closeDokumenPreviewModal();
+        }
+    });
 </script>
 @endsection

@@ -1,5 +1,11 @@
+@php
+    $kategoriWajibDokumen = ['CK', 'S'];
+    $isPulangCepatDenganSurat = $absen->kategori === 'P' && str_starts_with($absen->keterangan ?? '', 'Dengan Surat');
+    $butuhDokumen = in_array($absen->kategori, $kategoriWajibDokumen) || $isPulangCepatDenganSurat;
+@endphp
+
 @if(session()->has('employee_login') && session('employee_login'))
-    <form class="member-approval-form" data-id="{{ $absen->id }}">
+    <form class="member-approval-form" data-id="{{ $absen->id }}" data-butuh-dokumen="{{ $butuhDokumen ? '1' : '0' }}">
         @csrf
         @method('PUT')
 
