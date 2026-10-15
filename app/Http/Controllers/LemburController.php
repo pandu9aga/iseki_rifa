@@ -8,6 +8,7 @@ use App\Models\Budget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
@@ -181,11 +182,14 @@ class LemburController extends Controller
                 return $row->makan_lembur;
             })
             ->addColumn('action_buttons', function ($row) {
-                $isApproved = !is_null($row->approval_lembur);
+                $isApproved = ($row->approval_lembur === true);
                 $disabledAttr = $isApproved ? 'disabled' : '';
-                $opacity = $isApproved ? 'opacity: 0.2;' : '';
+                $style = $isApproved ? 'opacity: 0.2; pointer-events: none; cursor: not-allowed;' : '';
+                $onclick = $isApproved ? '' : 'onclick="showDeletePopup(this.closest(\'tr\'))"';
+                $title = $isApproved ? 'Lembur sudah disetujui (tidak dapat dihapus)' : 'Hapus';
+
                 return '<div class="btn-group">' .
-                    '<button type="button" class="btn btn-icon edit-btn" ' . $disabledAttr . ' style="' . $opacity . '"' .
+                    '<button type="button" class="btn btn-icon edit-btn" ' . $disabledAttr . ' style="' . $style . '"' .
                     ' data-id="' . $row->id_lembur . '"' .
                     ' data-employee_name="' . e($row->employee?->nama ?? '-') . '"' .
                     ' data-employee_id="' . ($row->employee?->id ?? '') . '"' .
@@ -195,8 +199,8 @@ class LemburController extends Controller
                     ' data-keterangan="' . e($row->keterangan_lembur) . '"' .
                     ' data-makan="' . e($row->makan_lembur) . '">' .
                     '<i class="material-symbols-rounded btn-primary">edit_square</i></button>' .
-                    '<button type="button" class="btn btn-icon danger delete-row" ' . $disabledAttr . ' style="' . $opacity . '"' .
-                    ' onclick="showDeletePopup(this.closest(\'tr\'))" title="Hapus">' .
+                    '<button type="button" class="btn btn-icon danger delete-row" ' . $disabledAttr . ' style="' . $style . '" ' .
+                    $onclick . ' title="' . $title . '">' .
                     '<i class="material-symbols-rounded btn-danger">delete</i></button></div>';
             })
             ->filterColumn('nama', function ($query, $keyword) {
@@ -472,6 +476,15 @@ class LemburController extends Controller
     public function destroy($id)
     {
         $lembur = Lembur::findOrFail($id);
+
+        // Kunci: Jangan izinkan hapus jika lembur sudah di-approve
+        if ($lembur->approval_lembur === true) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data lembur yang sudah disetujui tidak dapat dihapus! Batalkan persetujuan terlebih dahulu jika ingin menghapus.'
+            ], 422);
+        }
+
         $lembur->delete();
 
         return response()->json([
@@ -482,7 +495,7 @@ class LemburController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $lembur = Lembur::findOrFail($id);
+        $lembur = Lembur::with('employee')->findOrFail($id);
         $approval = $request->approval;
 
         if ($approval === '1') {
@@ -493,6 +506,14 @@ class LemburController extends Controller
             $lembur->approval_lembur = null;
         }
         $lembur->save();
+
+        // Sync ke DB Mirai saat approve
+        if ($lembur->approval_lembur === true) {
+            $this->syncToMirai($lembur);
+        } elseif (is_null($lembur->approval_lembur)) {
+            // Jika dibatalkan, hapus dari mirai
+            $this->removeFromMirai($lembur);
+        }
 
         if (is_null($lembur->approval_lembur)) {
             $status_label = 'Menunggu Persetujuan';
@@ -1338,5 +1359,147 @@ class LemburController extends Controller
         $html .= '</html>';
 
         return $html;
+    }
+
+    public function bulkApprove(Request $request)
+    {
+        $request->validate(['tanggal' => 'required|date']);
+
+        // Ambil semua data lembur pending pada tanggal tersebut SEBELUM update
+        $pendingLemburs = Lembur::with('employee')
+            ->whereDate('tanggal_lembur', $request->tanggal)
+            ->whereNull('approval_lembur')
+            ->get();
+
+        $affected = $pendingLemburs->count();
+
+        // Update approval lokal
+        Lembur::whereDate('tanggal_lembur', $request->tanggal)
+            ->whereNull('approval_lembur')
+            ->update(['approval_lembur' => true]);
+
+        // Sync masing-masing ke DB Mirai
+        foreach ($pendingLemburs as $lembur) {
+            $lembur->approval_lembur = true; // Set manual karena sudah di-update bulk
+            $this->syncToMirai($lembur);
+        }
+
+        return response()->json([
+            'success' => true,
+            'affected' => $affected,
+            'message' => 'Berhasil menyetujui semua lembur pada tanggal ' . $request->tanggal
+        ]);
+    }
+
+    public function bulkDecline(Request $request)
+    {
+        $request->validate(['tanggal' => 'required|date']);
+        $affected = Lembur::whereDate('tanggal_lembur', $request->tanggal)
+            ->whereNull('approval_lembur')
+            ->update(['approval_lembur' => false]);
+
+        return response()->json([
+            'success' => true,
+            'affected' => $affected,
+            'message' => 'Berhasil menolak semua lembur pada tanggal ' . $request->tanggal
+        ]);
+    }
+
+    /**
+     * Sync data lembur yang di-approve ke tabel overtimes di DB Mirai.
+     * Data yang dikirim: id_rifa, is_need_to_eat, tanggal (request_date), jam (request_time), pekerjaan (remark)
+     */
+    private function syncToMirai(Lembur $lembur)
+    {
+        try {
+            // Cari karyawan_id di mirai berdasarkan NIK (employee_number)
+            $nik = $lembur->employee->nik ?? null;
+            if (!$nik) return;
+
+            $miraiEmployee = DB::connection('mirai')
+                ->table('employees')
+                ->where('employee_number', $nik)
+                ->first();
+
+            if (!$miraiEmployee) return;
+
+            // Cari user_id di mirai (ambil user pertama sebagai default approval user)
+            $miraiUser = DB::connection('mirai')
+                ->table('users')
+                ->first();
+
+            $userId = $miraiUser->id ?? 1;
+
+            // Tentukan is_need_to_eat berdasarkan kolom makan_lembur
+            $makanValue = strtolower(trim($lembur->makan_lembur ?? ''));
+            $isNeedToEat = in_array($makanValue, ['ya', 'yes', 'o', '1']) ? 1 : 0;
+
+            // Generate kode overtime
+            $prefix = 'OT-';
+            $date = now()->format('ymd');
+            $countToday = DB::connection('mirai')
+                ->table('overtimes')
+                ->whereDate('created_at', today())
+                ->count() + 1;
+            $kode = $prefix . $date . str_pad($countToday, 4, '0', STR_PAD_LEFT);
+
+            // Cek apakah sudah ada data dengan id_rifa yang sama (untuk mencegah duplikat)
+            $existing = DB::connection('mirai')
+                ->table('overtimes')
+                ->where('id_rifa', $lembur->id_lembur)
+                ->first();
+
+            if ($existing) {
+                // Update yang sudah ada
+                DB::connection('mirai')
+                    ->table('overtimes')
+                    ->where('id_rifa', $lembur->id_lembur)
+                    ->update([
+                        'status' => 'APPROVE',
+                        'is_need_to_eat' => $isNeedToEat,
+                        'request_date' => $lembur->tanggal_lembur->format('Y-m-d'),
+                        'request_time' => $lembur->waktu_lembur ?? '',
+                        'remark' => $lembur->keterangan_lembur ?? '',
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                // Insert baru
+                DB::connection('mirai')
+                    ->table('overtimes')
+                    ->insert([
+                        'id_rifa' => $lembur->id_lembur,
+                        'kode' => $kode,
+                        'karyawan_id' => $miraiEmployee->id,
+                        'user_id' => $userId,
+                        'request_date' => $lembur->tanggal_lembur->format('Y-m-d'),
+                        'request_time' => $lembur->waktu_lembur ?? '',
+                        'actual_date' => $lembur->tanggal_lembur->format('Y-m-d'),
+                        'actual_time' => null,
+                        'break' => 0,
+                        'remark' => $lembur->keterangan_lembur ?? '',
+                        'is_need_to_eat' => $isNeedToEat,
+                        'status' => 'APPROVE',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Gagal sync ke Mirai: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Hapus data dari mirai saat approval dibatalkan
+     */
+    private function removeFromMirai(Lembur $lembur)
+    {
+        try {
+            DB::connection('mirai')
+                ->table('overtimes')
+                ->where('id_rifa', $lembur->id_lembur)
+                ->delete();
+        } catch (\Exception $e) {
+            \Log::error('Gagal hapus dari Mirai: ' . $e->getMessage());
+        }
     }
 }

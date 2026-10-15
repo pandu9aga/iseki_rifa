@@ -62,6 +62,12 @@
             @enduserType
 
             @userType('super')
+            <button type="button" class="btn" style="background-color: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; font-weight: 600;" id="btn-approve-all">
+                <i class="fas fa-check-double mr-2" style="margin-right: 0.5rem;"></i> Approve All
+            </button>
+            <button type="button" class="btn" style="background-color: #dc3545; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; font-weight: 600;" id="btn-decline-all">
+                <i class="fas fa-times-circle mr-2" style="margin-right: 0.5rem;"></i> Decline All
+            </button>
             <a href="#" class="btn btn-primary" id="export-lembur-btn">
                 <i class="fas fa-file-excel mr-2" style="margin-right: 0.5rem;"></i> Export Lembur
             </a>
@@ -305,7 +311,7 @@
         @endif
 
         table = $('#lembur-table').DataTable({
-            processing: true,
+            processing: false,
             serverSide: true,
             ajax: {
                 url: isEmployee ? '/iseki_rifa/public/employee/lembur/data' : '/iseki_rifa/public/lembur/data',
@@ -546,6 +552,9 @@
     // Modal Delete
     let rowToDelete = null;
     window.showDeletePopup = function (row) {
+        if (!row) return;
+        const deleteBtn = row.querySelector('.delete-row');
+        if (deleteBtn && deleteBtn.disabled) return;
         rowToDelete = row;
         document.getElementById('popupDeleteLembur').classList.replace('hidden', 'flex');
     };
@@ -563,11 +572,20 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json',
                 },
-            }).then(res => {
-                if (res.ok) {
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .then(result => {
+                if (result.ok && result.data.success !== false) {
                     if (table) table.ajax.reload(null, false);
                     hideDeletePopup();
-                } else alert('Gagal menghapus data');
+                } else {
+                    alert(result.data.message || 'Gagal menghapus data');
+                    hideDeletePopup();
+                }
+            })
+            .catch(() => {
+                alert('Terjadi kesalahan saat menghapus data');
+                hideDeletePopup();
             });
         }
     });
@@ -646,6 +664,8 @@
     function closeModal(modalId) {
         document.getElementById(modalId).classList.replace('flex', 'hidden');
     }
+
+
 </script>
 
 <script>
@@ -675,6 +695,59 @@
                     .catch(() => alert('Gagal memperbarui status'));
             });
         });
+    }
+
+    // Approve All & Decline All functionality for Super
+    const btnApproveAll = document.getElementById('btn-approve-all');
+    const btnDeclineAll = document.getElementById('btn-decline-all');
+
+    if (btnApproveAll) {
+        btnApproveAll.addEventListener('click', function() {
+            processBulkApproval('approve');
+        });
+    }
+
+    if (btnDeclineAll) {
+        btnDeclineAll.addEventListener('click', function() {
+            processBulkApproval('decline');
+        });
+    }
+
+    function processBulkApproval(action) {
+        const dateFilter = document.getElementById('customDate');
+        if (!dateFilter || !dateFilter.value) {
+            alert('Silakan pilih tanggal terlebih dahulu di filter tanggal!');
+            return;
+        }
+        
+        const tanggal = dateFilter.value;
+        const actionText = action === 'approve' ? 'Menyetujui' : 'Menolak';
+        const actionName = action === 'approve' ? 'Approve All' : 'Decline All';
+        
+        if (confirm('Apakah Anda yakin ingin ' + actionText + ' SEMUA pengajuan lembur pada tanggal ' + tanggal + '?')) {
+            fetch('/iseki_rifa/public/lembur/bulk-' + action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfTokenLembur,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ tanggal: tanggal })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(actionName + ' berhasil diproses!');
+                    if (table) table.ajax.reload(null, false);
+                } else {
+                    alert('Gagal: ' + (data.message || 'Terjadi kesalahan'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan pada sistem saat memproses ' + actionName);
+            });
+        }
     }
 </script>
 
