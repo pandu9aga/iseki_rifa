@@ -4,6 +4,102 @@
 @php
     $isEmployee = !Auth::check() && session('employee_login');
 @endphp
+
+<style>
+    /* Styling Tabel Lembur - Ultra Compact & Narrow Columns */
+    .table-scroll-wrapper {
+        width: 100%;
+        max-height: 72vh;
+        overflow-x: auto;
+    }
+
+    #lembur-table {
+        width: 100% !important;
+        min-width: unset !important;
+        table-layout: fixed !important;
+        border-collapse: collapse;
+    }
+
+    #lembur-table th,
+    #lembur-table td {
+        padding: 0.25rem 0.4rem !important;
+        font-size: 0.84rem !important;
+        white-space: nowrap !important;
+        vertical-align: middle;
+        line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #lembur-table thead th {
+        padding: 0.35rem 0.4rem !important;
+        font-weight: 600;
+        text-align: center;
+        background: var(--primary-50, #fff0f6);
+        font-size: 0.82rem !important;
+    }
+
+    /* Atur lebar kolom secara spesifik */
+    #lembur-table th:nth-child(1),
+    #lembur-table td:nth-child(1) { width: 30px !important; max-width: 30px !important; }  /* No */
+
+    #lembur-table th:nth-child(2),
+    #lembur-table td:nth-child(2) { width: 110px !important; max-width: 110px !important; } /* Nama */
+
+    #lembur-table thead .dt-filter-row th {
+        padding: 0.15rem 0.25rem !important;
+    }
+
+    #lembur-table thead .dt-filter-row input,
+    #lembur-table thead .dt-filter-row select {
+        padding: 0.2rem 0.35rem !important;
+        font-size: 0.78rem !important;
+        height: 26px !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        border-radius: 3px !important;
+        border: 1px solid var(--border-input, #ccc) !important;
+        box-sizing: border-box;
+    }
+
+    /* Tombol dalam tabel ultra compact */
+    #lembur-table .btn {
+        padding: 0.2rem 0.4rem !important;
+        font-size: 0.78rem !important;
+        border-radius: 3px !important;
+        min-width: auto !important;
+        line-height: 1.1 !important;
+    }
+
+    #lembur-table .btn-group {
+        gap: 0.15rem !important;
+        justify-content: center;
+        display: flex;
+    }
+
+    #lembur-table .btn-icon {
+        padding: 0.1rem 0.2rem !important;
+    }
+
+    #lembur-table .btn-icon i {
+        font-size: 1rem !important;
+    }
+
+    #lembur-table td.status {
+        padding: 0.2rem 0.35rem !important;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    /* Badge status lebih kecil */
+    #lembur-table .badge,
+    #lembur-table .status-badge {
+        font-size: 0.75rem !important;
+        padding: 0.15rem 0.45rem !important;
+        line-height: 1.2;
+    }
+</style>
+
 <main>
 
     <!-- Modal Edit -->
@@ -121,7 +217,7 @@
     @endif
 
     <section class="container-table table-scroll-wrapper">
-        <table class="table-auto w-full border border-gray-300 mt-4" id="lembur-table">
+        <table class="table-auto border border-gray-300" id="lembur-table">
             <thead>
                 <tr>
                     <th class="sticky-col-left">No</th>
@@ -253,37 +349,37 @@
 
     function buildColumns() {
         const cols = [
-            { data: 'no', orderable: false, searchable: false },
-            { data: 'nama' },
+            { data: 'no', orderable: false, searchable: false, className: 'text-center', width: '30px' },
+            { data: 'nama', width: '110px' },
         ];
         if (!isEmployee) {
-            cols.push({ data: 'nilai' });
-            cols.push({ data: 'divisi_nama' });
+            cols.push({ data: 'nilai', className: 'text-center', width: '45px' });
+            cols.push({ data: 'divisi_nama', width: '80px' });
         }
-        cols.push({ data: 'tanggal' });
+        cols.push({ data: 'tanggal', className: 'text-center', width: '80px' });
 
         if (userType === 'leader' || userType === 'admin') {
-            cols.push({ data: 'status_label' });
-            cols.push({ data: 'waktu' });
-            cols.push({ data: 'durasi' });
-            cols.push({ data: 'pekerjaan' });
-            cols.push({ data: 'makan' });
+            cols.push({ data: 'status_label', className: 'text-center', width: '85px' });
+            cols.push({ data: 'waktu', className: 'text-center', width: '90px' });
+            cols.push({ data: 'durasi', className: 'text-center', width: '50px' });
+            cols.push({ data: 'pekerjaan', width: '110px' });
+            cols.push({ data: 'makan', className: 'text-center', width: '45px' });
         } else if (userType === 'super') {
-            cols.push({ data: 'approval_buttons', orderable: false, searchable: false });
-            cols.push({ data: 'status_label' });
-            cols.push({ data: 'waktu' });
-            cols.push({ data: 'durasi' });
-            cols.push({ data: 'pekerjaan' });
-            cols.push({ data: 'makan' });
+            cols.push({ data: 'approval_buttons', orderable: false, searchable: false, className: 'text-center', width: '80px' });
+            cols.push({ data: 'status_label', className: 'text-center', width: '85px' });
+            cols.push({ data: 'waktu', className: 'text-center', width: '90px' });
+            cols.push({ data: 'durasi', className: 'text-center', width: '50px' });
+            cols.push({ data: 'pekerjaan', width: '110px' });
+            cols.push({ data: 'makan', className: 'text-center', width: '45px' });
         }
 
         if (isEmployee) {
-            cols.push({ data: 'waktu' });
-            cols.push({ data: 'durasi' });
+            cols.push({ data: 'waktu', className: 'text-center', width: '90px' });
+            cols.push({ data: 'durasi', className: 'text-center', width: '50px' });
         }
 
         if (userType) {
-            cols.push({ data: 'action_buttons', orderable: false, searchable: false });
+            cols.push({ data: 'action_buttons', orderable: false, searchable: false, className: 'text-center', width: '70px' });
         }
 
         return cols;
@@ -313,6 +409,7 @@
         table = $('#lembur-table').DataTable({
             processing: false,
             serverSide: true,
+            autoWidth: false,
             ajax: {
                 url: isEmployee ? '/iseki_rifa/public/employee/lembur/data' : '/iseki_rifa/public/lembur/data',
                 type: 'GET',

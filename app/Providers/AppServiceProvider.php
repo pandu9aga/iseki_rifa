@@ -41,8 +41,8 @@ class AppServiceProvider extends ServiceProvider
             }
         });
         
-        Blade::if('userType', function ($type) {
-            return auth()->check() && auth()->user()->type === $type;
+        Blade::if('userType', function (...$types) {
+            return auth()->check() && in_array(auth()->user()->type, $types, true);
         });
     }
 }
