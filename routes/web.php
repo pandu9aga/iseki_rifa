@@ -138,6 +138,10 @@ Route::middleware('auth')->group(function () {
 });
 
 // Helper routes (tanpa auth, tapi aman karena hanya read)
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+});
+
 Route::get('/employee/by-nik/{nik}', function ($nik) {
     $employee = \App\Models\Employee::where('nik', $nik)->first();
     return response()->json($employee ?? []);

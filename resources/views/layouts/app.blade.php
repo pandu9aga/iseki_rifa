@@ -41,6 +41,53 @@
         $(document).ready(function() {
             $('.select2').select2();
         });
+
+        // Setup CSRF header otomatis untuk jQuery AJAX
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
+        // Global Interceptor untuk fetch API: menangani error 419 (Page Expired / Session Expired)
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            try {
+                const response = await originalFetch.apply(this, args);
+                if (response.status === 419) {
+                    alert('Sesi Anda telah berakhir atau halaman kedaluwarsa. Halaman akan dimuat ulang secara otomatis.');
+                    window.location.reload();
+                    return response;
+                }
+                return response;
+            } catch (err) {
+                throw err;
+            }
+        };
+
+        // Tangani juga error 419 pada jQuery AJAX
+        $(document).ajaxError(function(event, jqXHR) {
+            if (jqXHR.status === 419) {
+                alert('Sesi Anda telah berakhir atau halaman kedaluwarsa. Halaman akan dimuat ulang secara otomatis.');
+                window.location.reload();
+            }
+        });
+
+        // Periodic keep-alive ping setiap 15 menit agar session tidak hangus saat tab dibiarkan terbuka
+        setInterval(function() {
+            originalFetch('{{ url("/csrf-token") }}', { method: 'GET' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.token) {
+                        const meta = document.querySelector('meta[name="csrf-token"]');
+                        if (meta) meta.setAttribute('content', data.token);
+                        $.ajaxSetup({
+                            headers: { 'X-CSRF-TOKEN': data.token }
+                        });
+                    }
+                })
+                .catch(() => {});
+        }, 15 * 60 * 1000);
     </script>
 
     @stack('scripts')
